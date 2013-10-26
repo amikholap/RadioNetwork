@@ -19,7 +19,7 @@ namespace Network
     {
         private List<Client> _clients;
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Namespace);
+        private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
 
         public Server()
         {
@@ -43,9 +43,9 @@ namespace Network
                 client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 client.EnableBroadcast = true;
 
-                // recieve client
+                // receive client's message
                 byte[] dgram = client.Receive(ref broadcastEP);
-                string data = Encoding.ASCII.GetString(dgram);
+                string data = Encoding.UTF8.GetString(dgram);
                 try
                 {
                     // data is in format {client,server}\n<ip_address>
@@ -62,9 +62,9 @@ namespace Network
                         continue;
                     }
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    log.Warn(ex);
+                    log.Error(e);
                     client.Close();
                     continue;
                 }
@@ -72,15 +72,15 @@ namespace Network
 
                 // send a response to the connected client: "server\n<server_ip>"
                 string response = String.Format("server\n{0}", NetworkHelper.GetLocalIPAddress());
-                dgram = Encoding.ASCII.GetBytes(response);
+                dgram = Encoding.UTF8.GetBytes(response);
                 try
                 {
                     client.Connect(clientAddr, Network.Properties.Settings.Default.BROADCAST_PORT);
                     client.Send(dgram, dgram.Length);
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    log.Warn(ex);
+                    log.Error(e);
                     continue;
                 }
                 finally
@@ -90,19 +90,74 @@ namespace Network
             }
         }
 
-        public void ListenTCP()
+        /// <summary>
+        /// Listens on TCP_PORT for any client actions such as
+        /// conecting and updating 
+        /// </summary>
+        public void ListenClientsInfo()
         {
-            TcpListener listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 59555);
+            TcpListener listener = new TcpListener(IPAddress.Any, Network.Properties.Settings.Default.TCP_PORT);
             listener.Start();
 
             while (true)
             {
-                using (TcpClient c = listener.AcceptTcpClient())
-                using (NetworkStream ns = c.GetStream())
+                using (TcpClient tcpClient = listener.AcceptTcpClient())
+                using (NetworkStream ns = tcpClient.GetStream())
                 {
+                    IPAddress clientAddr;    // client's IP address
+                    string callsign;       // client's callsign
+                    int fr, ft;            // client's receive and transmit frequencies
+
                     var buf = new byte[100];
                     ns.Read(buf, 0, buf.Length);
-                    Server.log.Debug(Encoding.UTF8.GetString(buf));
+                    string request = Encoding.UTF8.GetString(buf);
+                    log.Debug(String.Format("raw request: {0}", request));
+                    string[] lines = request.Split('\n');
+
+                    switch (lines[0])    // first line specifies the action
+                    {
+                        case "UPDATE":
+                            // the message format is:
+                            //     UPDATE
+                            //     <callsign>
+                            //     <receive_frequency>,<transmit_frequency>
+                            try
+                            {
+                                callsign = lines[1];
+                                fr = int.Parse(lines[2].Split(',')[0]);
+                                ft = int.Parse(lines[2].Split(',')[1]);
+                            }
+                            catch (Exception e)
+                            {
+                                log.Error(e.Message);
+                                continue;
+                            }
+
+                            // get client's IP address
+                            clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
+
+                            // add a new client to the list only if
+                            // a client with such IP address doesn't exist
+                            if (!_clients.Exists(c => c.Addr == clientAddr))
+                            {
+                                _clients.Add(new Client(clientAddr, callsign, fr, ft));
+                                log.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
+                                break;
+                            }
+
+                            // a client with such IP address already exists
+                            // update it
+                            Client client = _clients.Find(c => c.Addr == clientAddr);
+                            client.Callsign = callsign;
+                            client.Fr = fr;
+                            client.Ft = ft;
+
+                            break;
+                        default:
+                            // unknown format
+                            Server.log.Warn(request);
+                            continue;
+                    }
                 }
                 Thread.Sleep(100);
             }
@@ -110,18 +165,22 @@ namespace Network
 
         public void WriteTCP()
         {
-            using (TcpClient client = new TcpClient("127.0.0.1", 59555))
-            using (NetworkStream ns = client.GetStream())
+            using (TcpClient client = new TcpClient())
             {
-                byte[] data = System.Text.Encoding.UTF8.GetBytes("message");
-                ns.Write(data, 0, data.Length);
+                client.Connect(new IPEndPoint(IPAddress.Loopback, Network.Properties.Settings.Default.TCP_PORT));
+                using (NetworkStream ns = client.GetStream())
+                {
+                    string request = "UPDATE\nТополь\n175,275";
+                    byte[] data = Encoding.UTF8.GetBytes(request);
+                    ns.Write(data, 0, data.Length);
+                }
             }
         }
 
         public void Run()
         {
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
-            Thread listenTcpThread = new Thread(this.ListenTCP);
+            Thread listenTcpThread = new Thread(this.ListenClientsInfo);
 
             listenNewClientsThread.Start();
             listenTcpThread.Start();
