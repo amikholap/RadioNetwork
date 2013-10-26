@@ -48,6 +48,7 @@ namespace Network
                 string data = Encoding.UTF8.GetString(dgram);
                 try
                 {
+                    log.Error(data);
                     // data is in format {client,server}\n<ip_address>
                     string type = data.Split('\n')[0];
                     string sAddr = data.Split('\n')[1];
@@ -177,6 +178,11 @@ namespace Network
             }
         }
 
+        /// <summary>
+        /// Launch the server.
+        /// It spawns several threads for listening and processing
+        /// client messages.
+        /// </summary>
         public void Run()
         {
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
