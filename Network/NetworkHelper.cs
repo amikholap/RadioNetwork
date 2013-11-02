@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Network
 {
-    class NetworkHelper
+    public class NetworkHelper
     {
         public static IPAddress GetLocalIPAddress()
         {

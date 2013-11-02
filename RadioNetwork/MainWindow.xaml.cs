@@ -29,7 +29,7 @@ namespace RadioNetwork
         public MainWindow()
         {
             InitializeComponent();
-            Controller.Start();
+            Controller.StartServer();
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
