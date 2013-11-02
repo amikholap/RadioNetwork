@@ -1,8 +1,37 @@
 ﻿<Window x:Class="RadioNetwork.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
+        Closing="OnWindowClosing"
+        Title="Радиосеть" Height="150" Width="200">
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3*" MinHeight="110" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Column="0" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="4*" />
+            </Grid.RowDefinitions>
+            <Label Content="Позывной" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left"/>
+            <TextBox Name="Callsign" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch"></TextBox>
+            <Label Content="Ч. пр." Grid.Column="0" Grid.Row="1" />
+            <TextBox Name="Fr" Grid.Column="1" Grid.Row="1"></TextBox>
+            <Label Content="Ч. пер" Grid.Column="0" Grid.Row="2" />
+            <TextBox Name="Ftr" Grid.Column="1" Grid.Row="2"></TextBox>
+            <Button Content="Подключиться" Name="RefreshInfo" Grid.ColumnSpan="2" Grid.Row="3" Margin="25,5,25,0" />
+        </Grid>
     </Grid>
 </Window>

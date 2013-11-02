@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +30,11 @@ namespace RadioNetwork
             InitializeComponent();
 
             Logic.Main.Run();
+        }
+
+        void OnWindowClosing(object sender, CancelEventArgs e)
+        {
+            Logic.Main.Stop();
         }
     }
 }
