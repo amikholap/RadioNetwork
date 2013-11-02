@@ -10,13 +10,15 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-[assembly: log4net.Config.XmlConfigurator(Watch = true)]
-
-
 namespace Network
 {
     public class Server
     {
+        /// <summary>
+        /// Indicates if server is running.
+        /// True by default.
+        /// When set to false server will shut down in several seconds.
+        /// </summary>
         private bool _isWorking;
         private List<Client> _clients;
 
@@ -35,30 +37,35 @@ namespace Network
         public void ListenNewClients()
         {
             IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient client = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            client.EnableBroadcast = true;
 
             // listen for new clients
             while (_isWorking)
             {
-                // init udp client
-                UdpClient client = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-                client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                client.EnableBroadcast = true;
-
                 while (client.Available > 0)
                 {
                     // receive client's message
                     byte[] dgram = client.Receive(ref broadcastEP);
                     IPAddress clientAddr = broadcastEP.Address;
                     string type = Encoding.UTF8.GetString(dgram);    // either "client" or "server"
-                    log.Debug(String.Format("Found new client: {0}", clientAddr));
+                    if (type == "server")
+                    {
+                        // skip server's own messages
+                        continue;
+                    }
+
+                    log.Debug(String.Format("Found client: {0}", clientAddr));
 
                     // send a string "server" to the connected client
-                    string response = String.Format("server");
+                    string response = "server";
                     dgram = Encoding.UTF8.GetBytes(response);
+                    UdpClient c = new UdpClient();
                     try
                     {
-                        client.Connect(clientAddr, Network.Properties.Settings.Default.BROADCAST_PORT);
-                        client.Send(dgram, dgram.Length);
+                        c.Connect(clientAddr, Network.Properties.Settings.Default.BROADCAST_PORT);
+                        c.Send(dgram, dgram.Length);
                     }
                     catch (Exception e)
                     {
@@ -67,11 +74,10 @@ namespace Network
                     }
                     finally
                     {
-                        client.Close();
+                        c.Close();
                     }
                 }
                 Thread.Sleep(50);
-                client.Close();
             }
         }
 
@@ -100,7 +106,7 @@ namespace Network
                         var buf = new byte[100];
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
-                        log.Debug(String.Format("raw request: {0}", request));
+                        log.Debug(String.Format("raw request:\n{0}", request));
                         string[] lines = request.Split('\n');
 
                         switch (lines[0])    // first line specifies the action

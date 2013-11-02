@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Logic;
 
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
@@ -28,13 +29,12 @@ namespace RadioNetwork
         public MainWindow()
         {
             InitializeComponent();
-
-            Logic.Main.Run();
+            Controller.Start();
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
         {
-            Logic.Main.Stop();
+            Controller.Stop();
         }
     }
 }
