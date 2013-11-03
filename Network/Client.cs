@@ -17,9 +17,8 @@ namespace Network
         Byte[] receiveBytes;
         Byte[] sendBytes;
 
-        /// <summary>
-        /// Client's IP address.
-        /// </summary>
+
+        // Client's IP address.
         public IPAddress Addr { get; set; }
         /// <summary>
         /// Client's callsign.
@@ -49,7 +48,7 @@ namespace Network
         }
 
         // by UDP
-        public void udpCreate(int timeout)
+        public void udpOpen(int timeout)
         {
             // create client
             udpClient = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -58,12 +57,13 @@ namespace Network
             udpClient.Client.ReceiveTimeout = timeout;
             // determine port && BroadcastAddr
             broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
+            
         }
         public void udpSend()
         {
 
             // send BroadCast message "<MyIp>" in byte[]
-            string name = "client\n" + Addr.ToString();
+            string name = "client\n";
             sendBytes = Encoding.UTF8.GetBytes(name);
             // Blocks until a message returns on this socket from a remote host.
             udpClient.Send(sendBytes, sendBytes.Length, broadcastEndPoint);
@@ -79,16 +79,15 @@ namespace Network
                 string returnData = Encoding.UTF8.GetString(receiveBytes);
                 Console.WriteLine("updReceive: " + returnData.ToString());
                 // data is in format {client,server}\n<ip_address>
-                string type = returnData.Split('\n')[0];
-                string sAddr = returnData.Split('\n')[1];
+                string type = returnData.ToString();
                 if (type.Equals("server"))
                 {
                     // get new client's IP address
-                    serverIP = IPAddress.Parse(sAddr);
-                    Console.WriteLine("Found IP  " +
+                    serverIP = broadcastEndPoint.Address;
+                    Console.WriteLine("Found server IP  " +
                                         serverIP.ToString());
                     udpClient.Close();
-                    return true;
+                    return false;
                 }
 
             }
@@ -104,9 +103,9 @@ namespace Network
                 Console.WriteLine("Source : " + e.Source);
                 Console.WriteLine("Message : " + e.Message);
             }
-            return false;
+            return true;
         }
-        public void tcpCreate()
+        public void tcpOpen()
         {
             try
             {
@@ -114,7 +113,6 @@ namespace Network
                 IPEndPoint ipEndPoint = new IPEndPoint(serverIP, Network.Properties.Settings.Default.TCP_PORT);
                 // Create a TcpClient. 
                 tcpClient = new TcpClient(serverIP.ToString(), Network.Properties.Settings.Default.TCP_PORT);
-
             }
             catch (SocketException e)
             {
@@ -152,6 +150,16 @@ namespace Network
             Console.WriteLine("Received: ", responseData);
             // Close everything.
             stream.Close();
+        }
+
+        public void udpClose()
+        {
+            udpClient.Close();
+        }
+
+        public void tcpClose()
+        {
+            tcpClient.Close();
         }
 
     }
