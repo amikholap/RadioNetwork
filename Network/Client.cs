@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using log4net;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,15 +11,16 @@ namespace Network
 {
     public class Client
     {
-        IPAddress serverIP;
-        TcpClient tcpClient;
-        UdpClient udpClient;
-        IPEndPoint broadcastEndPoint;
-        Byte[] receiveBytes;
-        Byte[] sendBytes;
+        private IPAddress serverIP;
+        private TcpClient tcpClient;
+        private UdpClient udpClient;
+        private IPEndPoint broadcastEndPoint;
 
+        private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
 
-        // Client's IP address.
+        /// <summary>
+        /// Client's IP address.
+        /// </summary>
         public IPAddress Addr { get; set; }
         /// <summary>
         /// Client's callsign.
@@ -33,78 +35,78 @@ namespace Network
         /// </summary>
         public int Ft { get; set; }
 
-        public Client()
+
+        public Client(string callsign, int fr, int ft)
         {
-            // initial myIP
             Addr = NetworkHelper.GetLocalIPAddress();
-            receiveBytes = new Byte[256];
-            sendBytes = new Byte[256];
+            Callsign = callsign;
+            Fr = fr;
+            Ft = ft;
         }
 
         public Client(IPAddress addr, string callsign, int fr, int ft)
-            : base()
+            : this(callsign, fr, ft)
         {
             Addr = addr;
         }
 
         // by UDP
-        public void udpOpen(int timeout)
+        private void udpOpen(int timeout)
         {
             // create client
             udpClient = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             // broadcast ON
             udpClient.EnableBroadcast = true;
             udpClient.Client.ReceiveTimeout = timeout;
+            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             // determine port && BroadcastAddr
             broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
-            
-        }
-        public void udpSend()
-        {
 
-            // send BroadCast message "<MyIp>" in byte[]
-            string name = "client\n";
-            sendBytes = Encoding.UTF8.GetBytes(name);
+        }
+
+        private void udpSend()
+        {
+            Byte[] sendBytes = new Byte[256];
+            // send BroadCast message "<client>" in byte[]
+            string request = "client";
+            sendBytes = Encoding.UTF8.GetBytes(request);
             // Blocks until a message returns on this socket from a remote host.
             udpClient.Send(sendBytes, sendBytes.Length, broadcastEndPoint);
-            Console.WriteLine("updSend: " + name.ToString());
         }
 
-        public bool udpListen()
+        private bool udpListen()
         {
+            Byte[] receiveBytes = new Byte[256];
 
             try
             {
                 receiveBytes = udpClient.Receive(ref broadcastEndPoint);
                 string returnData = Encoding.UTF8.GetString(receiveBytes);
-                Console.WriteLine("updReceive: " + returnData.ToString());
+                log.Debug("updReceive: " + returnData.ToString());
                 // data is in format {client,server}\n<ip_address>
                 string type = returnData.ToString();
                 if (type.Equals("server"))
                 {
                     // get new client's IP address
                     serverIP = broadcastEndPoint.Address;
-                    Console.WriteLine("Found server IP  " +
-                                        serverIP.ToString());
+                    log.Debug(String.Format("Found server: {0}", serverIP.ToString()));
                     udpClient.Close();
                     return false;
                 }
 
             }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException caught!!!");
-                Console.WriteLine("Source : " + e.Source);
-                Console.WriteLine("Message : " + e.Message);
-            }
             catch (Exception e)
             {
-                Console.WriteLine("Exception caught!!!");
-                Console.WriteLine("Source : " + e.Source);
-                Console.WriteLine("Message : " + e.Message);
+                log.Error(e.Message);
             }
             return true;
         }
+
+        private void udpClose()
+        {
+            udpClient.Close();
+        }
+
         public void tcpOpen()
         {
             try
@@ -114,32 +116,28 @@ namespace Network
                 // Create a TcpClient. 
                 tcpClient = new TcpClient(serverIP.ToString(), Network.Properties.Settings.Default.TCP_PORT);
             }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException caught!!!");
-                Console.WriteLine("Source : " + e.Source);
-                Console.WriteLine("Message : " + e.Message);
-            }
             catch (Exception e)
             {
-                Console.WriteLine("Exception caught!!!");
-                Console.WriteLine("Source : " + e.Source);
-                Console.WriteLine("Message : " + e.Message);
+                log.Error(e.Message);
             }
         }
-        public void tcpSend(String mess)
+
+        private void tcpSend(String mess)
         {
+            Byte[] sendBytes = new Byte[256];
             sendBytes = System.Text.Encoding.UTF8.GetBytes(mess);
             // Get a client stream for reading and writing. 
             NetworkStream stream = tcpClient.GetStream();
             // Send the message to the connected TcpServer. 
             stream.Write(sendBytes, 0, sendBytes.Length);
-            Console.WriteLine("Sent: {0}", mess);
             // Close everything.
             stream.Close();
         }
-        public void tcpReceive()
+
+        private void tcpReceive()
         {
+
+            Byte[] receiveBytes = new Byte[256];
             // String to store the response ASCII representation.
             String responseData = String.Empty;
             // Read the first batch of the TcpServer response bytes.
@@ -147,20 +145,22 @@ namespace Network
             NetworkStream stream = tcpClient.GetStream();
             bytes = stream.Read(receiveBytes, 0, receiveBytes.Length);
             responseData = System.Text.Encoding.UTF8.GetString(receiveBytes, 0, bytes);
-            Console.WriteLine("Received: ", responseData);
+            log.Debug(String.Format("Client received: {0}", responseData));
             // Close everything.
             stream.Close();
         }
 
-        public void udpClose()
-        {
-            udpClient.Close();
-        }
-
-        public void tcpClose()
+        private void tcpClose()
         {
             tcpClient.Close();
         }
 
+        public void DetectServer()
+        {
+            udpOpen(5000);
+            udpSend();
+            udpListen();
+            udpClose();
+        }
     }
 }

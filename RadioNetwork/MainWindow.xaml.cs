@@ -26,15 +26,29 @@ namespace RadioNetwork
     /// </summary>
     public partial class MainWindow : Window
     {
+        private ClientDataContext _cdc;
+        private ServerDataContext _sdc;
+
         public MainWindow()
         {
             InitializeComponent();
-            Controller.StartServer();
+            // Controller.StartServer();
+            this._cdc = new ClientDataContext();
+            this.DataContext = _cdc;
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
         {
             Controller.Stop();
+        }
+
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            string callsign = _cdc.Callsign;
+            int fr = int.Parse(_cdc.Fr);
+            int ft = int.Parse(_cdc.Ft);
+
+            Controller.StartClient(callsign, fr, ft);
         }
     }
 }

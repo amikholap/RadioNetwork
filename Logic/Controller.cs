@@ -16,15 +16,16 @@ namespace Logic
     {
         private static Client _client;
         private static Server _server;
-        private static ControllerMode _mode;
 
         private static ILog logger = LogManager.GetLogger("RadioNetwork");
+
+        public static ControllerMode Mode { get; set; }
 
         static Controller()
         {
             _client = null;
             _server = null;
-            _mode = ControllerMode.None;
+            Mode = ControllerMode.None;
         }
 
         /// <summary>
@@ -35,21 +36,16 @@ namespace Logic
         /// <param name="ft"></param>
         public static void StartClient(string callsign, int fr, int ft)
         {
-            switch (_mode)
+            if (Mode == ControllerMode.Server)
             {
-                case ControllerMode.None:
-                    _client = new Client(NetworkHelper.GetLocalIPAddress(), callsign, fr, ft);
-                    _mode = ControllerMode.Client;
-                    break;
-                case ControllerMode.Client:
-                    break;
-                case ControllerMode.Server:
-                    _server.Stop();
-                    _server = null;
-                    _client = new Client(NetworkHelper.GetLocalIPAddress(), callsign, fr, ft);
-                    _mode = ControllerMode.Client;
-                    break;
+                // stop server process
+                _server.Stop();
+                _server = null;
             }
+            _client = new Client(callsign, fr, ft);
+            Mode = ControllerMode.Client;
+
+            _client.DetectServer();
         }
 
         /// <summary>
@@ -57,12 +53,12 @@ namespace Logic
         /// </summary>
         public static void StartServer()
         {
-            switch (_mode)
+            switch (Mode)
             {
                 case ControllerMode.None:
                     _server = new Server();
                     _server.Start();
-                    _mode = ControllerMode.Server;
+                    Mode = ControllerMode.Server;
                     break;
                 case ControllerMode.Client:
                     break;
@@ -76,7 +72,7 @@ namespace Logic
         /// </summary>
         public static void Stop()
         {
-            switch (_mode)
+            switch (Mode)
             {
                 case ControllerMode.Client:
                     break;
