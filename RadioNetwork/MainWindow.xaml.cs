@@ -32,7 +32,10 @@ namespace RadioNetwork
         public MainWindow()
         {
             InitializeComponent();
+
+            // this._sdc = new ServerDataContext();
             // Controller.StartServer();
+
             this._cdc = new ClientDataContext();
             this.DataContext = _cdc;
         }
@@ -48,7 +51,15 @@ namespace RadioNetwork
             int fr = int.Parse(_cdc.Fr);
             int ft = int.Parse(_cdc.Ft);
 
-            Controller.StartClient(callsign, fr, ft);
+            if (Controller.Mode != ControllerMode.Client)
+            {
+                Controller.StartClient(callsign, fr, ft);
+            }
+        }
+
+        private void DisconnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            Controller.Stop();
         }
     }
 }

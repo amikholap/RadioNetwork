@@ -45,8 +45,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="AudioHelper.cs" />
+    <Compile Include="INetworkChatCodec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UncompressedPcmChatCodec.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

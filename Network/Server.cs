@@ -196,6 +196,7 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
+            Thread.Sleep(1000);    // let worker threads finish
         }
     }
 }

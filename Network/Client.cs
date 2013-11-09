@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
+using System.Threading;
 
 namespace Network
 {
@@ -14,7 +15,7 @@ namespace Network
         private IPAddress serverIP;
         private TcpClient tcpClient;
         private UdpClient udpClient;
-        private IPEndPoint broadcastEndPoint;
+        private Thread streamingThread;
 
         private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
 
@@ -50,117 +51,116 @@ namespace Network
             Addr = addr;
         }
 
-        // by UDP
-        private void udpOpen(int timeout)
+
+        private void detectServer()
         {
+            Byte[] dgram = new byte[256];
+
             // create client
             udpClient = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             // broadcast ON
             udpClient.EnableBroadcast = true;
-            udpClient.Client.ReceiveTimeout = timeout;
+            udpClient.Client.ReceiveTimeout = 5000;
             udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             // determine port && BroadcastAddr
-            broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
+            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
+            IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
 
-        }
-
-        private void udpSend()
-        {
-            Byte[] sendBytes = new Byte[256];
-            // send BroadCast message "<client>" in byte[]
+            // send BroadCast message "client" in byte[]
             string request = "client";
-            sendBytes = Encoding.UTF8.GetBytes(request);
+            dgram = Encoding.UTF8.GetBytes(request);
             // Blocks until a message returns on this socket from a remote host.
-            udpClient.Send(sendBytes, sendBytes.Length, broadcastEndPoint);
-        }
+            udpClient.Send(dgram, dgram.Length, broadcastEndPoint);
 
-        private bool udpListen()
-        {
-            Byte[] receiveBytes = new Byte[256];
-
-            try
+            // listen for server's reponse for 5 seconds
+            DateTime t = DateTime.Now;
+            while ((DateTime.Now - t) < TimeSpan.FromSeconds(5))
             {
-                receiveBytes = udpClient.Receive(ref broadcastEndPoint);
-                string returnData = Encoding.UTF8.GetString(receiveBytes);
-                log.Debug("updReceive: " + returnData.ToString());
-                // data is in format {client,server}\n<ip_address>
-                string type = returnData.ToString();
-                if (type.Equals("server"))
+                try
                 {
-                    // get new client's IP address
-                    serverIP = broadcastEndPoint.Address;
-                    log.Debug(String.Format("Found server: {0}", serverIP.ToString()));
-                    udpClient.Close();
-                    return false;
+                    dgram = udpClient.Receive(ref anyEndPoint);
+                    string response = Encoding.UTF8.GetString(dgram);
+                    // data is in format {client,server}
+                    if (response == "server")
+                    {
+                        // get new server's IP address
+                        serverIP = anyEndPoint.Address;
+                        log.Debug(String.Format("Found server: {0}", serverIP));
+                        return;
+                    }
+
                 }
+                catch (Exception e)
+                {
+                    log.Error(e.Message);
+                }
+                finally
+                {
+                    udpClient.Close();
+                }
+            }
 
-            }
-            catch (Exception e)
-            {
-                log.Error(e.Message);
-            }
-            return true;
+            // server didn't reply while client was listening
+            throw new TimeoutException("No reply from server.");
         }
 
-        private void udpClose()
+        /// <summary>
+        /// Send to server updated info about this client.
+        /// </summary>
+        public void UpdateClientInfo()
         {
-            udpClient.Close();
-        }
+            Byte[] dgram = new Byte[256];
 
-        public void tcpOpen()
-        {
             try
             {
-                // determine port && BroadcastAddr
                 IPEndPoint ipEndPoint = new IPEndPoint(serverIP, Network.Properties.Settings.Default.TCP_PORT);
-                // Create a TcpClient. 
-                tcpClient = new TcpClient(serverIP.ToString(), Network.Properties.Settings.Default.TCP_PORT);
+                tcpClient = new TcpClient(ipEndPoint);
             }
             catch (Exception e)
             {
                 log.Error(e.Message);
+                return;
             }
-        }
 
-        private void tcpSend(String mess)
-        {
-            Byte[] sendBytes = new Byte[256];
-            sendBytes = System.Text.Encoding.UTF8.GetBytes(mess);
-            // Get a client stream for reading and writing. 
-            NetworkStream stream = tcpClient.GetStream();
-            // Send the message to the connected TcpServer. 
-            stream.Write(sendBytes, 0, sendBytes.Length);
-            // Close everything.
-            stream.Close();
-        }
+            string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
+            dgram = System.Text.Encoding.UTF8.GetBytes(message);
+            using (NetworkStream ns = tcpClient.GetStream())
+            {
+                ns.Write(dgram, 0, dgram.Length);
+            }
 
-        private void tcpReceive()
-        {
+            using (NetworkStream ns = tcpClient.GetStream())
+            {
+                ns.Write(dgram, 0, dgram.Length);
+                ns.Read(dgram, 0, dgram.Length);
+                string response = System.Text.Encoding.UTF8.GetString(dgram, 0, dgram.Length);
+            }
 
-            Byte[] receiveBytes = new Byte[256];
-            // String to store the response ASCII representation.
-            String responseData = String.Empty;
-            // Read the first batch of the TcpServer response bytes.
-            Int32 bytes;
-            NetworkStream stream = tcpClient.GetStream();
-            bytes = stream.Read(receiveBytes, 0, receiveBytes.Length);
-            responseData = System.Text.Encoding.UTF8.GetString(receiveBytes, 0, bytes);
-            log.Debug(String.Format("Client received: {0}", responseData));
-            // Close everything.
-            stream.Close();
-        }
-
-        private void tcpClose()
-        {
             tcpClient.Close();
         }
 
-        public void DetectServer()
+        private void startStreaming()
         {
-            udpOpen(5000);
-            udpSend();
-            udpListen();
-            udpClose();
+        }
+
+        /// <summary>
+        /// Connect to a server and start streaming audio.
+        /// </summary>
+        public void Connect()
+        {
+            detectServer();
+            UpdateClientInfo();
+
+            streamingThread = new Thread(startStreaming);
+            streamingThread.Start();
+        }
+
+        /// <summary>
+        /// Disconnect from a server.
+        /// </summary>
+        public void Disconnect()
+        {
+            streamingThread.Abort();
         }
     }
 }

@@ -36,16 +36,19 @@ namespace Logic
         /// <param name="ft"></param>
         public static void StartClient(string callsign, int fr, int ft)
         {
-            if (Mode == ControllerMode.Server)
+            switch (Mode)
             {
-                // stop server process
-                _server.Stop();
-                _server = null;
+                case ControllerMode.Client:
+                    return;
+                case ControllerMode.Server:
+                    // stop server process
+                    _server.Stop();
+                    _server = null;
+                    break;
             }
             _client = new Client(callsign, fr, ft);
+            _client.Connect();
             Mode = ControllerMode.Client;
-
-            _client.DetectServer();
         }
 
         /// <summary>
@@ -75,6 +78,7 @@ namespace Logic
             switch (Mode)
             {
                 case ControllerMode.Client:
+                    _client.Disconnect();
                     break;
                 case ControllerMode.Server:
                     _server.Stop();
@@ -82,8 +86,12 @@ namespace Logic
             }
         }
 
+        /// <summary>
+        /// For testing only.
+        /// </summary>
         public static void Start()
         {
+            /*
             _server.Start();
 
             System.Threading.Thread.Sleep(5000);
@@ -96,10 +104,11 @@ namespace Logic
             writer.Send(dgram, dgram.Length);
             writer.Close();
             _server.WriteTCP();
+             */
 
 
-            //var h = new Audio.AudioHelper();
-            //h.CaptureFromMic();
+            // var h = new Audio.AudioHelper();
+            // h.CaptureFromMic();
             // h.PlayCaptured();
         }
     }
