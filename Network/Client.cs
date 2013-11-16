@@ -1,6 +1,6 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
-using log4net;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,16 +52,24 @@ namespace Network
         }
 
 
-        private void detectServer()
+        private UdpClient InitUpdClient(int port, int timeout = 5000)
+        {
+            // create client
+            udpClient = new UdpClient(port);
+            // set timeouts
+            udpClient.Client.ReceiveTimeout = timeout;
+            udpClient.Client.SendTimeout = timeout;
+            // reuse ports
+            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            return udpClient;
+        }
+
+        private void DetectServer()
         {
             Byte[] dgram = new byte[256];
 
-            // create client
-            udpClient = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-            // broadcast ON
+            udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             udpClient.EnableBroadcast = true;
-            udpClient.Client.ReceiveTimeout = 5000;
-            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             // determine port && BroadcastAddr
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
             IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -74,12 +82,14 @@ namespace Network
 
             // listen for server's reponse for 5 seconds
             DateTime t = DateTime.Now;
-            while ((DateTime.Now - t) < TimeSpan.FromSeconds(5))
+            try
             {
-                try
+                // wait for server's response for 5 seconds
+                while ((DateTime.Now - t) < TimeSpan.FromSeconds(5))
                 {
                     dgram = udpClient.Receive(ref anyEndPoint);
                     string response = Encoding.UTF8.GetString(dgram);
+                    log.Debug(String.Format("Client received: {0}", response));
                     // data is in format {client,server}
                     if (response == "server")
                     {
@@ -88,16 +98,15 @@ namespace Network
                         log.Debug(String.Format("Found server: {0}", serverIP));
                         return;
                     }
-
                 }
-                catch (Exception e)
-                {
-                    log.Error(e.Message);
-                }
-                finally
-                {
-                    udpClient.Close();
-                }
+            }
+            catch (Exception e)
+            {
+                log.Error(e.Message);
+            }
+            finally
+            {
+                udpClient.Close();
             }
 
             // server didn't reply while client was listening
@@ -105,7 +114,7 @@ namespace Network
         }
 
         /// <summary>
-        /// Send to server updated info about this client.
+        /// Send to server updated info about this client to server.
         /// </summary>
         public void UpdateClientInfo()
         {
@@ -114,7 +123,8 @@ namespace Network
             try
             {
                 IPEndPoint ipEndPoint = new IPEndPoint(serverIP, Network.Properties.Settings.Default.TCP_PORT);
-                tcpClient = new TcpClient(ipEndPoint);
+                tcpClient = new TcpClient();
+                tcpClient.Connect(ipEndPoint);
             }
             catch (Exception e)
             {
@@ -129,18 +139,15 @@ namespace Network
                 ns.Write(dgram, 0, dgram.Length);
             }
 
-            using (NetworkStream ns = tcpClient.GetStream())
-            {
-                ns.Write(dgram, 0, dgram.Length);
-                ns.Read(dgram, 0, dgram.Length);
-                string response = System.Text.Encoding.UTF8.GetString(dgram, 0, dgram.Length);
-            }
-
             tcpClient.Close();
         }
 
-        private void startStreaming()
+        private void StartStreaming(IEnumerable<byte[]> buffer)
         {
+            foreach (byte[] data in buffer)
+            {
+
+            }
         }
 
         /// <summary>
@@ -148,11 +155,11 @@ namespace Network
         /// </summary>
         public void Connect()
         {
-            detectServer();
+            DetectServer();
             UpdateClientInfo();
 
-            streamingThread = new Thread(startStreaming);
-            streamingThread.Start();
+            // streamingThread = new Thread(new ParameterizedThreadStart(StartStreaming)
+            // streamingThread.Start();
         }
 
         /// <summary>
@@ -160,7 +167,7 @@ namespace Network
         /// </summary>
         public void Disconnect()
         {
-            streamingThread.Abort();
+            // streamingThread.Abort();
         }
     }
 }

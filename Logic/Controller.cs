@@ -47,8 +47,15 @@ namespace Logic
                     break;
             }
             _client = new Client(callsign, fr, ft);
-            _client.Connect();
-            Mode = ControllerMode.Client;
+            try
+            {
+                _client.Connect();
+                Mode = ControllerMode.Client;
+            }
+            catch (Exception e)
+            {
+                logger.Error("Couldn't start client: " + e.Message);
+            }
         }
 
         /// <summary>
@@ -84,32 +91,6 @@ namespace Logic
                     _server.Stop();
                     break;
             }
-        }
-
-        /// <summary>
-        /// For testing only.
-        /// </summary>
-        public static void Start()
-        {
-            /*
-            _server.Start();
-
-            System.Threading.Thread.Sleep(5000);
-            System.Net.Sockets.UdpClient writer = new System.Net.Sockets.UdpClient();
-            writer.EnableBroadcast = true;
-            writer.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Broadcast, 41853));
-            byte[] dgram = Encoding.ASCII.GetBytes("client");
-            writer.Send(dgram, dgram.Length);
-            System.Threading.Thread.Sleep(1000);
-            writer.Send(dgram, dgram.Length);
-            writer.Close();
-            _server.WriteTCP();
-             */
-
-
-            // var h = new Audio.AudioHelper();
-            // h.CaptureFromMic();
-            // h.PlayCaptured();
         }
     }
 }

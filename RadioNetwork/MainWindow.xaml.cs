@@ -33,11 +33,11 @@ namespace RadioNetwork
         {
             InitializeComponent();
 
-            // this._sdc = new ServerDataContext();
-            // Controller.StartServer();
+            this._sdc = new ServerDataContext();
+            Controller.StartServer();
 
-            this._cdc = new ClientDataContext();
-            this.DataContext = _cdc;
+            // this._cdc = new ClientDataContext();
+            // this.DataContext = _cdc;
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
