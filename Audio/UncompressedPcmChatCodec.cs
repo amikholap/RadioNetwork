@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Audio
 {
     // [Export(typeof(INetworkChatCodec))]
-    class UncompressedPcmChatCodec : INetworkChatCodec
+    public class UncompressedPcmChatCodec : INetworkChatCodec
     {
         public UncompressedPcmChatCodec()
         {

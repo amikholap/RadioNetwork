@@ -36,26 +36,29 @@ namespace Logic
         /// <param name="ft"></param>
         public static void StartClient(string callsign, int fr, int ft)
         {
-            switch (Mode)
+            if (Mode != ControllerMode.Client)
             {
-                case ControllerMode.Client:
-                    return;
-                case ControllerMode.Server:
-                    // stop server process
-                    _server.Stop();
-                    _server = null;
-                    break;
+                // stop any existing non client processes
+                Stop();
             }
+
+            // create Client instance
             _client = new Client(callsign, fr, ft);
+
+            // find a server and connect to it
             try
             {
-                _client.Connect();
+                // _client.Connect();
                 Mode = ControllerMode.Client;
             }
             catch (Exception e)
             {
                 logger.Error("Couldn't start client: " + e.Message);
+                return;
             }
+
+            // start streaming
+            _client.StartStreaming();
         }
 
         /// <summary>
@@ -63,17 +66,25 @@ namespace Logic
         /// </summary>
         public static void StartServer()
         {
-            switch (Mode)
+            if (Mode != ControllerMode.Server)
             {
-                case ControllerMode.None:
-                    _server = new Server();
-                    _server.Start();
-                    Mode = ControllerMode.Server;
-                    break;
-                case ControllerMode.Client:
-                    break;
-                case ControllerMode.Server:
-                    break;
+                // stop any existing non server processes
+                Stop();
+            }
+
+            // create Server instance
+            _server = new Server();
+
+            // try to start server
+            try
+            {
+                _server.Start();
+                Mode = ControllerMode.Client;
+            }
+            catch (Exception e)
+            {
+                logger.Error("Couldn't start server: " + e.Message);
+                return;
             }
         }
 

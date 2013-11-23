@@ -34,7 +34,7 @@ namespace Network
         /// Listens on BROADCAST_PORT for any udp datagrams with client ip addresses.
         /// Replies with a string "server"
         /// </summary>
-        public void ListenNewClients()
+        private void ListenNewClients()
         {
             IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
             UdpClient client = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -85,7 +85,7 @@ namespace Network
         /// Listens on TCP_PORT for any client actions such as
         /// conecting and updating 
         /// </summary>
-        public void ListenClientsInfo()
+        private void ListenClientsInfo()
         {
             TcpListener listener = new TcpListener(IPAddress.Any, Network.Properties.Settings.Default.TCP_PORT);
             listener.Server.ReceiveTimeout = 5000;

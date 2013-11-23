@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Audio;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.IO;
+using System.IO.Pipes;
 
 namespace Network
 {
@@ -142,12 +145,34 @@ namespace Network
             tcpClient.Close();
         }
 
-        private void StartStreaming(IEnumerable<byte[]> buffer)
+        private void StartStreamLoop()
         {
-            foreach (byte[] data in buffer)
-            {
+            AudioHelper ah = new AudioHelper();
+            byte[] buffer = new byte[500];
 
+            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
+            streamingThread = new Thread(() => ah.StartCapture(new UncompressedPcmChatCodec()));
+            streamingThread.Start();
+
+            var pipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
+            pipe.Connect();
+
+            // read from mic and send audio data to server
+            while (true)
+            {
+                pipe.Read(buffer, 0, buffer.Length);
+
+                // SEND DATA TO SERVER
             }
+        }
+
+        /// <summary>
+        /// Start listening for audio stream from mic and passing it to the server.
+        /// </summary>
+        public void StartStreaming()
+        {
+            Thread streamThread = new Thread(StartStreamLoop);
+            streamingThread.Start();
         }
 
         /// <summary>
@@ -157,9 +182,6 @@ namespace Network
         {
             DetectServer();
             UpdateClientInfo();
-
-            // streamingThread = new Thread(new ParameterizedThreadStart(StartStreaming)
-            // streamingThread.Start();
         }
 
         /// <summary>
@@ -167,7 +189,7 @@ namespace Network
         /// </summary>
         public void Disconnect()
         {
-            // streamingThread.Abort();
+            streamingThread.Abort();
         }
     }
 }
