@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Audio;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,6 +24,7 @@ namespace Network
         private bool _isWorking;
         private List<Client> _clients;
         private NamedPipeServerStream _pipe;
+        private Thread _playAudioDataThread;
 
         private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
 
@@ -174,14 +176,8 @@ namespace Network
         private void ListenAudioData()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
-            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
 
             // LISTEN UDP DATAGRAMS AND FILL THE BUFFER
-
-            while (true)
-            {
-                pipe.Read(buffer, 0, (int)pipe.Length);
-            }
         }
 
         /// <summary>
@@ -194,10 +190,12 @@ namespace Network
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
             Thread listenAudioDataThread = new Thread(this.ListenAudioData);
+            _playAudioDataThread = new Thread(new ParameterizedThreadStart(AudioHelper.StartPlaying));
 
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
-            // listenAudioDataThread.Start();
+            listenAudioDataThread.Start();
+            _playAudioDataThread.Start();
         }
 
         /// <summary>
@@ -206,6 +204,7 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
+            _playAudioDataThread.Abort();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

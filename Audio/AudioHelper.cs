@@ -45,5 +45,23 @@ namespace Audio
             waveIn.DataAvailable += waveIn_DataAvailable;
             waveIn.StartRecording();
         }
+
+        public static void StartPlaying(object codec)
+        {
+            INetworkChatCodec cdc = (INetworkChatCodec)codec;
+            byte[] buffer = new byte[100];
+            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
+            BufferedWaveProvider playBuffer = new BufferedWaveProvider(cdc.RecordFormat);
+            WaveOut waveOut = new WaveOut();
+
+            waveOut.Init(playBuffer);
+            waveOut.Play();
+
+            while (true)
+            {
+                pipe.Read(buffer, 0, buffer.Length);
+                playBuffer.AddSamples(buffer, 0, buffer.Length);
+            }
+        }
     }
 }
