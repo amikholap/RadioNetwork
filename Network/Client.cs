@@ -171,7 +171,7 @@ namespace Network
         /// </summary>
         public void StartStreaming()
         {
-            Thread streamThread = new Thread(StartStreamLoop);
+            streamingThread = new Thread(StartStreamLoop);
             streamingThread.Start();
         }
 

@@ -48,7 +48,7 @@ namespace Logic
             // find a server and connect to it
             try
             {
-                // _client.Connect();
+                _client.Connect();
                 Mode = ControllerMode.Client;
             }
             catch (Exception e)

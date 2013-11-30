@@ -29,13 +29,33 @@ namespace RadioNetwork
         private ClientDataContext _cdc;
         private ServerDataContext _sdc;
 
+        private void StartClient()
+        {
+            string callsign = _cdc.Callsign;
+            int fr = int.Parse(_cdc.Fr);
+            int ft = int.Parse(_cdc.Ft);
+
+            if (Controller.Mode != ControllerMode.Client)
+            {
+                Controller.Stop();
+                Controller.StartClient(callsign, fr, ft);
+            }
+        }
+
+        private void StartServer()
+        {
+            if (Controller.Mode != ControllerMode.Server)
+            {
+                Controller.Stop();
+                Controller.StartServer();
+            }
+        }
+
         public MainWindow()
         {
             InitializeComponent();
 
-            // this._sdc = new ServerDataContext();
-            // Controller.StartServer();
-
+            this._sdc = new ServerDataContext();
             this._cdc = new ClientDataContext();
             this.DataContext = _cdc;
         }
@@ -45,16 +65,23 @@ namespace RadioNetwork
             Controller.Stop();
         }
 
-        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        void ClientModeMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            string callsign = _cdc.Callsign;
-            int fr = int.Parse(_cdc.Fr);
-            int ft = int.Parse(_cdc.Ft);
+            ClientModeMenuItem.IsChecked = true;
+            ServerModeMenuItem.IsChecked = false;
+            StartClient();
+        }
 
-            if (Controller.Mode != ControllerMode.Client)
-            {
-                Controller.StartClient(callsign, fr, ft);
-            }
+        void ServerModeMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            ClientModeMenuItem.IsChecked = false;
+            ServerModeMenuItem.IsChecked = true;
+            StartServer();
+        }
+
+        private void ConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            StartClient();
         }
 
         private void DisconnectButton_Click(object sender, RoutedEventArgs e)
