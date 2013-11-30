@@ -35,20 +35,12 @@ namespace RadioNetwork
             int fr = int.Parse(_cdc.Fr);
             int ft = int.Parse(_cdc.Ft);
 
-            if (Controller.Mode != ControllerMode.Client)
-            {
-                Controller.Stop();
-                Controller.StartClient(callsign, fr, ft);
-            }
+            Controller.StartClient(callsign, fr, ft);
         }
 
         private void StartServer()
         {
-            if (Controller.Mode != ControllerMode.Server)
-            {
-                Controller.Stop();
-                Controller.StartServer();
-            }
+            Controller.StartServer();
         }
 
         public MainWindow()

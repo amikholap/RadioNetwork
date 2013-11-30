@@ -148,13 +148,13 @@ namespace Network
         private void StartStreamLoop()
         {
             AudioHelper ah = new AudioHelper();
-            byte[] buffer = new byte[500];
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
 
             // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
             streamingThread = new Thread(() => ah.StartCapture(new UncompressedPcmChatCodec()));
             streamingThread.Start();
 
-            var pipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
+            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
             pipe.Connect();
 
             // read from mic and send audio data to server

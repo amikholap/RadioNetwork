@@ -79,7 +79,7 @@ namespace Logic
             try
             {
                 _server.Start();
-                Mode = ControllerMode.Client;
+                Mode = ControllerMode.Server;
             }
             catch (Exception e)
             {

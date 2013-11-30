@@ -11,5 +11,11 @@
     <Setting Name="UDP_PORT" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">41855</Value>
     </Setting>
+    <Setting Name="BUFFER_SIZE" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">500</Value>
+    </Setting>
+    <Setting Name="MAX_BUFFER_SIZE" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">1048576</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

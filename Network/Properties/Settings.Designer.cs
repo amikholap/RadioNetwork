@@ -58,5 +58,29 @@ namespace Network.Properties {
                 this["UDP_PORT"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("500")]
+        public int BUFFER_SIZE {
+            get {
+                return ((int)(this["BUFFER_SIZE"]));
+            }
+            set {
+                this["BUFFER_SIZE"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1048576")]
+        public int MAX_BUFFER_SIZE {
+            get {
+                return ((int)(this["MAX_BUFFER_SIZE"]));
+            }
+            set {
+                this["MAX_BUFFER_SIZE"] = value;
+            }
+        }
     }
 }

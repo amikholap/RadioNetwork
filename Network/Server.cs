@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -21,13 +22,19 @@ namespace Network
         /// </summary>
         private bool _isWorking;
         private List<Client> _clients;
+        private NamedPipeServerStream _pipe;
 
         private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
 
         public Server()
         {
+            IAsyncResult r = null;
+
             _isWorking = true;
             _clients = new List<Client>();
+
+            _pipe = new NamedPipeServerStream("audio", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            r = _pipe.BeginWaitForConnection((o) => { _pipe.EndWaitForConnection(r); }, null);
         }
 
         /// <summary>
@@ -79,6 +86,7 @@ namespace Network
                 }
                 Thread.Sleep(50);
             }
+            client.Close();
         }
 
         /// <summary>
@@ -160,19 +168,19 @@ namespace Network
                     Thread.Sleep(500);
                 }
             }
+            listener.Stop();
         }
 
-        public void WriteTCP()
+        private void ListenAudioData()
         {
-            using (TcpClient client = new TcpClient())
+            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
+            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
+
+            // LISTEN UDP DATAGRAMS AND FILL THE BUFFER
+
+            while (true)
             {
-                client.Connect(new IPEndPoint(IPAddress.Loopback, Network.Properties.Settings.Default.TCP_PORT));
-                using (NetworkStream ns = client.GetStream())
-                {
-                    string request = "UPDATE\nТополь\n175,275";
-                    byte[] data = Encoding.UTF8.GetBytes(request);
-                    ns.Write(data, 0, data.Length);
-                }
+                pipe.Read(buffer, 0, (int)pipe.Length);
             }
         }
 
@@ -184,10 +192,12 @@ namespace Network
         public void Start()
         {
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
-            Thread listenTcpThread = new Thread(this.ListenClientsInfo);
+            Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
+            Thread listenAudioDataThread = new Thread(this.ListenAudioData);
 
             listenNewClientsThread.Start();
-            listenTcpThread.Start();
+            listenClientsInfoThread.Start();
+            // listenAudioDataThread.Start();
         }
 
         /// <summary>
