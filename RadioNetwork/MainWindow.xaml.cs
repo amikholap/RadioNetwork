@@ -43,6 +43,9 @@ namespace RadioNetwork
             Controller.StartServer();
         }
 
+        /// <summary>
+        /// Entry point of application code.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();

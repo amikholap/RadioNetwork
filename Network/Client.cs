@@ -20,7 +20,7 @@ namespace Network
         private UdpClient udpClient;
         private Thread streamingThread;
 
-        private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
+        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
         /// <summary>
         /// Client's IP address.
@@ -92,20 +92,19 @@ namespace Network
                 {
                     dgram = udpClient.Receive(ref anyEndPoint);
                     string response = Encoding.UTF8.GetString(dgram);
-                    log.Debug(String.Format("Client received: {0}", response));
                     // data is in format {client,server}
                     if (response == "server")
                     {
                         // get new server's IP address
                         serverIP = anyEndPoint.Address;
-                        log.Debug(String.Format("Found server: {0}", serverIP));
+                        logger.Debug(String.Format("Found server: {0}", serverIP));
                         return;
                     }
                 }
             }
             catch (Exception e)
             {
-                log.Error(e.Message);
+                logger.Error("Unhandled exception while detecting servers.", e);
             }
             finally
             {
@@ -131,7 +130,7 @@ namespace Network
             }
             catch (Exception e)
             {
-                log.Error(e.Message);
+                logger.Error("Unhandled exception while sending client's info.", e);
                 return;
             }
 
@@ -164,9 +163,9 @@ namespace Network
             {
                 pipe.Read(buffer, 0, buffer.Length);
                 udpClient.Send(buffer, buffer.Length, serverEndPoint);
-                
+
             }
-            
+
         }
 
         /// <summary>

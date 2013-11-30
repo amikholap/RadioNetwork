@@ -53,7 +53,7 @@ namespace Logic
             }
             catch (Exception e)
             {
-                logger.Error("Couldn't start client: " + e.Message);
+                logger.Error("Unhandled exception while starting client.", e);
                 return;
             }
 
@@ -83,7 +83,7 @@ namespace Logic
             }
             catch (Exception e)
             {
-                logger.Error("Couldn't start server: " + e.Message);
+                logger.Error("Unhandled exception while starting server.", e);
                 return;
             }
         }

@@ -26,7 +26,7 @@ namespace Network
         private NamedPipeServerStream _pipe;
         private Thread _playAudioDataThread;
 
-        private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
+        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
         public Server()
         {
@@ -40,8 +40,8 @@ namespace Network
         }
 
         /// <summary>
-        /// Listens on BROADCAST_PORT for any udp datagrams with client ip addresses.
-        /// Replies with a string "server"
+        /// Listen on BROADCAST_PORT for any udp datagrams with client ip addresses.
+        /// Reply with a string "server"
         /// </summary>
         private void ListenNewClients()
         {
@@ -65,7 +65,7 @@ namespace Network
                         continue;
                     }
 
-                    log.Debug(String.Format("Found client: {0}", clientAddr));
+                    logger.Debug(String.Format("Found client: {0}", clientAddr));
 
                     // send a string "server" to the connected client
                     string response = "server";
@@ -78,7 +78,7 @@ namespace Network
                     }
                     catch (Exception e)
                     {
-                        log.Error(e);
+                        logger.Error("Unhandled exception while listening for new clients.", e);
                         continue;
                     }
                     finally
@@ -116,7 +116,6 @@ namespace Network
                         var buf = new byte[100];
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
-                        log.Debug(String.Format("raw request:\n{0}", request));
                         string[] lines = request.Split('\n');
 
                         switch (lines[0])    // first line specifies the action
@@ -134,7 +133,7 @@ namespace Network
                                 }
                                 catch (Exception e)
                                 {
-                                    log.Error(e.Message);
+                                    logger.Error("Unhandled exception while listening clients' info.", e);
                                     continue;
                                 }
 
@@ -146,7 +145,7 @@ namespace Network
                                 if (!_clients.Exists(c => c.Addr == clientAddr))
                                 {
                                     _clients.Add(new Client(clientAddr, callsign, fr, ft));
-                                    log.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
+                                    logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
                                     break;
                                 }
 
@@ -160,7 +159,7 @@ namespace Network
                                 break;
                             default:
                                 // unknown format
-                                Server.log.Warn(request);
+                                Server.logger.Warn(request);
                                 continue;
                         }
                     }
@@ -176,11 +175,8 @@ namespace Network
         private void ListenAudioData()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
-            
-            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
-            Audio.AudioHelper ah = new Audio.AudioHelper();
-            // NEED TO INSERT GET AUDIOSTREAM FROM PIPE
 
+            Audio.AudioHelper ah = new Audio.AudioHelper();
 
             UdpClient udpClient = new UdpClient(Network.Properties.Settings.Default.UDP_PORT);
             // set timeouts
@@ -190,23 +186,24 @@ namespace Network
             udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.UDP_PORT);
 
-            while (true)
+            while (_isWorking)
             {
-                buffer = udpClient.Receive(ref clientEndPoint);
+                try
+                {
+                    buffer = udpClient.Receive(ref clientEndPoint);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                    continue;
+                }
                 _pipe.Write(buffer, 0, buffer.Length);
             }
-
-            // LISTEN UDP DATAGRAMS AND FILL THE BUFFER
         }
-
-
-
-
-
 
         /// <summary>
         /// Launch the server.
-        /// It spawns several threads for listening and processing
+        /// It spawns several threads for listening and processing.
         /// client messages.
         /// </summary>
         public void Start()
@@ -219,7 +216,7 @@ namespace Network
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
             listenAudioDataThread.Start();
-            _playAudioDataThread.Start();
+            _playAudioDataThread.Start(new UncompressedPcmChatCodec());
         }
 
         /// <summary>
@@ -228,7 +225,7 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
-            _playAudioDataThread.Abort();
+            _playAudioDataThread.Interrupt();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

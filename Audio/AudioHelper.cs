@@ -15,7 +15,7 @@ namespace Audio
     {
         private NamedPipeServerStream _pipe;
 
-        private static readonly ILog log = LogManager.GetLogger("RadioNetwork");
+        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
         public AudioHelper()
         {
@@ -46,21 +46,70 @@ namespace Audio
             waveIn.StartRecording();
         }
 
+        /// <summary>
+        /// Callback that is called after successfull read from pipe.
+        /// </summary>
+        /// <param name="r"></param>
+        private static void AddSamples(IAsyncResult r)
+        {
+            var state = (Tuple<BufferedWaveProvider, byte[]>)r.AsyncState;
+            var provider = state.Item1;
+            var buffer = state.Item2;
+            provider.AddSamples(buffer, 0, buffer.Length);
+        }
+
+        /// <summary>
+        /// Read audio data from named pipe 'audio' and play it.
+        /// Data format is determined by codec.
+        /// </summary>
+        /// <param name="codec"></param>
         public static void StartPlaying(object codec)
         {
-            INetworkChatCodec cdc = (INetworkChatCodec)codec;
-            byte[] buffer = new byte[100];
-            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
-            BufferedWaveProvider playBuffer = new BufferedWaveProvider(cdc.RecordFormat);
-            WaveOut waveOut = new WaveOut();
+            byte[] buffer;
+            NamedPipeClientStream pipe;
+            BufferedWaveProvider playBuffer;
+            WaveOut waveOut;
 
+            buffer = new byte[100];
+
+            // pipe to read from 
+            pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
+            pipe.Connect();
+
+            // data provider for WaveOut
+            playBuffer = new BufferedWaveProvider(((INetworkChatCodec)codec).RecordFormat);
+            playBuffer.DiscardOnBufferOverflow = true;
+
+            // output device
+            waveOut = new WaveOut();
             waveOut.Init(playBuffer);
             waveOut.Play();
 
-            while (true)
+            // callback for BeginRead from pipe
+            AsyncCallback callback = new AsyncCallback(AddSamples);
+
+            try
             {
-                pipe.Read(buffer, 0, buffer.Length);
-                playBuffer.AddSamples(buffer, 0, buffer.Length);
+                while (true)
+                {
+                    pipe.Read(buffer, 0, buffer.Length);
+                    playBuffer.AddSamples(buffer, 0, buffer.Length);
+
+                    // TODO:
+                    // use BeginRead since thread cannot be interrupted while simple Read blocks
+
+                    // var state = new Tuple<BufferedWaveProvider, byte[]>(playBuffer, buffer);
+                    // pipe.BeginRead(buffer, 0, buffer.Length, callback, state);
+                }
+            }
+            catch (ThreadInterruptedException)
+            {
+                waveOut.Stop();
+                pipe.Close();
+            }
+            catch (Exception e)
+            {
+                logger.Error("Unhandled exception while playing audio data from pipe.", e);
             }
         }
     }
