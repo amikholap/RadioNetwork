@@ -163,16 +163,10 @@ namespace Network
             while (true)
             {
                 pipe.Read(buffer, 0, buffer.Length);
-
-
-                
-                
-                               
-                
                 udpClient.Send(buffer, buffer.Length, serverEndPoint);
-                // SEND DATA TO SERVER
+                
             }
-            udpClient.Close();
+            
         }
 
         /// <summary>
@@ -180,10 +174,18 @@ namespace Network
         /// </summary>
         public void StartStreaming()
         {
+            udpClient.Close();
+            streamingThread.Abort();
+        }
+
+        /// <summary>
+        /// Stop listening for audio stream from mic and passing it to the server.
+        /// </summary>
+        public void StopStreaming()
+        {
             streamingThread = new Thread(StartStreamLoop);
             streamingThread.Start();
         }
-
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>

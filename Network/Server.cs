@@ -176,9 +176,33 @@ namespace Network
         private void ListenAudioData()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
+            
+            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
+            Audio.AudioHelper ah = new Audio.AudioHelper();
+            // NEED TO INSERT GET AUDIOSTREAM FROM PIPE
+
+
+            UdpClient udpClient = new UdpClient(Network.Properties.Settings.Default.UDP_PORT);
+            // set timeouts
+            udpClient.Client.ReceiveTimeout = 5000;
+            udpClient.Client.SendTimeout = 5000;
+            // reuse ports
+            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.UDP_PORT);
+
+            while (true)
+            {
+                buffer = udpClient.Receive(ref clientEndPoint);
+                _pipe.Write(buffer, 0, buffer.Length);
+            }
 
             // LISTEN UDP DATAGRAMS AND FILL THE BUFFER
         }
+
+
+
+
+
 
         /// <summary>
         /// Launch the server.
