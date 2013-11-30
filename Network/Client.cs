@@ -158,12 +158,21 @@ namespace Network
             pipe.Connect();
 
             // read from mic and send audio data to server
+            IPEndPoint serverEndPoint = new IPEndPoint(serverIP, Network.Properties.Settings.Default.UDP_PORT);
+            udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             while (true)
             {
                 pipe.Read(buffer, 0, buffer.Length);
 
+
+                
+                
+                               
+                
+                udpClient.Send(buffer, buffer.Length, serverEndPoint);
                 // SEND DATA TO SERVER
             }
+            udpClient.Close();
         }
 
         /// <summary>
