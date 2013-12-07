@@ -173,8 +173,8 @@ namespace Network
         /// </summary>
         public void StartStreaming()
         {
-            udpClient.Close();
-            streamingThread.Abort();
+            streamingThread = new Thread(StartStreamLoop);
+            streamingThread.Start();
         }
 
         /// <summary>
@@ -182,9 +182,10 @@ namespace Network
         /// </summary>
         public void StopStreaming()
         {
-            streamingThread = new Thread(StartStreamLoop);
-            streamingThread.Start();
+            udpClient.Close();
+            streamingThread.Abort();
         }
+
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
