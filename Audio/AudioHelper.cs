@@ -71,12 +71,11 @@ namespace Audio
         /// Data format is determined by codec.
         /// </summary>
         /// <param name="codec"></param>
-        public static void StartPlaying(object codec)
+        public static void StartPlaying(INetworkChatCodec codec)
         {
             byte[] buffer;
             NamedPipeClientStream pipe;
             BufferedWaveProvider playBuffer;
-            WaveOut waveOut;
 
             buffer = new byte[100];
 
@@ -85,14 +84,13 @@ namespace Audio
             pipe.Connect();
 
             // data provider for WaveOut
-            playBuffer = new BufferedWaveProvider(((INetworkChatCodec)codec).RecordFormat);
+            playBuffer = new BufferedWaveProvider(codec.RecordFormat);
             playBuffer.DiscardOnBufferOverflow = true;
 
             // output device
-            waveOut = new WaveOut();
-            waveOut.Init(playBuffer);
-            waveOut.PlaybackStopped += (sender, e) => { pipe.Close(); };
-            waveOut.Play();
+            _waveOut.Init(playBuffer);
+            _waveOut.PlaybackStopped += (sender, e) => { pipe.Close(); };
+            _waveOut.Play();
 
             var state = new Tuple<NamedPipeClientStream, BufferedWaveProvider, byte[]>(pipe, playBuffer, buffer);
             pipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);

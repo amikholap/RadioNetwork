@@ -53,8 +53,6 @@ namespace RadioNetwork
             this._sdc = new ServerDataContext();
             this._cdc = new ClientDataContext();
             this.DataContext = _cdc;
-
-            StartClient();
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
@@ -72,7 +70,7 @@ namespace RadioNetwork
             ClientModeMenuItem.IsChecked = true;
             ServerModeMenuItem.IsChecked = false;
 
-            StartClient();
+            Controller.Stop();
 
             ServerLayout.Visibility = System.Windows.Visibility.Collapsed;
             ClientLayout.Visibility = System.Windows.Visibility.Visible;

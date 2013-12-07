@@ -219,7 +219,7 @@ namespace Network
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
             listenAudioDataThread.Start();
-            AudioHelper.StartCapture(new UncompressedPcmChatCodec());
+            AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
         }
 
         /// <summary>

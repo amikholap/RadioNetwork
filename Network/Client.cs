@@ -99,9 +99,13 @@ namespace Network
                     if (response == "server")
                     {
                         serverIPs.Add(anyEndPoint.Address);
-                        logger.Debug(String.Format("Found server: {0}", _serverIP));
+                        logger.Debug(String.Format("Found server: {0}", anyEndPoint.Address));
                     }
                 }
+            }
+            catch (SocketException)
+            {
+                // timeout
             }
             catch (Exception e)
             {

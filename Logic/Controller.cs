@@ -85,7 +85,6 @@ namespace Logic
                     return;
                 }
             }
-
         }
 
         /// <summary>
@@ -102,6 +101,7 @@ namespace Logic
                     _server.Stop();
                     break;
             }
+            Mode = ControllerMode.None;
         }
     }
 }
