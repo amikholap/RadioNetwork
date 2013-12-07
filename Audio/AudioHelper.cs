@@ -47,18 +47,6 @@ namespace Audio
         }
 
         /// <summary>
-        /// Callback that is called after successfull read from pipe.
-        /// </summary>
-        /// <param name="r"></param>
-        private static void AddSamples(IAsyncResult r)
-        {
-            var state = (Tuple<BufferedWaveProvider, byte[]>)r.AsyncState;
-            var provider = state.Item1;
-            var buffer = state.Item2;
-            provider.AddSamples(buffer, 0, buffer.Length);
-        }
-
-        /// <summary>
         /// Read audio data from named pipe 'audio' and play it.
         /// Data format is determined by codec.
         /// </summary>
@@ -73,7 +61,7 @@ namespace Audio
             buffer = new byte[100];
 
             // pipe to read from 
-            pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In);
+            pipe = new NamedPipeClientStream(".", "audio", PipeDirection.In, PipeOptions.Asynchronous);
             pipe.Connect();
 
             // data provider for WaveOut
@@ -85,31 +73,24 @@ namespace Audio
             waveOut.Init(playBuffer);
             waveOut.Play();
 
-            // callback for BeginRead from pipe
-            AsyncCallback callback = new AsyncCallback(AddSamples);
-
             try
             {
                 while (true)
                 {
-                    pipe.Read(buffer, 0, buffer.Length);
-                    playBuffer.AddSamples(buffer, 0, buffer.Length);
-
-                    // TODO:
-                    // use BeginRead since thread cannot be interrupted while simple Read blocks
-
-                    // var state = new Tuple<BufferedWaveProvider, byte[]>(playBuffer, buffer);
-                    // pipe.BeginRead(buffer, 0, buffer.Length, callback, state);
+                    pipe.BeginRead(buffer, 0, buffer.Length, (r) => { playBuffer.AddSamples(buffer, 0, buffer.Length); pipe.EndRead(r); }, null);
                 }
             }
-            catch (ThreadInterruptedException)
+            catch (ThreadAbortException)
             {
-                waveOut.Stop();
-                pipe.Close();
             }
             catch (Exception e)
             {
                 logger.Error("Unhandled exception while playing audio data from pipe.", e);
+            }
+            finally
+            {
+                waveOut.Stop();
+                pipe.Close();
             }
         }
     }

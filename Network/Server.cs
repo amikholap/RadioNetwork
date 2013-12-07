@@ -30,13 +30,11 @@ namespace Network
 
         public Server()
         {
-            IAsyncResult r = null;
-
             _isWorking = true;
             _clients = new List<Client>();
 
             _pipe = new NamedPipeServerStream("audio", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            r = _pipe.BeginWaitForConnection((o) => { _pipe.EndWaitForConnection(r); }, null);
+            _pipe.BeginWaitForConnection((r) => { _pipe.EndWaitForConnection(r); }, null);
         }
 
         /// <summary>
@@ -197,7 +195,10 @@ namespace Network
                     // timeout
                     continue;
                 }
-                _pipe.Write(buffer, 0, buffer.Length);
+                if (_pipe.IsConnected)
+                {
+                    _pipe.Write(buffer, 0, buffer.Length);
+                }
             }
         }
 
@@ -225,7 +226,7 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
-            _playAudioDataThread.Interrupt();
+            _playAudioDataThread.Abort();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }
