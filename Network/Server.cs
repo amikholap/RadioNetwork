@@ -226,7 +226,7 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
-            _playAudioDataThread.Abort();
+            _playAudioDataThread.Interrupt();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

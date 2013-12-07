@@ -47,6 +47,26 @@ namespace Audio
         }
 
         /// <summary>
+        /// Callback that is called after successfull read from pipe.
+        /// </summary>
+        /// <param name="r"></param>
+        private static void AddSamples(IAsyncResult r)
+        {
+            var state = (Tuple<NamedPipeClientStream, BufferedWaveProvider, byte[]>)r.AsyncState;
+            var pipe = state.Item1;
+            var provider = state.Item2;
+            var buffer = state.Item3;
+
+            provider.AddSamples(buffer, 0, buffer.Length);
+            pipe.EndRead(r);
+            if (pipe.IsConnected)
+            {
+                pipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);
+            }
+        }
+
+
+        /// <summary>
         /// Read audio data from named pipe 'audio' and play it.
         /// Data format is determined by codec.
         /// </summary>
@@ -73,19 +93,15 @@ namespace Audio
             waveOut.Init(playBuffer);
             waveOut.Play();
 
+            var state = new Tuple<NamedPipeClientStream, BufferedWaveProvider, byte[]>(pipe, playBuffer, buffer);
+            pipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);
+
             try
             {
-                while (true)
-                {
-                    pipe.BeginRead(buffer, 0, buffer.Length, (r) => { playBuffer.AddSamples(buffer, 0, buffer.Length); pipe.EndRead(r); }, null);
-                }
+                Thread.Sleep(System.Threading.Timeout.Infinite);
             }
-            catch (ThreadAbortException)
+            catch (ThreadInterruptedException)
             {
-            }
-            catch (Exception e)
-            {
-                logger.Error("Unhandled exception while playing audio data from pipe.", e);
             }
             finally
             {
