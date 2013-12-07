@@ -11,22 +11,19 @@ using System.Threading.Tasks;
 
 namespace Audio
 {
-    public class AudioHelper
+    public static class AudioHelper
     {
-        private NamedPipeServerStream _pipe;
-
         private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+        private static NamedPipeServerStream _pipe;
+        private static WaveInEvent _waveIn;
+        private static WaveOut _waveOut;
 
-        public AudioHelper()
+        static AudioHelper()
         {
-            IAsyncResult r = null;
             _pipe = new NamedPipeServerStream("mic", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            r = _pipe.BeginWaitForConnection((o) => { _pipe.EndWaitForConnection(r); }, null);
-        }
-
-        private void waveIn_DataAvailable(object sender, WaveInEventArgs e)
-        {
-            _pipe.Write(e.Buffer, 0, e.BytesRecorded);
+            _pipe.BeginWaitForConnection((r) => { _pipe.EndWaitForConnection(r); }, null);
+            _waveIn = new WaveInEvent();
+            _waveOut = new WaveOut();
         }
 
         /// <summary>
@@ -36,14 +33,18 @@ namespace Audio
         /// <param name="buffer"></param>
         /// <param name="codec"></param>
         /// <param name="inputDeviceNumber"></param>
-        public void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
+        public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
-            WaveInEvent waveIn = new WaveInEvent();
-            waveIn.BufferMilliseconds = 50;
-            waveIn.DeviceNumber = inputDeviceNumber;
-            waveIn.WaveFormat = codec.RecordFormat;
-            waveIn.DataAvailable += waveIn_DataAvailable;
-            waveIn.StartRecording();
+            _waveIn.BufferMilliseconds = 50;
+            _waveIn.DeviceNumber = inputDeviceNumber;
+            _waveIn.WaveFormat = codec.RecordFormat;
+            _waveIn.DataAvailable += (sender, e) => { _pipe.Write(e.Buffer, 0, e.BytesRecorded); };
+            _waveIn.StartRecording();
+        }
+
+        public static void StopCapture()
+        {
+            _waveIn.StopRecording();
         }
 
         /// <summary>
@@ -64,7 +65,6 @@ namespace Audio
                 pipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);
             }
         }
-
 
         /// <summary>
         /// Read audio data from named pipe 'audio' and play it.
@@ -91,23 +91,19 @@ namespace Audio
             // output device
             waveOut = new WaveOut();
             waveOut.Init(playBuffer);
+            waveOut.PlaybackStopped += (sender, e) => { pipe.Close(); };
             waveOut.Play();
 
             var state = new Tuple<NamedPipeClientStream, BufferedWaveProvider, byte[]>(pipe, playBuffer, buffer);
             pipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);
+        }
 
-            try
-            {
-                Thread.Sleep(System.Threading.Timeout.Infinite);
-            }
-            catch (ThreadInterruptedException)
-            {
-            }
-            finally
-            {
-                waveOut.Stop();
-                pipe.Close();
-            }
+        /// <summary>
+        /// Stop playing audio.
+        /// </summary>
+        public static void StopPlaying()
+        {
+            _waveOut.Stop();
         }
     }
 }

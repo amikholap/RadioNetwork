@@ -53,6 +53,8 @@ namespace RadioNetwork
             this._sdc = new ServerDataContext();
             this._cdc = new ClientDataContext();
             this.DataContext = _cdc;
+
+            StartClient();
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
@@ -60,18 +62,36 @@ namespace RadioNetwork
             Controller.Stop();
         }
 
+        /// <summary>
+        /// Switch to client mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void ClientModeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             ClientModeMenuItem.IsChecked = true;
             ServerModeMenuItem.IsChecked = false;
+
             StartClient();
+
+            ServerLayout.Visibility = System.Windows.Visibility.Collapsed;
+            ClientLayout.Visibility = System.Windows.Visibility.Visible;
         }
 
+        /// <summary>
+        /// Switch to server mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void ServerModeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             ClientModeMenuItem.IsChecked = false;
             ServerModeMenuItem.IsChecked = true;
+
             StartServer();
+
+            ClientLayout.Visibility = System.Windows.Visibility.Collapsed;
+            ServerLayout.Visibility = System.Windows.Visibility.Visible;
         }
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)

@@ -16,25 +16,27 @@ namespace Network
 {
     public class Server
     {
+        private static NamedPipeServerStream _pipe;
+        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+
         /// <summary>
         /// Indicates if server is running.
         /// True by default.
         /// When set to false server will shut down in several seconds.
         /// </summary>
-        private bool _isWorking;
+        private volatile bool _isWorking;
         private List<Client> _clients;
-        private NamedPipeServerStream _pipe;
-        private Thread _playAudioDataThread;
 
-        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+        static Server()
+        {
+            _pipe = new NamedPipeServerStream("audio", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            _pipe.BeginWaitForConnection((r) => { _pipe.EndWaitForConnection(r); }, null);
+        }
 
         public Server()
         {
             _isWorking = true;
             _clients = new List<Client>();
-
-            _pipe = new NamedPipeServerStream("audio", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            _pipe.BeginWaitForConnection((r) => { _pipe.EndWaitForConnection(r); }, null);
         }
 
         /// <summary>
@@ -174,8 +176,6 @@ namespace Network
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            Audio.AudioHelper ah = new Audio.AudioHelper();
-
             UdpClient udpClient = new UdpClient(Network.Properties.Settings.Default.UDP_PORT);
             // set timeouts
             udpClient.Client.ReceiveTimeout = 5000;
@@ -200,6 +200,9 @@ namespace Network
                     _pipe.Write(buffer, 0, buffer.Length);
                 }
             }
+
+            // free resources
+            udpClient.Close();
         }
 
         /// <summary>
@@ -212,12 +215,11 @@ namespace Network
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
             Thread listenAudioDataThread = new Thread(this.ListenAudioData);
-            _playAudioDataThread = new Thread(new ParameterizedThreadStart(AudioHelper.StartPlaying));
 
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
             listenAudioDataThread.Start();
-            _playAudioDataThread.Start(new UncompressedPcmChatCodec());
+            AudioHelper.StartCapture(new UncompressedPcmChatCodec());
         }
 
         /// <summary>
@@ -226,7 +228,7 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
-            _playAudioDataThread.Interrupt();
+            AudioHelper.StopPlaying();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

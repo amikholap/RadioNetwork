@@ -40,25 +40,23 @@ namespace Logic
             {
                 // stop any existing non client processes
                 Stop();
-            }
 
-            // create Client instance
-            _client = new Client(callsign, fr, ft);
+                // create Client instance
+                _client = new Client(callsign, fr, ft);
 
-            // find a server and connect to it
-            try
-            {
-                _client.Connect();
-                Mode = ControllerMode.Client;
+                // find a server and connect to it
+                try
+                {
+                    _client.Start();
+                    Mode = ControllerMode.Client;
+                }
+                catch (Exception e)
+                {
+                    Mode = ControllerMode.None;
+                    logger.Error("Unhandled exception while starting client.", e);
+                    return;
+                }
             }
-            catch (Exception e)
-            {
-                logger.Error("Unhandled exception while starting client.", e);
-                return;
-            }
-
-            // start streaming
-            _client.StartStreaming();
         }
 
         /// <summary>
@@ -70,22 +68,24 @@ namespace Logic
             {
                 // stop any existing non server processes
                 Stop();
+
+                // create Server instance
+                _server = new Server();
+
+                // try to start server
+                try
+                {
+                    _server.Start();
+                    Mode = ControllerMode.Server;
+                }
+                catch (Exception e)
+                {
+                    Mode = ControllerMode.None;
+                    logger.Error("Unhandled exception while starting server.", e);
+                    return;
+                }
             }
 
-            // create Server instance
-            _server = new Server();
-
-            // try to start server
-            try
-            {
-                _server.Start();
-                Mode = ControllerMode.Server;
-            }
-            catch (Exception e)
-            {
-                logger.Error("Unhandled exception while starting server.", e);
-                return;
-            }
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Logic
             switch (Mode)
             {
                 case ControllerMode.Client:
-                    _client.Disconnect();
+                    _client.Stop();
                     break;
                 case ControllerMode.Server:
                     _server.Stop();

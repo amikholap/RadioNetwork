@@ -15,12 +15,10 @@ namespace Network
 {
     public class Client
     {
-        private IPAddress serverIP;
-        private TcpClient tcpClient;
-        private UdpClient udpClient;
-        private Thread streamingThread;
+        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork"); private IPAddress _serverIP;
 
-        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+        private volatile bool _streaming;
+        private Thread streamingThread;
 
         /// <summary>
         /// Client's IP address.
@@ -42,6 +40,7 @@ namespace Network
 
         public Client(string callsign, int fr, int ft)
         {
+            _streaming = false;
             Addr = NetworkHelper.GetLocalIPAddress();
             Callsign = callsign;
             Fr = fr;
@@ -55,23 +54,27 @@ namespace Network
         }
 
 
-        private UdpClient InitUpdClient(int port, int timeout = 5000)
+        private UdpClient InitUpdClient(int port, int timeout = 3000)
         {
             // create client
-            udpClient = new UdpClient(port);
+            UdpClient udpClient = new UdpClient(port);
+
             // set timeouts
             udpClient.Client.ReceiveTimeout = timeout;
             udpClient.Client.SendTimeout = timeout;
+
             // reuse ports
             udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
             return udpClient;
         }
 
-        private void DetectServer()
+        private IEnumerable<IPAddress> DetectServers()
         {
             Byte[] dgram = new byte[256];
+            List<IPAddress> serverIPs = new List<IPAddress>();
 
-            udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             udpClient.EnableBroadcast = true;
             // determine port && BroadcastAddr
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -95,10 +98,8 @@ namespace Network
                     // data is in format {client,server}
                     if (response == "server")
                     {
-                        // get new server's IP address
-                        serverIP = anyEndPoint.Address;
-                        logger.Debug(String.Format("Found server: {0}", serverIP));
-                        return;
+                        serverIPs.Add(anyEndPoint.Address);
+                        logger.Debug(String.Format("Found server: {0}", _serverIP));
                     }
                 }
             }
@@ -111,8 +112,7 @@ namespace Network
                 udpClient.Close();
             }
 
-            // server didn't reply while client was listening
-            throw new TimeoutException("No reply from server.");
+            return serverIPs;
         }
 
         /// <summary>
@@ -121,57 +121,63 @@ namespace Network
         public void UpdateClientInfo()
         {
             Byte[] dgram = new Byte[256];
+            IPEndPoint ipEndPoint = new IPEndPoint(_serverIP, Network.Properties.Settings.Default.TCP_PORT);
+            TcpClient tcpClient = new TcpClient();
 
             try
             {
-                IPEndPoint ipEndPoint = new IPEndPoint(serverIP, Network.Properties.Settings.Default.TCP_PORT);
-                tcpClient = new TcpClient();
                 tcpClient.Connect(ipEndPoint);
+
+                string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
+                dgram = System.Text.Encoding.UTF8.GetBytes(message);
+                using (NetworkStream ns = tcpClient.GetStream())
+                {
+                    ns.Write(dgram, 0, dgram.Length);
+                }
             }
             catch (Exception e)
             {
                 logger.Error("Unhandled exception while sending client's info.", e);
                 return;
             }
-
-            string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
-            dgram = System.Text.Encoding.UTF8.GetBytes(message);
-            using (NetworkStream ns = tcpClient.GetStream())
+            finally
             {
-                ns.Write(dgram, 0, dgram.Length);
+                tcpClient.Close();
             }
-
-            tcpClient.Close();
         }
 
         private void StartStreamLoop()
         {
-            AudioHelper ah = new AudioHelper();
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
 
             // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
-            streamingThread = new Thread(() => ah.StartCapture(new UncompressedPcmChatCodec()));
+            streamingThread = new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec()));
             streamingThread.Start();
 
             NamedPipeClientStream pipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
             pipe.Connect();
 
             // read from mic and send audio data to server
-            IPEndPoint serverEndPoint = new IPEndPoint(serverIP, Network.Properties.Settings.Default.UDP_PORT);
-            udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-            while (true)
+            IPEndPoint serverEndPoint = new IPEndPoint(_serverIP, Network.Properties.Settings.Default.UDP_PORT);
+            UdpClient udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+
+            _streaming = true;
+            while (_streaming)
             {
                 pipe.Read(buffer, 0, buffer.Length);
                 udpClient.Send(buffer, buffer.Length, serverEndPoint);
-
             }
 
+            // free resources
+            AudioHelper.StopCapture();
+            pipe.Close();
+            udpClient.Close();
         }
 
         /// <summary>
         /// Start listening for audio stream from mic and passing it to the server.
         /// </summary>
-        public void StartStreaming()
+        private void StartStreaming()
         {
             streamingThread = new Thread(StartStreamLoop);
             streamingThread.Start();
@@ -180,27 +186,31 @@ namespace Network
         /// <summary>
         /// Stop listening for audio stream from mic and passing it to the server.
         /// </summary>
-        public void StopStreaming()
+        private void StopStreaming()
         {
-            udpClient.Close();
-            streamingThread.Abort();
+            _streaming = false;
         }
 
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
-        public void Connect()
+        public void Start()
         {
-            DetectServer();
-            UpdateClientInfo();
+            IEnumerable<IPAddress> serverIPs = DetectServers();
+            if (serverIPs.Count() > 0)
+            {
+                _serverIP = serverIPs.First();
+                UpdateClientInfo();
+                StartStreaming();
+            }
         }
 
         /// <summary>
-        /// Disconnect from a server.
+        /// Stop client.
         /// </summary>
-        public void Disconnect()
+        public void Stop()
         {
-            streamingThread.Abort();
+            StopStreaming();
         }
     }
 }
