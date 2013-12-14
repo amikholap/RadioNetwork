@@ -1,5 +1,4 @@
 ﻿using Audio;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,12 +12,9 @@ using System.IO.Pipes;
 
 namespace Network
 {
-    public class Client
+    public class Client : NetworkChatParticipant
     {
-        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork"); private IPAddress _serverIP;
-
-        private volatile bool _streaming;
-        private Thread streamingThread;
+        private IPAddress _serverIP;
 
         /// <summary>
         /// Client's IP address.
@@ -39,8 +35,8 @@ namespace Network
 
 
         public Client(string callsign, int fr, int ft)
+            : base()
         {
-            _streaming = false;
             Addr = NetworkHelper.GetLocalIPAddress();
             Callsign = callsign;
             Fr = fr;
@@ -51,22 +47,6 @@ namespace Network
             : this(callsign, fr, ft)
         {
             Addr = addr;
-        }
-
-
-        private UdpClient InitUpdClient(int port, int timeout = 3000)
-        {
-            // create client
-            UdpClient udpClient = new UdpClient(port);
-
-            // set timeouts
-            udpClient.Client.ReceiveTimeout = timeout;
-            udpClient.Client.SendTimeout = timeout;
-
-            // reuse ports
-            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-            return udpClient;
         }
 
         private IEnumerable<IPAddress> DetectServers()
@@ -150,51 +130,6 @@ namespace Network
             }
         }
 
-        private void StartStreamLoop()
-        {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-
-            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
-            streamingThread = new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec()));
-            streamingThread.Start();
-
-            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            pipe.Connect();
-
-            // read from mic and send audio data to server
-            IPEndPoint serverEndPoint = new IPEndPoint(_serverIP, Network.Properties.Settings.Default.UDP_PORT);
-            UdpClient udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-
-            _streaming = true;
-            while (_streaming)
-            {
-                pipe.Read(buffer, 0, buffer.Length);
-                udpClient.Send(buffer, buffer.Length, serverEndPoint);
-            }
-
-            // free resources
-            AudioHelper.StopCapture();
-            pipe.Close();
-            udpClient.Close();
-        }
-
-        /// <summary>
-        /// Start listening for audio stream from mic and passing it to the server.
-        /// </summary>
-        private void StartStreaming()
-        {
-            streamingThread = new Thread(StartStreamLoop);
-            streamingThread.Start();
-        }
-
-        /// <summary>
-        /// Stop listening for audio stream from mic and passing it to the server.
-        /// </summary>
-        private void StopStreaming()
-        {
-            _streaming = false;
-        }
-
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
@@ -205,7 +140,8 @@ namespace Network
             {
                 _serverIP = serverIPs.First();
                 UpdateClientInfo();
-                StartStreaming();
+                StartStreaming(/*_serverIP*/);
+                StartPlaying();
             }
         }
 
@@ -214,6 +150,7 @@ namespace Network
         /// </summary>
         public void Stop()
         {
+            StopPlaying();
             StopStreaming();
         }
     }

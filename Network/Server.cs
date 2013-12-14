@@ -1,5 +1,4 @@
 ﻿using Audio;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,11 +13,8 @@ using System.Threading.Tasks;
 
 namespace Network
 {
-    public class Server
+    public class Server : NetworkChatParticipant
     {
-        private static NamedPipeServerStream _pipe;
-        private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
-
         /// <summary>
         /// Indicates if server is running.
         /// True by default.
@@ -27,13 +23,8 @@ namespace Network
         private volatile bool _isWorking;
         private List<Client> _clients;
 
-        static Server()
-        {
-            _pipe = new NamedPipeServerStream("audio", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            _pipe.BeginWaitForConnection((r) => { _pipe.EndWaitForConnection(r); }, null);
-        }
-
         public Server()
+            : base()
         {
             _isWorking = true;
             _clients = new List<Client>();
@@ -46,8 +37,7 @@ namespace Network
         private void ListenNewClients()
         {
             IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
-            UdpClient client = new UdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            UdpClient client = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             client.EnableBroadcast = true;
 
             // listen for new clients
@@ -172,39 +162,6 @@ namespace Network
             listener.Stop();
         }
 
-        private void ListenAudioData()
-        {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
-
-            UdpClient udpClient = new UdpClient(Network.Properties.Settings.Default.UDP_PORT);
-            // set timeouts
-            udpClient.Client.ReceiveTimeout = 5000;
-            udpClient.Client.SendTimeout = 5000;
-            // reuse ports
-            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.UDP_PORT);
-
-            while (_isWorking)
-            {
-                try
-                {
-                    buffer = udpClient.Receive(ref clientEndPoint);
-                }
-                catch (SocketException)
-                {
-                    // timeout
-                    continue;
-                }
-                if (_pipe.IsConnected)
-                {
-                    _pipe.Write(buffer, 0, buffer.Length);
-                }
-            }
-
-            // free resources
-            udpClient.Close();
-        }
-
         /// <summary>
         /// Launch the server.
         /// It spawns several threads for listening and processing.
@@ -214,12 +171,12 @@ namespace Network
         {
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
-            Thread listenAudioDataThread = new Thread(this.ListenAudioData);
 
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
-            listenAudioDataThread.Start();
-            AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
+
+            StartStreaming();
+            StartPlaying();
         }
 
         /// <summary>
@@ -228,7 +185,8 @@ namespace Network
         public void Stop()
         {
             _isWorking = false;
-            AudioHelper.StopPlaying();
+            StopPlaying();
+            StopStreaming();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

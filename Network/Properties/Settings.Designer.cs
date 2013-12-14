@@ -49,18 +49,6 @@ namespace Network.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("41855")]
-        public int UDP_PORT {
-            get {
-                return ((int)(this["UDP_PORT"]));
-            }
-            set {
-                this["UDP_PORT"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("500")]
         public int BUFFER_SIZE {
             get {
@@ -80,6 +68,30 @@ namespace Network.Properties {
             }
             set {
                 this["MAX_BUFFER_SIZE"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("41855")]
+        public int AUDIO_RECEIVE_PORT {
+            get {
+                return ((int)(this["AUDIO_RECEIVE_PORT"]));
+            }
+            set {
+                this["AUDIO_RECEIVE_PORT"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("41856")]
+        public int AUDIO_TRANSMIT_PORT {
+            get {
+                return ((int)(this["AUDIO_TRANSMIT_PORT"]));
+            }
+            set {
+                this["AUDIO_TRANSMIT_PORT"] = value;
             }
         }
     }
