@@ -16,12 +16,12 @@ namespace Network
     {
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
-        private volatile bool _playing;
+        private volatile bool _receiving;
         private volatile bool _streaming;
 
         protected NetworkChatParticipant()
         {
-            _playing = false;
+            _receiving = false;
             _streaming = false;
         }
 
@@ -40,21 +40,16 @@ namespace Network
             return udpClient;
         }
 
-        public void StartPlayingLoop()
+        private void StartReceivingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            // open pipe to read audio data from network
-            NamedPipeServerStream netPipe = new NamedPipeServerStream("net", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            netPipe.BeginWaitForConnection((r) => { netPipe.EndWaitForConnection(r); }, null);
-
             UdpClient client = InitUpdClient(Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
             client.EnableBroadcast = true;
-            // TODO: replace IPAddress.Any with something more specific
             IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
 
-            _playing = true;
-            while (_playing)
+            _receiving = true;
+            while (_receiving)
             {
                 try
                 {
@@ -65,38 +60,27 @@ namespace Network
                     // timeout
                     continue;
                 }
-                if (netPipe.IsConnected)
-                {
-                    try
-                    {
-                        netPipe.Write(buffer, 0, buffer.Length);
-                    }
-                    catch (System.IO.IOException)
-                    {
-                        // sometimes netPipe becomes not connected
-                        logger.Info("Tried to write to a not connected 'net' pipe");
-                    }
-                }
+                DataReceived(clientEndPoint.Address, buffer);
             }
-
-            // free resources
-            netPipe.Close();
             client.Close();
         }
 
-        public void StartPlaying()
+        protected void DataReceived(IPAddress addr, byte[] data)
         {
-            new Thread(StartPlayingLoop).Start();
-            AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
+            AudioHelper.AddSamples(data);
         }
 
-        public void StopPlaying()
+        protected void StartReceiving()
         {
-            AudioHelper.StopPlaying();
-            _playing = false;
+            new Thread(StartReceivingLoop).Start();
         }
 
-        private void StartStreamingLoop(/*IPAddress dst*/)
+        protected void StopReceiving()
+        {
+            _receiving = false;
+        }
+
+        private void StartStreamingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
 
@@ -129,9 +113,9 @@ namespace Network
         /// <summary>
         /// Start listening for audio stream from mic and passing it to the server.
         /// </summary>
-        protected void StartStreaming(/*IPAddress dst*/)
+        protected void StartStreaming()
         {
-            new Thread(() => { StartStreamingLoop(/*dst*/); }).Start();
+            new Thread(() => { StartStreamingLoop(); }).Start();
         }
 
         /// <summary>
@@ -140,6 +124,20 @@ namespace Network
         protected void StopStreaming()
         {
             _streaming = false;
+        }
+
+        public void Start()
+        {
+            StartReceiving();
+            StartStreaming();
+            AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
+        }
+
+        public void Stop()
+        {
+            AudioHelper.StopPlaying();
+            StopStreaming();
+            StopReceiving();
         }
     }
 }

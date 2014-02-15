@@ -14,6 +14,7 @@ namespace Audio
     public static class AudioHelper
     {
         private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+        private static BufferedWaveProvider playBuffer;
         private static WaveInEvent _waveIn;
         private static WaveOut _waveOut;
 
@@ -47,39 +48,13 @@ namespace Audio
             }
         }
 
-        /// <summary>
-        /// Callback that is called after successfull read from pipe.
-        /// </summary>
-        /// <param name="r"></param>
-        private static void AddSamples(IAsyncResult r)
+        public static void AddSamples(byte[] samples)
         {
-            var state = (Tuple<NamedPipeClientStream, BufferedWaveProvider, byte[]>)r.AsyncState;
-            var pipe = state.Item1;
-            var provider = state.Item2;
-            var buffer = state.Item3;
-
-            provider.AddSamples(buffer, 0, buffer.Length);
-            pipe.EndRead(r);
-            if (pipe.IsConnected)
-            {
-                pipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);
-            }
+            playBuffer.AddSamples(samples, 0, samples.Length);
         }
 
-        /// <summary>
-        /// Read audio data from named pipe 'net' and play it.
-        /// Data format is determined by codec.
-        /// </summary>
-        /// <param name="codec"></param>
         public static void StartPlaying(INetworkChatCodec codec)
         {
-            byte[] buffer = new byte[100];
-            BufferedWaveProvider playBuffer;
-
-            // pipe for audio data from network
-            NamedPipeClientStream netPipe = new NamedPipeClientStream(".", "net", PipeDirection.In, PipeOptions.Asynchronous);
-            netPipe.Connect();
-
             // data provider for WaveOut
             playBuffer = new BufferedWaveProvider(codec.RecordFormat);
             // BufferDuration == lag
@@ -89,11 +64,7 @@ namespace Audio
             // output device
             _waveOut = new WaveOut();
             _waveOut.Init(playBuffer);
-            _waveOut.PlaybackStopped += (sender, e) => { netPipe.Close(); };
             _waveOut.Play();
-
-            var state = new Tuple<NamedPipeClientStream, BufferedWaveProvider, byte[]>(netPipe, playBuffer, buffer);
-            netPipe.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(AddSamples), state);
         }
 
         /// <summary>

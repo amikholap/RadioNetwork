@@ -169,14 +169,13 @@ namespace Network
         /// </summary>
         public void Start()
         {
+            base.Start();
+
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
 
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
-
-            StartStreaming();
-            StartPlaying();
         }
 
         /// <summary>
@@ -184,9 +183,9 @@ namespace Network
         /// </summary>
         public void Stop()
         {
+            base.Stop();
+
             _isWorking = false;
-            StopPlaying();
-            StopStreaming();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

@@ -140,8 +140,7 @@ namespace Network
             {
                 _serverIP = serverIPs.First();
                 UpdateClientInfo();
-                StartStreaming(/*_serverIP*/);
-                StartPlaying();
+                base.Start();
             }
         }
 
@@ -150,8 +149,7 @@ namespace Network
         /// </summary>
         public void Stop()
         {
-            StopPlaying();
-            StopStreaming();
+            base.Stop();
         }
     }
 }
