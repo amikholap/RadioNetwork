@@ -17,10 +17,6 @@ namespace Network
         private IPAddress _serverIP;
 
         /// <summary>
-        /// Client's IP address.
-        /// </summary>
-        public IPAddress Addr { get; set; }
-        /// <summary>
         /// Client's callsign.
         /// </summary>
         public string Callsign { get; set; }
@@ -37,7 +33,6 @@ namespace Network
         public Client(string callsign, int fr, int ft)
             : base()
         {
-            Addr = NetworkHelper.GetLocalIPAddress();
             Callsign = callsign;
             Fr = fr;
             Ft = ft;

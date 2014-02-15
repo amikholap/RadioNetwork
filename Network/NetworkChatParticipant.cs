@@ -19,10 +19,16 @@ namespace Network
         private volatile bool _receiving;
         private volatile bool _streaming;
 
+        /// <summary>
+        /// Machine's IP address.
+        /// </summary>
+        public IPAddress Addr { get; set; }
+
         protected NetworkChatParticipant()
         {
             _receiving = false;
             _streaming = false;
+            Addr = NetworkHelper.GetLocalIPAddress();
         }
 
         protected UdpClient InitUpdClient(int port, int timeout = 3000)
@@ -67,7 +73,10 @@ namespace Network
 
         protected void DataReceived(IPAddress addr, byte[] data)
         {
-            AudioHelper.AddSamples(data);
+            if (!this.Addr.Equals(addr))
+            {
+                AudioHelper.AddSamples(data);
+            }
         }
 
         protected void StartReceiving()
@@ -128,16 +137,16 @@ namespace Network
 
         public void Start()
         {
+            AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
             StartStreaming();
-            AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
         }
 
         public void Stop()
         {
-            AudioHelper.StopPlaying();
             StopStreaming();
             StopReceiving();
+            AudioHelper.StopPlaying();
         }
     }
 }
