@@ -103,5 +103,25 @@ namespace Logic
             }
             Mode = ControllerMode.None;
         }
+
+        public static void StartTalking()
+        {
+            switch (Mode)
+            {
+                case ControllerMode.Client:
+                    _client.StartStreaming();
+                    break;
+            }
+        }
+
+        public static void StopTalking()
+        {
+            switch (Mode)
+            {
+                case ControllerMode.Client:
+                    _client.StopStreaming();
+                    break;
+            }
+        }
     }
 }

@@ -14,9 +14,17 @@ namespace Audio
     public static class AudioHelper
     {
         private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
-        private static BufferedWaveProvider playBuffer;
+        private static BufferedWaveProvider _playBuffer;
+        private static NamedPipeServerStream _micPipe;
         private static WaveInEvent _waveIn;
         private static WaveOut _waveOut;
+
+        static AudioHelper()
+        {
+            _waveIn = new WaveInEvent();
+            _waveIn.BufferMilliseconds = 50;
+            _waveIn.DataAvailable += (sender, e) => { _micPipe.Write(e.Buffer, 0, e.BytesRecorded); };
+        }
 
         /// <summary>
         /// Capture audio stream from the specified input device in codec's format
@@ -28,42 +36,66 @@ namespace Audio
         public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
             // pipe for audio data from mic
-            NamedPipeServerStream micPipe = new NamedPipeServerStream("mic", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            micPipe.BeginWaitForConnection((r) => { micPipe.EndWaitForConnection(r); }, null);
+            if (_micPipe != null)
+            {
+                _micPipe.Close();
+            }
+            _micPipe = new NamedPipeServerStream("mic", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            _micPipe.BeginWaitForConnection((r) =>
+            {
+                try
+                {
+                    _micPipe.EndWaitForConnection(r);
+                }
+                catch (Exception e)
+                {
+                    if (e is IOException || e is ObjectDisposedException)
+                    {
+                        // the pipe was closed before a connection could be established
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }, null);
 
-            _waveIn = new WaveInEvent();
-            _waveIn.BufferMilliseconds = 50;
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;
-            _waveIn.DataAvailable += (sender, e) => { micPipe.Write(e.Buffer, 0, e.BytesRecorded); };
-            _waveIn.RecordingStopped += (sender, e) => { micPipe.Close(); };
-            _waveIn.StartRecording();
+            try
+            {
+                _waveIn.StartRecording();
+            }
+            catch (InvalidOperationException)
+            {
+                // already recording
+                return;
+            }
         }
 
         public static void StopCapture()
         {
-            if (_waveIn != null)
+            try
             {
                 _waveIn.StopRecording();
             }
-        }
-
-        public static void AddSamples(byte[] samples)
-        {
-            playBuffer.AddSamples(samples, 0, samples.Length);
+            catch (NAudio.MmException)
+            {
+                // recording hasn't started
+            }
         }
 
         public static void StartPlaying(INetworkChatCodec codec)
         {
             // data provider for WaveOut
-            playBuffer = new BufferedWaveProvider(codec.RecordFormat);
+            _playBuffer = new BufferedWaveProvider(codec.RecordFormat);
             // BufferDuration == lag
-            playBuffer.BufferDuration = new TimeSpan(hours: 0, minutes: 0, seconds: 1);
-            playBuffer.DiscardOnBufferOverflow = true;
+            _playBuffer.BufferDuration = new TimeSpan(hours: 0, minutes: 0, seconds: 1);
+            _playBuffer.DiscardOnBufferOverflow = true;
 
             // output device
             _waveOut = new WaveOut();
-            _waveOut.Init(playBuffer);
+            _waveOut.Init(_playBuffer);
             _waveOut.Play();
         }
 
@@ -76,6 +108,11 @@ namespace Audio
             {
                 _waveOut.Stop();
             }
+        }
+
+        public static void AddSamples(byte[] samples)
+        {
+            _playBuffer.AddSamples(samples, 0, samples.Length);
         }
     }
 }

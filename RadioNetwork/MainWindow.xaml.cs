@@ -28,6 +28,7 @@ namespace RadioNetwork
     {
         private ClientDataContext _cdc;
         private ServerDataContext _sdc;
+        private bool _isTalking;
 
         private void StartClient()
         {
@@ -49,6 +50,9 @@ namespace RadioNetwork
         public MainWindow()
         {
             InitializeComponent();
+
+            PushToTalkButton.ClickMode = ClickMode.Press;
+            _isTalking = false;
 
             this._sdc = new ServerDataContext();
             this._cdc = new ClientDataContext();
@@ -100,6 +104,22 @@ namespace RadioNetwork
         private void DisconnectButton_Click(object sender, RoutedEventArgs e)
         {
             Controller.Stop();
+        }
+
+        private void PushToTalkButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isTalking)
+            {
+                PushToTalkButton.ClickMode = ClickMode.Press;
+                Controller.StopTalking();
+                _isTalking = false;
+            }
+            else
+            {
+                PushToTalkButton.ClickMode = ClickMode.Release;
+                Controller.StartTalking();
+                _isTalking = true;
+            }
         }
     }
 }

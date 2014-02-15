@@ -49,7 +49,7 @@ namespace Network
             Byte[] dgram = new byte[256];
             List<IPAddress> serverIPs = new List<IPAddress>();
 
-            UdpClient udpClient = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient udpClient = InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             udpClient.EnableBroadcast = true;
             // determine port && BroadcastAddr
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -122,6 +122,14 @@ namespace Network
             finally
             {
                 tcpClient.Close();
+            }
+        }
+
+        protected override void DataReceived(IPAddress addr, byte[] data)
+        {
+            if (!this.Addr.Equals(addr))
+            {
+                AudioHelper.AddSamples(data);
             }
         }
 

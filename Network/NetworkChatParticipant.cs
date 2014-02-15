@@ -17,7 +17,17 @@ namespace Network
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
         private volatile bool _receiving;
-        private volatile bool _streaming;
+
+        private NamedPipeClientStream _micPipe;
+        private UdpClient _streamClient;
+        private Thread _streamingThread;
+
+        /// <summary>
+        /// Callback that is executed when any audio data is received.
+        /// </summary>
+        /// <param name="addr"></param>
+        /// <param name="data"></param>
+        protected virtual void DataReceived(IPAddress addr, byte[] data) { }
 
         /// <summary>
         /// Machine's IP address.
@@ -27,11 +37,10 @@ namespace Network
         protected NetworkChatParticipant()
         {
             _receiving = false;
-            _streaming = false;
             Addr = NetworkHelper.GetLocalIPAddress();
         }
 
-        protected UdpClient InitUpdClient(int port, int timeout = 3000)
+        protected UdpClient InitUdpClient(int port, int timeout = 3000)
         {
             // create client
             UdpClient udpClient = new UdpClient(port);
@@ -50,7 +59,7 @@ namespace Network
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            UdpClient client = InitUpdClient(Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
+            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
             client.EnableBroadcast = true;
             IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
 
@@ -71,14 +80,6 @@ namespace Network
             client.Close();
         }
 
-        protected void DataReceived(IPAddress addr, byte[] data)
-        {
-            if (!this.Addr.Equals(addr))
-            {
-                AudioHelper.AddSamples(data);
-            }
-        }
-
         protected void StartReceiving()
         {
             new Thread(StartReceivingLoop).Start();
@@ -97,54 +98,50 @@ namespace Network
             new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
 
             // open pipe to read audio data from microphone
-            NamedPipeClientStream pipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            pipe.Connect();
+            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
+            _micPipe.Connect();
 
             // read from mic and send audio data to server
             // IPEndPoint serverEndPoint = new IPEndPoint(dst, Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
             IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
-            UdpClient udpClient = InitUpdClient(Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
-            udpClient.EnableBroadcast = true;
+            _streamClient = InitUdpClient(Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
+            _streamClient.EnableBroadcast = true;
 
-            _streaming = true;
-            while (_streaming)
+            while (true)
             {
-                pipe.Read(buffer, 0, buffer.Length);
-                udpClient.Send(buffer, buffer.Length, serverEndPoint);
+                _micPipe.Read(buffer, 0, buffer.Length);
+                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
             }
-
-            // free resources
-            AudioHelper.StopCapture();
-            pipe.Close();
-            udpClient.Close();
         }
 
         /// <summary>
         /// Start listening for audio stream from mic and passing it to the server.
         /// </summary>
-        protected void StartStreaming()
+        public void StartStreaming()
         {
-            new Thread(() => { StartStreamingLoop(); }).Start();
+            _streamingThread = new Thread(StartStreamingLoop);
+            _streamingThread.Start();
         }
 
         /// <summary>
         /// Stop listening for audio stream from mic and passing it to the server.
         /// </summary>
-        protected void StopStreaming()
+        public void StopStreaming()
         {
-            _streaming = false;
+            AudioHelper.StopCapture();
+            _streamingThread.Abort();
+            _micPipe.Close();
+            _streamClient.Close();
         }
 
         public void Start()
         {
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
-            StartStreaming();
         }
 
         public void Stop()
         {
-            StopStreaming();
             StopReceiving();
             AudioHelper.StopPlaying();
         }

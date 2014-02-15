@@ -37,7 +37,7 @@ namespace Network
         private void ListenNewClients()
         {
             IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
-            UdpClient client = InitUpdClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             client.EnableBroadcast = true;
 
             // listen for new clients
@@ -160,6 +160,14 @@ namespace Network
                 }
             }
             listener.Stop();
+        }
+
+        protected override void DataReceived(IPAddress addr, byte[] data)
+        {
+            if (!this.Addr.Equals(addr))
+            {
+                AudioHelper.AddSamples(data);
+            }
         }
 
         /// <summary>
