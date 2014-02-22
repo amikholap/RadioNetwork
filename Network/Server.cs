@@ -33,7 +33,7 @@ namespace Network
 
             // initialize an UdpClient to send data to a predefined IP multicast group
             _multicastClient = new UdpClient();
-            _multicastClient.JoinMulticastGroup(_multicastEP.Address);
+            _multicastClient.JoinMulticastGroup(_multicastAddr);
         }
 
         /// <summary>
@@ -170,6 +170,7 @@ namespace Network
 
         protected override void StartStreamingLoop()
         {
+            IPEndPoint remoteEP = new IPEndPoint(_multicastAddr, Network.Properties.Settings.Default.MULTICAST_PORT);
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
 
             // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
@@ -180,21 +181,23 @@ namespace Network
             _micPipe.Connect();
 
             // read from mic and send audio data to the multicast group
-            _streamClient = InitUdpClient(_multicastEP.Port);
+            _streamClient = new UdpClient();
+            _streamClient.JoinMulticastGroup(_multicastAddr);
 
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                _streamClient.Send(buffer, buffer.Length, _multicastEP);
+                _streamClient.Send(buffer, buffer.Length, remoteEP);
             }
         }
 
         protected override void StartReceivingLoop()
         {
+            IPEndPoint clientEP = null;
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            IPEndPoint clientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            UdpClient client = InitUdpClient(clientEP.Port);
+            IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            UdpClient client = new UdpClient(anyClientEP);
 
             _receiving = true;
             while (_receiving)

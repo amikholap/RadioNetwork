@@ -22,7 +22,7 @@ namespace Network
         private Thread _streamingThread;
 
         protected NamedPipeClientStream _micPipe;
-        protected IPEndPoint _multicastEP;
+        protected IPAddress _multicastAddr;
 
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
@@ -43,8 +43,7 @@ namespace Network
         {
             _receiving = false;
             Addr = NetworkHelper.GetLocalIPAddress();
-            _multicastEP = new IPEndPoint(IPAddress.Parse(Network.Properties.Settings.Default.MULTICAST_GROUP),
-                Network.Properties.Settings.Default.MULTICAST_PORT);
+            _multicastAddr = IPAddress.Parse(Network.Properties.Settings.Default.MULTICAST_GROUP);
         }
 
         protected UdpClient InitUdpClient(int port, int timeout = 3000)

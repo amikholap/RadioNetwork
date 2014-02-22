@@ -125,6 +125,9 @@ namespace Network
             }
         }
 
+        /// <summary>
+        /// Start capturing audio from mic and send to the server.
+        /// </summary>
         protected override void StartStreamingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
@@ -132,34 +135,47 @@ namespace Network
             // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
             new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
 
+            // read from mic and send audio data to server
+            if (_servAddr == null)
+                return;
+            IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            _streamClient = InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+
             // open pipe to read audio data from microphone
             _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
             _micPipe.Connect();
 
-            // read from mic and send audio data to server
-            // IPEndPoint serverEndPoint = new IPEndPoint(dst, Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
-            IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            _streamClient = InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
+                if (serverEndPoint.Address != null)
+                {
+                    _streamClient.Send(buffer, buffer.Length, serverEndPoint);
+                }
             }
         }
 
+        /// <summary>
+        /// Start receiving audio from the multicast address and send it to player buffer.
+        /// </summary>
         protected override void StartReceivingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.MULTICAST_PORT);
+            UdpClient client = new UdpClient();
+            client.ExclusiveAddressUse = false;
+            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            client.JoinMulticastGroup(_multicastAddr);
+
+            IPEndPoint localEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.MULTICAST_PORT);
+            client.Client.Bind(localEP);
 
             _receiving = true;
             while (_receiving)
             {
                 try
                 {
-                    buffer = client.Receive(ref _multicastEP);
+                    buffer = client.Receive(ref localEP);
                 }
                 catch (SocketException)
                 {
