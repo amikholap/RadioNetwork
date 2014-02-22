@@ -32,7 +32,7 @@ namespace Network
             _clients = new List<Client>();
 
             // initialize an UdpClient to send data to a predefined IP multicast group
-            _multicastClient = new UdpClient();
+            _multicastClient = NetworkHelper.InitUdpClient();
             _multicastClient.JoinMulticastGroup(_multicastAddr);
         }
 
@@ -43,7 +43,7 @@ namespace Network
         private void ListenNewClients()
         {
             IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
-            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient client = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             client.EnableBroadcast = true;
 
             // listen for new clients
@@ -181,7 +181,7 @@ namespace Network
             _micPipe.Connect();
 
             // read from mic and send audio data to the multicast group
-            _streamClient = new UdpClient();
+            _streamClient = NetworkHelper.InitUdpClient();
             _streamClient.JoinMulticastGroup(_multicastAddr);
 
             while (true)
@@ -194,10 +194,11 @@ namespace Network
         protected override void StartReceivingLoop()
         {
             IPEndPoint clientEP = null;
+            IPEndPoint multicastEP = new IPEndPoint(_multicastAddr, Network.Properties.Settings.Default.MULTICAST_PORT);
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
             IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            UdpClient client = new UdpClient(anyClientEP);
+            UdpClient client = NetworkHelper.InitUdpClient(anyClientEP);
 
             _receiving = true;
             while (_receiving)
@@ -215,7 +216,7 @@ namespace Network
                 // add received data to the player queue
                 AudioHelper.AddSamples(buffer);
 
-                _multicastClient.Send(buffer, buffer.Length);
+                _multicastClient.Send(buffer, buffer.Length, multicastEP);
             }
             client.Close();
         }

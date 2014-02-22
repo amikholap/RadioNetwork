@@ -46,21 +46,6 @@ namespace Network
             _multicastAddr = IPAddress.Parse(Network.Properties.Settings.Default.MULTICAST_GROUP);
         }
 
-        protected UdpClient InitUdpClient(int port, int timeout = 3000)
-        {
-            // create client
-            UdpClient udpClient = new UdpClient(port);
-
-            // set timeouts
-            udpClient.Client.ReceiveTimeout = timeout;
-            udpClient.Client.SendTimeout = timeout;
-
-            // reuse ports
-            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-            return udpClient;
-        }
-
         protected void StartReceiving()
         {
             new Thread(StartReceivingLoop).Start();

@@ -49,7 +49,7 @@ namespace Network
             Byte[] dgram = new byte[256];
             List<IPAddress> serverIPs = new List<IPAddress>();
 
-            UdpClient udpClient = InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient udpClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             udpClient.EnableBroadcast = true;
             // determine port && BroadcastAddr
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -139,7 +139,7 @@ namespace Network
             if (_servAddr == null)
                 return;
             IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            _streamClient = InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
 
             // open pipe to read audio data from microphone
             _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
@@ -162,9 +162,8 @@ namespace Network
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            UdpClient client = new UdpClient();
+            UdpClient client = NetworkHelper.InitUdpClient();
             client.ExclusiveAddressUse = false;
-            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             client.JoinMulticastGroup(_multicastAddr);
 
             IPEndPoint localEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.MULTICAST_PORT);
