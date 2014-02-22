@@ -14,7 +14,7 @@ namespace Network
 {
     public class Client : NetworkChatParticipant
     {
-        private IPAddress _serverIP;
+        private IPAddress _servAddr;
 
         /// <summary>
         /// Client's callsign.
@@ -100,7 +100,7 @@ namespace Network
         public void UpdateClientInfo()
         {
             Byte[] dgram = new Byte[256];
-            IPEndPoint ipEndPoint = new IPEndPoint(_serverIP, Network.Properties.Settings.Default.TCP_PORT);
+            IPEndPoint ipEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.TCP_PORT);
             TcpClient tcpClient = new TcpClient();
 
             try
@@ -125,12 +125,52 @@ namespace Network
             }
         }
 
-        protected override void DataReceived(IPAddress addr, byte[] data)
+        protected override void StartStreamingLoop()
         {
-            if (!this.Addr.Equals(addr))
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
+
+            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
+            new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
+
+            // open pipe to read audio data from microphone
+            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
+            _micPipe.Connect();
+
+            // read from mic and send audio data to server
+            // IPEndPoint serverEndPoint = new IPEndPoint(dst, Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
+            IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            _streamClient = InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+
+            while (true)
             {
-                AudioHelper.AddSamples(data);
+                _micPipe.Read(buffer, 0, buffer.Length);
+                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
             }
+        }
+
+        protected override void StartReceivingLoop()
+        {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
+
+            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.MULTICAST_PORT);
+
+            _receiving = true;
+            while (_receiving)
+            {
+                try
+                {
+                    buffer = client.Receive(ref _multicastEP);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                    continue;
+                }
+
+                // add received data to the player queue
+                AudioHelper.AddSamples(buffer);
+            }
+            client.Close();
         }
 
         /// <summary>
@@ -141,7 +181,7 @@ namespace Network
             IEnumerable<IPAddress> serverIPs = DetectServers();
             if (serverIPs.Count() > 0)
             {
-                _serverIP = serverIPs.First();
+                _servAddr = serverIPs.First();
                 UpdateClientInfo();
                 base.Start();
             }

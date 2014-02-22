@@ -16,11 +16,16 @@ namespace Network
     {
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
-        private volatile bool _receiving;
+        protected volatile bool _receiving;
 
-        private NamedPipeClientStream _micPipe;
-        private UdpClient _streamClient;
+        protected UdpClient _streamClient;
         private Thread _streamingThread;
+
+        protected NamedPipeClientStream _micPipe;
+        protected IPEndPoint _multicastEP;
+
+        protected virtual void StartStreamingLoop() { }
+        protected virtual void StartReceivingLoop() { }
 
         /// <summary>
         /// Callback that is executed when any audio data is received.
@@ -38,6 +43,8 @@ namespace Network
         {
             _receiving = false;
             Addr = NetworkHelper.GetLocalIPAddress();
+            _multicastEP = new IPEndPoint(IPAddress.Parse(Network.Properties.Settings.Default.MULTICAST_GROUP),
+                Network.Properties.Settings.Default.MULTICAST_PORT);
         }
 
         protected UdpClient InitUdpClient(int port, int timeout = 3000)
@@ -55,31 +62,6 @@ namespace Network
             return udpClient;
         }
 
-        private void StartReceivingLoop()
-        {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
-
-            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
-            client.EnableBroadcast = true;
-            IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
-
-            _receiving = true;
-            while (_receiving)
-            {
-                try
-                {
-                    buffer = client.Receive(ref clientEndPoint);
-                }
-                catch (SocketException)
-                {
-                    // timeout
-                    continue;
-                }
-                DataReceived(clientEndPoint.Address, buffer);
-            }
-            client.Close();
-        }
-
         protected void StartReceiving()
         {
             new Thread(StartReceivingLoop).Start();
@@ -88,30 +70,6 @@ namespace Network
         protected void StopReceiving()
         {
             _receiving = false;
-        }
-
-        private void StartStreamingLoop()
-        {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-
-            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
-            new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
-
-            // open pipe to read audio data from microphone
-            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            _micPipe.Connect();
-
-            // read from mic and send audio data to server
-            // IPEndPoint serverEndPoint = new IPEndPoint(dst, Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
-            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.AUDIO_RECEIVE_PORT);
-            _streamClient = InitUdpClient(Network.Properties.Settings.Default.AUDIO_TRANSMIT_PORT);
-            _streamClient.EnableBroadcast = true;
-
-            while (true)
-            {
-                _micPipe.Read(buffer, 0, buffer.Length);
-                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
-            }
         }
 
         /// <summary>

@@ -23,11 +23,17 @@ namespace Network
         private volatile bool _isWorking;
         private List<Client> _clients;
 
+        private UdpClient _multicastClient;
+
         public Server()
             : base()
         {
             _isWorking = true;
             _clients = new List<Client>();
+
+            // initialize an UdpClient to send data to a predefined IP multicast group
+            _multicastClient = new UdpClient();
+            _multicastClient.JoinMulticastGroup(_multicastEP.Address);
         }
 
         /// <summary>
@@ -162,12 +168,53 @@ namespace Network
             listener.Stop();
         }
 
-        protected override void DataReceived(IPAddress addr, byte[] data)
+        protected override void StartStreamingLoop()
         {
-            if (!this.Addr.Equals(addr))
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
+
+            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
+            new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
+
+            // open pipe to read audio data from microphone
+            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
+            _micPipe.Connect();
+
+            // read from mic and send audio data to the multicast group
+            _streamClient = InitUdpClient(_multicastEP.Port);
+
+            while (true)
             {
-                AudioHelper.AddSamples(data);
+                _micPipe.Read(buffer, 0, buffer.Length);
+                _streamClient.Send(buffer, buffer.Length, _multicastEP);
             }
+        }
+
+        protected override void StartReceivingLoop()
+        {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
+
+            IPEndPoint clientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            UdpClient client = InitUdpClient(clientEP.Port);
+
+            _receiving = true;
+            while (_receiving)
+            {
+                try
+                {
+                    buffer = client.Receive(ref clientEP);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                    continue;
+                }
+
+                // add received data to the player queue
+                AudioHelper.AddSamples(buffer);
+
+                _multicastClient.Send(buffer, buffer.Length);
+            }
+            client.Close();
         }
 
         /// <summary>
