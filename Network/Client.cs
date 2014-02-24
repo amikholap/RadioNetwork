@@ -14,11 +14,13 @@ namespace Network
 {
     public class Client : NetworkChatParticipant
     {
-        private IPAddress _servAddr;
+        private IPAddress _serverIP;
 
         /// <summary>
         /// Client's callsign.
         /// </summary>
+        /// 
+        
         public string Callsign { get; set; }
         /// <summary>
         /// Receive frequency.
@@ -100,13 +102,12 @@ namespace Network
         public void UpdateClientInfo()
         {
             Byte[] dgram = new Byte[256];
-            IPEndPoint ipEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.TCP_PORT);
+            IPEndPoint ipEndPoint = new IPEndPoint(_serverIP, Network.Properties.Settings.Default.TCP_PORT);
             TcpClient tcpClient = new TcpClient();
 
             try
             {
                 tcpClient.Connect(ipEndPoint);
-
                 string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
                 dgram = System.Text.Encoding.UTF8.GetBytes(message);
                 using (NetworkStream ns = tcpClient.GetStream())
@@ -125,69 +126,15 @@ namespace Network
             }
         }
 
-        /// <summary>
-        /// Start capturing audio from mic and send to the server.
-        /// </summary>
-        protected override void StartStreamingLoop()
+        protected override void DataReceived(IPAddress addr, byte[] data)
         {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-
-            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
-            new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
-
-            // read from mic and send audio data to server
-            if (_servAddr == null)
-                return;
-            IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            _streamClient = InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-
-            // open pipe to read audio data from microphone
-            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            _micPipe.Connect();
-
-            while (true)
+            if (!this.Addr.Equals(addr))
             {
-                _micPipe.Read(buffer, 0, buffer.Length);
-                if (serverEndPoint.Address != null)
-                {
-                    _streamClient.Send(buffer, buffer.Length, serverEndPoint);
-                }
+                AudioHelper.AddSamples(data);
             }
         }
 
-        /// <summary>
-        /// Start receiving audio from the multicast address and send it to player buffer.
-        /// </summary>
-        protected override void StartReceivingLoop()
-        {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
-            UdpClient client = new UdpClient();
-            client.ExclusiveAddressUse = false;
-            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            client.JoinMulticastGroup(_multicastAddr);
-
-            IPEndPoint localEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.MULTICAST_PORT);
-            client.Client.Bind(localEP);
-
-            _receiving = true;
-            while (_receiving)
-            {
-                try
-                {
-                    buffer = client.Receive(ref localEP);
-                }
-                catch (SocketException)
-                {
-                    // timeout
-                    continue;
-                }
-
-                // add received data to the player queue
-                AudioHelper.AddSamples(buffer);
-            }
-            client.Close();
-        }
 
         /// <summary>
         /// Connect to a server and start streaming audio.
@@ -197,9 +144,11 @@ namespace Network
             IEnumerable<IPAddress> serverIPs = DetectServers();
             if (serverIPs.Count() > 0)
             {
-                _servAddr = serverIPs.First();
+                _serverIP = serverIPs.First();
                 UpdateClientInfo();
                 base.Start();
+                base.StartConnectPingThread(_serverIP, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
+                base.StartListenPingThread(_serverIP, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER);
             }
         }
 

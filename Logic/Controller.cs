@@ -49,6 +49,7 @@ namespace Logic
                 {
                     _client.Start();
                     Mode = ControllerMode.Client;
+
                 }
                 catch (Exception e)
                 {

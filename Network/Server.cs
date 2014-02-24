@@ -23,17 +23,11 @@ namespace Network
         private volatile bool _isWorking;
         private List<Client> _clients;
 
-        private UdpClient _multicastClient;
-
         public Server()
             : base()
         {
             _isWorking = true;
             _clients = new List<Client>();
-
-            // initialize an UdpClient to send data to a predefined IP multicast group
-            _multicastClient = new UdpClient();
-            _multicastClient.JoinMulticastGroup(_multicastAddr);
         }
 
         /// <summary>
@@ -86,6 +80,7 @@ namespace Network
             }
             client.Close();
         }
+
 
         /// <summary>
         /// Listens on TCP_PORT for any client actions such as
@@ -168,58 +163,34 @@ namespace Network
             listener.Stop();
         }
 
-        protected override void StartStreamingLoop()
+        protected override void DataReceived(IPAddress addr, byte[] data)
         {
-            IPEndPoint remoteEP = new IPEndPoint(_multicastAddr, Network.Properties.Settings.Default.MULTICAST_PORT);
-            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
+            if (!this.Addr.Equals(addr))
+            {
+                AudioHelper.AddSamples(data);
+            }
+        }
 
-            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
-            new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
-
-            // open pipe to read audio data from microphone
-            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            _micPipe.Connect();
-
-            // read from mic and send audio data to the multicast group
-            _streamClient = new UdpClient();
-            _streamClient.JoinMulticastGroup(_multicastAddr);
-
+        public void StartPing()
+        {
+            int TimeOut = 5000;
             while (true)
             {
-                _micPipe.Read(buffer, 0, buffer.Length);
-                _streamClient.Send(buffer, buffer.Length, remoteEP);
+                foreach (Client client in _clients)
+                {
+                    if (base.StartAsyncPing(client.Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER) == false)
+                    {
+                        _clients.Remove(client);    // remove non-ping client
+                    }
+                }
+                Thread.Sleep(TimeOut);
             }
         }
 
-        protected override void StartReceivingLoop()
+        public void StartListenPing()
         {
-            IPEndPoint clientEP = null;
-            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
-
-            IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            UdpClient client = new UdpClient(anyClientEP);
-
-            _receiving = true;
-            while (_receiving)
-            {
-                try
-                {
-                    buffer = client.Receive(ref clientEP);
-                }
-                catch (SocketException)
-                {
-                    // timeout
-                    continue;
-                }
-
-                // add received data to the player queue
-                AudioHelper.AddSamples(buffer);
-
-                _multicastClient.Send(buffer, buffer.Length);
-            }
-            client.Close();
+            base.StartListenPingThread(IPAddress.Any, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
         }
-
         /// <summary>
         /// Launch the server.
         /// It spawns several threads for listening and processing.
@@ -228,10 +199,11 @@ namespace Network
         public void Start()
         {
             base.Start();
-
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
-
+            StartListenPing();
+            Thread pingThread = new Thread(StartPing);
+            pingThread.Start();
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
         }
