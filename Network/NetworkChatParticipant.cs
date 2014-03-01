@@ -17,8 +17,10 @@ namespace Network
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
         private volatile bool _receiving;
+        private bool _listenPing;
+        protected bool _connectPing;
         private Thread _listenPingThread;
-        private Thread _connectPingThread;
+        protected Thread _connectPingThread;
         private NamedPipeClientStream _micPipe;
         private UdpClient _streamClient;
         private Thread _streamingThread;
@@ -37,7 +39,10 @@ namespace Network
 
         protected NetworkChatParticipant()
         {
+            _connectPing = false;
+            _listenPing = false;
             _receiving = false;
+            _listenPing = false;
             Addr = NetworkHelper.GetLocalIPAddress();
         }
 
@@ -138,15 +143,23 @@ namespace Network
         protected void ListenPingThread(IPAddress PingAddr, int PING_PORT)
         {
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
+            listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            TcpClient tcpClient;            
+            Int32 sleepTime = 200;
             listener.Server.ReceiveTimeout = 5000;
             listener.Server.SendTimeout = 5000;
-            Int32 sleepTime = 200;
-            TcpClient tcpClient;
             listener.Start();
-            while (true)
+            _listenPing = true;
+            while (_listenPing)
             {
+                // Step 0: Client connection
+                if (!listener.Pending())
+                {
+                    Thread.Sleep(sleepTime);  // choose a number (in milliseconds) that makes sense
+                    continue;           // skip to next iteration of loop
+                }
                 tcpClient = listener.AcceptTcpClient();
-                Thread.Sleep(sleepTime);
+                tcpClient.Close();
             }
         }
 
@@ -158,28 +171,12 @@ namespace Network
 
         public void StopListenPingThread()
         {
-            _listenPingThread.Abort();
-        }
-
-        protected void StartPing(IPAddress PingAddr, int PING_PORT)
-        {
-            double Delta = 0.0;
-            DateTime dtStart;
-            do
+            lock (this)
             {
-                dtStart = DateTime.Now;
-                StartAsyncPing(PingAddr, PING_PORT);
-                Delta = (DateTime.Now - dtStart).TotalMilliseconds;
-            } while (Delta < 5000);
-            throw new TimeoutException();
+                _listenPing = false;
+            }
         }
 
-
-        public void StartConnectPingThread(IPAddress PingAddr, int PING_PORT)
-        {
-            _connectPingThread = new Thread(() => StartPing(PingAddr, PING_PORT));
-            _connectPingThread.Start();
-        }
 
         protected bool StartAsyncPing(IPAddress PingAddr, int PING_PORT)
         {
@@ -202,11 +199,6 @@ namespace Network
                 }
             }
             return true;
-        }
-
-        public void StopConnectPingThread()
-        {
-            _connectPingThread.Abort();
         }
 
         public void Start()

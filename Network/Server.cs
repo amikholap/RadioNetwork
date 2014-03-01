@@ -174,7 +174,8 @@ namespace Network
         public void StartPing()
         {
             int TimeOut = 5000;
-            while (true)
+            base._connectPing = true;
+            while (base._connectPing == true)
             {
                 foreach (Client client in _clients)
                 {
@@ -187,10 +188,20 @@ namespace Network
             }
         }
 
-        public void StartListenPing()
+        public void StartConnectPingThread()
         {
-            base.StartListenPingThread(IPAddress.Any, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
+            base._connectPingThread = new Thread(() => this.StartPing());
+            base._connectPingThread.Start();
         }
+
+        public void StopConnectPingThread()
+        {
+            lock (this)
+            {
+                base._connectPing = false;
+            }
+        }
+
         /// <summary>
         /// Launch the server.
         /// It spawns several threads for listening and processing.
@@ -201,9 +212,8 @@ namespace Network
             base.Start();
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
-            StartListenPing();
-            Thread pingThread = new Thread(StartPing);
-            pingThread.Start();
+            StartListenPingThread(IPAddress.Any, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
+            StartConnectPingThread();
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
         }
@@ -214,7 +224,8 @@ namespace Network
         public void Stop()
         {
             base.Stop();
-
+            StopConnectPingThread();
+            StopListenPingThread();
             _isWorking = false;
             Thread.Sleep(1000);    // let worker threads finish
         }
