@@ -173,7 +173,7 @@ namespace Network
             // already initialized multicast groups
             var currentAddrs = _mcastClients.Keys;
             // a fresh list of required mmulticast groups
-            var newAddrs = _clients.Select(c => c.MulticastGroupAddr).Distinct().ToArray();
+            var newAddrs = _clients.Select(c => c.TransmitMulticastGroupAddr).Distinct().ToArray();
 
             IEnumerable<IPAddress> toAdd = newAddrs.Except(currentAddrs);
             IEnumerable<IPAddress> toRemove = currentAddrs.Except(newAddrs);
@@ -199,13 +199,6 @@ namespace Network
         protected override void StartStreamingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-
-            // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
-            new Thread(() => AudioHelper.StartCapture(new UncompressedPcmChatCodec())).Start();
-
-            // open pipe to read audio data from microphone
-            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            _micPipe.Connect();
 
             while (true)
             {

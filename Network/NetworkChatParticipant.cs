@@ -55,17 +55,30 @@ namespace Network
         }
 
         /// <summary>
+        /// Initialize UDP client and mic pipe and start capturing audio.
+        /// </summary>
+        protected void PrepareStreaming()
+        {
+            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+
+            // capture audio stream from mic and write it to "mic" named pipe
+            AudioHelper.StartCapture(new UncompressedPcmChatCodec());
+
+            // open pipe to read audio data from microphone
+            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
+            _micPipe.Connect();
+        }
+
+        /// <summary>
         /// Start listening for audio stream from mic and passing it to the server.
         /// </summary>
         public void StartStreaming()
         {
+            PrepareStreaming();
             _streamingThread = new Thread(StartStreamingLoop);
             _streamingThread.Start();
         }
 
-        /// <summary>
-        /// Stop listening for audio stream from mic and passing it to the server.
-        /// </summary>
         public void StopStreaming()
         {
             AudioHelper.StopCapture();

@@ -29,9 +29,13 @@ namespace Network
         /// </summary>
         public UInt32 Ft { get; set; }
         /// <summary>
-        /// IP multicast group that the client will listen for audio data.
+        /// IP multicast group where the client will send audio data.
         /// </summary>
-        public IPAddress MulticastGroupAddr { get; set; }
+        public IPAddress TransmitMulticastGroupAddr { get; set; }
+        /// <summary>
+        /// IP multicast group where the client will listen for audio data.
+        /// </summary>
+        public IPAddress ReceiveMulticastGroupAddr { get; set; }
 
 
         public Client(string callsign, UInt32 fr, UInt32 ft)
@@ -40,21 +44,19 @@ namespace Network
             Callsign = callsign;
             Fr = fr;
             Ft = ft;
-
-            // derive a multicast group from the client's receive frequency
-            // 239.XX.XX.XX
-            // Fr = 123 => 239.0.0.123
-            UInt32 intAddr = 0xef000000 | Fr;
-            byte[] byteAddr = BitConverter.GetBytes(intAddr);
-            if (BitConverter.IsLittleEndian)
-                byteAddr = byteAddr.Reverse().ToArray();
-            MulticastGroupAddr = new IPAddress(byteAddr);
+            UpdateMulticastAddrs();
         }
 
         public Client(IPAddress addr, string callsign, UInt32 fr, UInt32 ft)
             : this(callsign, fr, ft)
         {
             Addr = addr;
+        }
+
+        protected void UpdateMulticastAddrs()
+        {
+            TransmitMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Ft);
+            ReceiveMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Fr);
         }
 
         private IEnumerable<IPAddress> DetectServers()
@@ -145,28 +147,16 @@ namespace Network
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
 
-            // read from mic and send audio data to server
             if (_servAddr == null)
             {
                 return;
             }
             IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-
-            // capture audio stream from mic and write it to "mic" named pipe
-            AudioHelper.StartCapture(new UncompressedPcmChatCodec());
-
-            // open pipe to read audio data from microphone
-            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            _micPipe.Connect();
 
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                if (serverEndPoint.Address != null)
-                {
-                    _streamClient.Send(buffer, buffer.Length, serverEndPoint);
-                }
+                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
             }
         }
 
@@ -179,7 +169,7 @@ namespace Network
 
             UdpClient client = NetworkHelper.InitUdpClient();
             // client.ExclusiveAddressUse = false;
-            client.JoinMulticastGroup(MulticastGroupAddr);
+            client.JoinMulticastGroup(ReceiveMulticastGroupAddr);
 
             IPEndPoint localEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.MULTICAST_PORT);
             client.Client.Bind(localEP);

@@ -28,6 +28,22 @@ namespace Network
         }
 
         /// <summary>
+        /// Derive a multicast group from the frequency.
+        /// 239.XX.XX.XX
+        /// f = 123 => 239.0.0.123
+        /// </summary>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static IPAddress FreqToMcastGroup(UInt32 f)
+        {
+            UInt32 intAddr = 0xef000000 | f;
+            byte[] byteAddr = BitConverter.GetBytes(intAddr);
+            if (BitConverter.IsLittleEndian)
+                byteAddr = byteAddr.Reverse().ToArray();
+            return new IPAddress(byteAddr);
+        }
+
+        /// <summary>
         /// Set send/receive timeouts and REUSE_ADDRESS socket option.
         /// </summary>
         /// <param name="client"></param>
