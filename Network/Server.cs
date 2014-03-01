@@ -240,13 +240,13 @@ namespace Network
                 }
 
                 // change active client if it wasn't set or was silent for too long
-                if (lastActive.last_talked == null || DateTime.Now - lastActive.last_talked > TimeSpan.FromSeconds(0.5))
+                if (lastActive.Client == null || DateTime.Now - lastActive.last_talked > TimeSpan.FromSeconds(0.5))
                 {
-                    lastActive.Client = _clients.Find(c => c.Addr == clientEP.Address);
+                    lastActive.Client = _clients.Find(c => c.Addr.Equals(clientEP.Address));
                 }
 
                 // process audio data only from active client
-                if (clientEP.Address == lastActive.Client.Addr)
+                if (lastActive.Client != null && clientEP.Address.Equals(lastActive.Client.Addr))
                 {
                     // add received data to the player queue
                     AudioHelper.AddSamples(buffer);
