@@ -49,13 +49,25 @@ namespace Network.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("500")]
-        public int BUFFER_SIZE {
+        [global::System.Configuration.DefaultSettingValueAttribute("41856")]
+        public int MULTICAST_PORT {
             get {
-                return ((int)(this["BUFFER_SIZE"]));
+                return ((int)(this["MULTICAST_PORT"]));
             }
             set {
-                this["BUFFER_SIZE"] = value;
+                this["MULTICAST_PORT"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("41855")]
+        public int SERVER_AUDIO_PORT {
+            get {
+                return ((int)(this["SERVER_AUDIO_PORT"]));
+            }
+            set {
+                this["SERVER_AUDIO_PORT"] = value;
             }
         }
         
@@ -73,37 +85,13 @@ namespace Network.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("41856")]
-        public int MULTICAST_PORT {
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int BUFFER_SIZE {
             get {
-                return ((int)(this["MULTICAST_PORT"]));
+                return ((int)(this["BUFFER_SIZE"]));
             }
             set {
-                this["MULTICAST_PORT"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("239.32.54.234")]
-        public string MULTICAST_GROUP {
-            get {
-                return ((string)(this["MULTICAST_GROUP"]));
-            }
-            set {
-                this["MULTICAST_GROUP"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("41855")]
-        public int SERVER_AUDIO_PORT {
-            get {
-                return ((int)(this["SERVER_AUDIO_PORT"]));
-            }
-            set {
-                this["SERVER_AUDIO_PORT"] = value;
+                this["BUFFER_SIZE"] = value;
             }
         }
     }

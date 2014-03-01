@@ -41,24 +41,7 @@ namespace Audio
                 _micPipe.Close();
             }
             _micPipe = new NamedPipeServerStream("mic", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            _micPipe.BeginWaitForConnection((r) =>
-            {
-                try
-                {
-                    _micPipe.EndWaitForConnection(r);
-                }
-                catch (Exception e)
-                {
-                    if (e is IOException || e is ObjectDisposedException)
-                    {
-                        // the pipe was closed before a connection could be established
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }, null);
+            _micPipe.BeginWaitForConnection((r) => _micPipe.EndWaitForConnection(r), null);
 
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;

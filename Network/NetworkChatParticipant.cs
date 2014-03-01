@@ -22,7 +22,6 @@ namespace Network
         private Thread _streamingThread;
 
         protected NamedPipeClientStream _micPipe;
-        protected IPAddress _multicastAddr;
 
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
@@ -43,7 +42,6 @@ namespace Network
         {
             _receiving = false;
             Addr = NetworkHelper.GetLocalIPAddress();
-            _multicastAddr = IPAddress.Parse(Network.Properties.Settings.Default.MULTICAST_GROUP);
         }
 
         protected void StartReceiving()

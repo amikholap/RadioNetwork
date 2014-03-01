@@ -34,7 +34,7 @@ namespace Logic
         /// <param name="callsign"></param>
         /// <param name="fr"></param>
         /// <param name="ft"></param>
-        public static void StartClient(string callsign, int fr, int ft)
+        public static void StartClient(string callsign, UInt32 fr, UInt32 ft)
         {
             if (Mode != ControllerMode.Client)
             {
@@ -111,6 +111,9 @@ namespace Logic
                 case ControllerMode.Client:
                     _client.StartStreaming();
                     break;
+                case ControllerMode.Server:
+                    _server.StartStreaming();
+                    break;
             }
         }
 
@@ -120,6 +123,9 @@ namespace Logic
             {
                 case ControllerMode.Client:
                     _client.StopStreaming();
+                    break;
+                case ControllerMode.Server:
+                    _server.StopStreaming();
                     break;
             }
         }

@@ -33,8 +33,8 @@ namespace RadioNetwork
         private void StartClient()
         {
             string callsign = _cdc.Callsign;
-            int fr = int.Parse(_cdc.Fr);
-            int ft = int.Parse(_cdc.Ft);
+            var fr = UInt32.Parse(_cdc.Fr);
+            var ft = UInt32.Parse(_cdc.Ft);
 
             Controller.StartClient(callsign, fr, ft);
         }

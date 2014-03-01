@@ -22,18 +22,14 @@ namespace Network
         /// </summary>
         private volatile bool _isWorking;
         private List<Client> _clients;
-
-        private UdpClient _multicastClient;
+        private Dictionary<IPAddress, UdpClient> _mcastClients;
 
         public Server()
             : base()
         {
             _isWorking = true;
             _clients = new List<Client>();
-
-            // initialize an UdpClient to send data to a predefined IP multicast group
-            _multicastClient = NetworkHelper.InitUdpClient();
-            _multicastClient.JoinMulticastGroup(_multicastAddr);
+            _mcastClients = new Dictionary<IPAddress, UdpClient>();
         }
 
         /// <summary>
@@ -107,9 +103,9 @@ namespace Network
                     {
                         IPAddress clientAddr;    // client's IP address
                         string callsign;         // client's callsign
-                        int fr, ft;              // client's receive and transmit frequencies
+                        UInt32 fr, ft;           // client's receive and transmit frequencies
 
-                        var buf = new byte[100];
+                        var buf = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
                         string[] lines = request.Split('\n');
@@ -124,8 +120,8 @@ namespace Network
                                 try
                                 {
                                     callsign = lines[1];
-                                    fr = int.Parse(lines[2].Split(',')[0]);
-                                    ft = int.Parse(lines[2].Split(',')[1]);
+                                    fr = UInt32.Parse(lines[2].Split(',')[0]);
+                                    ft = UInt32.Parse(lines[2].Split(',')[1]);
                                 }
                                 catch (Exception e)
                                 {
@@ -141,6 +137,7 @@ namespace Network
                                 if (!_clients.Exists(c => c.Addr == clientAddr))
                                 {
                                     _clients.Add(new Client(clientAddr, callsign, fr, ft));
+                                    UpdateMulticastClients();
                                     logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
                                     break;
                                 }
@@ -168,9 +165,39 @@ namespace Network
             listener.Stop();
         }
 
+        /// <summary>
+        /// Update UDPClients for multicast groups.
+        /// </summary>
+        private void UpdateMulticastClients()
+        {
+            // already initialized multicast groups
+            var currentAddrs = _mcastClients.Keys;
+            // a fresh list of required mmulticast groups
+            var newAddrs = _clients.Select(c => c.MulticastGroupAddr).Distinct().ToArray();
+
+            IEnumerable<IPAddress> toAdd = newAddrs.Except(currentAddrs);
+            IEnumerable<IPAddress> toRemove = currentAddrs.Except(newAddrs);
+
+            // initialize UdpClients for new clients
+            foreach (IPAddress addr in toAdd)
+            {
+                UdpClient client = NetworkHelper.InitUdpClient();
+                client.JoinMulticastGroup(addr);
+                _mcastClients[addr] = client;
+            }
+
+            // close UdpClients for disconnected clients
+            foreach (IPAddress addr in toRemove)
+            {
+                UdpClient client = _mcastClients[addr];
+                _mcastClients.Remove(addr);
+                client.DropMulticastGroup(addr);
+                client.Close();
+            }
+        }
+
         protected override void StartStreamingLoop()
         {
-            IPEndPoint remoteEP = new IPEndPoint(_multicastAddr, Network.Properties.Settings.Default.MULTICAST_PORT);
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
 
             // launch a thread that captures audio stream from mic and writes it to "mic" named pipe
@@ -180,22 +207,20 @@ namespace Network
             _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
             _micPipe.Connect();
 
-            // read from mic and send audio data to the multicast group
-            _streamClient = NetworkHelper.InitUdpClient();
-            _streamClient.JoinMulticastGroup(_multicastAddr);
-
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                _streamClient.Send(buffer, buffer.Length, remoteEP);
+                foreach (var item in _mcastClients)
+                {
+                    item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                }
             }
         }
 
         protected override void StartReceivingLoop()
         {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
             IPEndPoint clientEP = null;
-            IPEndPoint multicastEP = new IPEndPoint(_multicastAddr, Network.Properties.Settings.Default.MULTICAST_PORT);
-            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
             IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
             UdpClient client = NetworkHelper.InitUdpClient(anyClientEP);
@@ -216,8 +241,13 @@ namespace Network
                 // add received data to the player queue
                 AudioHelper.AddSamples(buffer);
 
-                _multicastClient.Send(buffer, buffer.Length, multicastEP);
+                // spread server message to all clients
+                foreach (var item in _mcastClients)
+                {
+                    item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                }
             }
+
             client.Close();
         }
 
@@ -226,7 +256,7 @@ namespace Network
         /// It spawns several threads for listening and processing.
         /// client messages.
         /// </summary>
-        public void Start()
+        public new void Start()
         {
             base.Start();
 
@@ -240,12 +270,16 @@ namespace Network
         /// <summary>
         /// Stop the server.
         /// </summary>
-        public void Stop()
+        public new void Stop()
         {
-            base.Stop();
-
             _isWorking = false;
             Thread.Sleep(1000);    // let worker threads finish
+
+            // close all UdpClients
+            _clients.Clear();
+            UpdateMulticastClients();
+
+            base.Stop();
         }
     }
 }
