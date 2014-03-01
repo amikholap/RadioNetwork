@@ -220,8 +220,9 @@ namespace Network
         protected override void StartReceivingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-            IPEndPoint clientEP = null;
+            ClientActivity lastActive = new ClientActivity();
 
+            IPEndPoint clientEP = null;
             IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
             UdpClient client = NetworkHelper.InitUdpClient(anyClientEP);
 
@@ -238,13 +239,26 @@ namespace Network
                     continue;
                 }
 
-                // add received data to the player queue
-                AudioHelper.AddSamples(buffer);
-
-                // spread server message to all clients
-                foreach (var item in _mcastClients)
+                // change active client if it wasn't set or was silent for too long
+                if (lastActive.last_talked == null || DateTime.Now - lastActive.last_talked > TimeSpan.FromSeconds(0.5))
                 {
-                    item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    lastActive.Client = _clients.Find(c => c.Addr == clientEP.Address);
+                }
+
+                // process audio data only from active client
+                if (clientEP.Address == lastActive.Client.Addr)
+                {
+                    // add received data to the player queue
+                    AudioHelper.AddSamples(buffer);
+
+                    // spread server message to all clients
+                    foreach (var item in _mcastClients)
+                    {
+                        item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    }
+
+                    // update last_talked timestamp
+                    lastActive.last_talked = DateTime.Now;
                 }
             }
 

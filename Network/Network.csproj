@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client.cs" />
+    <Compile Include="ClientActivity.cs" />
     <Compile Include="NetworkChatParticipant.cs" />
     <Compile Include="NetworkHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
