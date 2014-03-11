@@ -54,9 +54,8 @@ namespace RadioNetwork
             PushToTalkButton.ClickMode = ClickMode.Press;
             _isTalking = false;
 
-            this._sdc = new ServerDataContext();
-            this._cdc = new ClientDataContext();
-            this.DataContext = _cdc;
+            _cdc = new ClientDataContext();
+            ClientLayout.DataContext = _cdc;
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
@@ -76,6 +75,12 @@ namespace RadioNetwork
 
             Controller.Stop();
 
+            if (_cdc == null)
+            {
+                _cdc = new ClientDataContext();
+            }
+            ClientLayout.DataContext = _cdc;
+
             ServerLayout.Visibility = System.Windows.Visibility.Collapsed;
             ClientLayout.Visibility = System.Windows.Visibility.Visible;
         }
@@ -91,6 +96,9 @@ namespace RadioNetwork
             ServerModeMenuItem.IsChecked = true;
 
             StartServer();
+
+            _sdc = new ServerDataContext(Controller.Server);
+            ServerLayout.DataContext = _sdc;
 
             ClientLayout.Visibility = System.Windows.Visibility.Collapsed;
             ServerLayout.Visibility = System.Windows.Visibility.Visible;

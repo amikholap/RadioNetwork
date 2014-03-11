@@ -1,6 +1,7 @@
 ﻿using Audio;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -21,14 +22,22 @@ namespace Network
         /// When set to false server will shut down in several seconds.
         /// </summary>
         private volatile bool _isWorking;
-        private List<Client> _clients;
+        private ObservableCollection<Client> _clients;
         private Dictionary<IPAddress, UdpClient> _mcastClients;
+
+        public ObservableCollection<Client> Clients
+        {
+            get
+            {
+                return _clients;
+            }
+        }
 
         public Server()
             : base()
         {
             _isWorking = true;
-            _clients = new List<Client>();
+            _clients = new ObservableCollection<Client>();
             _mcastClients = new Dictionary<IPAddress, UdpClient>();
         }
 
@@ -134,7 +143,8 @@ namespace Network
 
                                 // add a new client to the list only if
                                 // a client with such IP address doesn't exist
-                                if (!_clients.Exists(c => c.Addr == clientAddr))
+                                Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
+                                if (existingClient != null)
                                 {
                                     _clients.Add(new Client(clientAddr, callsign, fr, ft));
                                     UpdateMulticastClients();
@@ -144,10 +154,9 @@ namespace Network
 
                                 // a client with such IP address already exists
                                 // update it
-                                Client client = _clients.Find(c => c.Addr == clientAddr);
-                                client.Callsign = callsign;
-                                client.Fr = fr;
-                                client.Ft = ft;
+                                existingClient.Callsign = callsign;
+                                existingClient.Fr = fr;
+                                existingClient.Ft = ft;
 
                                 break;
                             default:
@@ -235,7 +244,7 @@ namespace Network
                 // change active client if it wasn't set or was silent for too long
                 if (lastActive.Client == null || DateTime.Now - lastActive.last_talked > TimeSpan.FromSeconds(0.5))
                 {
-                    lastActive.Client = _clients.Find(c => c.Addr.Equals(clientEP.Address));
+                    lastActive.Client = _clients.FirstOrDefault(c => c.Addr.Equals(clientEP.Address));
                 }
 
                 // process audio data only from active client

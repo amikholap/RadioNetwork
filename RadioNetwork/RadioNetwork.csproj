@@ -104,6 +104,10 @@
       <Project>{8745f7da-4aef-4c4c-b86e-41f9d21877fc}</Project>
       <Name>Logic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Network\Network.csproj">
+      <Project>{2cd08627-0bfd-47cc-bbd9-50a85242b475}</Project>
+      <Name>Network</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -21,6 +21,16 @@ namespace Logic
 
         public static ControllerMode Mode { get; set; }
 
+        public static Client Client
+        {
+            get { return _client; }
+        }
+
+        public static Server Server
+        {
+            get { return _server; }
+        }
+
         static Controller()
         {
             _client = null;
