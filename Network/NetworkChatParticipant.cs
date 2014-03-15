@@ -84,13 +84,13 @@ namespace Network
             _micPipe.Close();
         }
 
-        public void Start()
+        public virtual void Start()
         {
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
         }
 
-        public void Stop()
+        public virtual void Stop()
         {
             StopReceiving();
             AudioHelper.StopPlaying();

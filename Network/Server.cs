@@ -279,7 +279,7 @@ namespace Network
         /// It spawns several threads for listening and processing.
         /// client messages.
         /// </summary>
-        public new void Start()
+        public override void Start()
         {
             base.Start();
 
@@ -293,7 +293,7 @@ namespace Network
         /// <summary>
         /// Stop the server.
         /// </summary>
-        public new void Stop()
+        public override void Stop()
         {
             _isWorking = false;
             Thread.Sleep(1000);    // let worker threads finish

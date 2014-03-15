@@ -60,7 +60,11 @@ namespace Network
             ReceiveMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Fr);
         }
 
-        private IEnumerable<IPAddress> DetectServers()
+        /// <summary>
+        /// Return a list of available server IP addresses.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<IPAddress> DetectServers()
         {
             Byte[] dgram = new byte[256];
             List<IPAddress> serverIPs = new List<IPAddress>();
@@ -187,7 +191,6 @@ namespace Network
             byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
 
             UdpClient client = NetworkHelper.InitUdpClient();
-            // client.ExclusiveAddressUse = false;
             client.JoinMulticastGroup(ReceiveMulticastGroupAddr);
 
             IPEndPoint localEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.MULTICAST_PORT);
@@ -215,21 +218,17 @@ namespace Network
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
-        public new void Start()
+        public override void Start(IPAddress serverAddr)
         {
-            IEnumerable<IPAddress> serverIPs = DetectServers();
-            if (serverIPs.Count() > 0)
-            {
-                _servAddr = serverIPs.First();
-                UpdateClientInfo();
-                base.Start();
-            }
+            _servAddr = serverAddr;
+            UpdateClientInfo();
+            base.Start();
         }
 
         /// <summary>
         /// Stop client.
         /// </summary>
-        public new void Stop()
+        public override void Stop()
         {
             base.Stop();
         }

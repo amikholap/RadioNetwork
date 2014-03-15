@@ -48,7 +48,7 @@ namespace Logic
         {
             if (Mode != ControllerMode.Client)
             {
-                // stop any existing non client processes
+                // stop any existing process
                 Stop();
 
                 // create Client instance
@@ -57,14 +57,20 @@ namespace Logic
                 // find a server and connect to it
                 try
                 {
-                    _client.Start();
-                    Mode = ControllerMode.Client;
+                    var servers = _client.DetectServers().ToList();
+                    if (servers.Count == 0)
+                    {
+                    }
+                    else
+                    {
+                        _client.Start(servers[0]);
+                        Mode = ControllerMode.Client;
+                    }
                 }
                 catch (Exception e)
                 {
                     Mode = ControllerMode.None;
                     logger.Error("Unhandled exception while starting client.", e);
-                    return;
                 }
             }
         }
