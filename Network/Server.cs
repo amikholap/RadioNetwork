@@ -22,6 +22,12 @@ namespace Network
         /// When set to false server will shut down in several seconds.
         /// </summary>
         private volatile bool _isWorking;
+
+        /// <summary>
+        /// Cliens collection should be modified only from
+        /// WPF dispacher thread to be properly updated on UI.
+        /// To accomplish this use Dispatcher.Invoke.
+        /// </summary>
         private ObservableCollection<Client> _clients;
         private Dictionary<IPAddress, UdpClient> _mcastClients;
 
@@ -144,19 +150,20 @@ namespace Network
                                 // add a new client to the list only if
                                 // a client with such IP address doesn't exist
                                 Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
-                                if (existingClient != null)
+                                if (existingClient == null)
                                 {
-                                    _clients.Add(new Client(clientAddr, callsign, fr, ft));
-                                    UpdateMulticastClients();
+                                    Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
                                     logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
-                                    break;
                                 }
-
-                                // a client with such IP address already exists
-                                // update it
-                                existingClient.Callsign = callsign;
-                                existingClient.Fr = fr;
-                                existingClient.Ft = ft;
+                                else
+                                {
+                                    // a client with such IP address already exists
+                                    // update it
+                                    existingClient.Callsign = callsign;
+                                    existingClient.Fr = fr;
+                                    existingClient.Ft = ft;
+                                }
+                                UpdateMulticastClients();
 
                                 break;
                             default:
@@ -184,8 +191,8 @@ namespace Network
             // a fresh list of required mmulticast groups
             var newAddrs = _clients.Select(c => c.TransmitMulticastGroupAddr).Distinct().ToArray();
 
-            IEnumerable<IPAddress> toAdd = newAddrs.Except(currentAddrs);
-            IEnumerable<IPAddress> toRemove = currentAddrs.Except(newAddrs);
+            List<IPAddress> toAdd = newAddrs.Except(currentAddrs).ToList();
+            List<IPAddress> toRemove = currentAddrs.Except(newAddrs).ToList();
 
             // initialize UdpClients for new clients
             foreach (IPAddress addr in toAdd)
@@ -292,7 +299,7 @@ namespace Network
             Thread.Sleep(1000);    // let worker threads finish
 
             // close all UdpClients
-            _clients.Clear();
+            Dispatcher.Invoke((Action)(() => _clients.Clear()));
             UpdateMulticastClients();
 
             base.Stop();

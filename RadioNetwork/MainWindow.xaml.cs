@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using Logic;
 
 
+
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
 

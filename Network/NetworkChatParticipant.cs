@@ -8,11 +8,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Windows.Threading;
 using System.Threading.Tasks;
 
 namespace Network
 {
-    public class NetworkChatParticipant
+    public class NetworkChatParticipant : DispatcherObject
     {
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
