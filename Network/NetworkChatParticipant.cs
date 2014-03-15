@@ -23,7 +23,7 @@ namespace Network
 
         protected NamedPipeClientStream _micPipe;
 
-        private bool _listenPing;
+        private volatile bool _listenPing;
         protected bool _connectPing;
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
@@ -82,10 +82,7 @@ namespace Network
 
         public void StopListenPingThread()
         {
-            lock (this)
-            {
-                _listenPing = false;
-            }
+            _listenPing = false;
         }
 
 
