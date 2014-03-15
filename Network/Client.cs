@@ -16,7 +16,7 @@ namespace Network
     {
         private IPAddress _servAddr;
         private UdpClient _streamClient;
-
+        private bool _connected;
         /// <summary>
         /// Client's callsign.
         /// </summary>
@@ -162,7 +162,39 @@ namespace Network
             base.StopStreaming();
             _streamClient.Close();
         }
+        protected void StartPing(IPAddress PingAddr, int PING_PORT)
+        {
+            double Delta = 0;
+            DateTime dtStart;
+            base._connectPing = true;
+            while (base._connectPing == true)
+            {
+                dtStart = DateTime.Now;
+                StartAsyncPing(PingAddr, PING_PORT);
+                Delta = (DateTime.Now - dtStart).TotalMilliseconds;
+                if (Delta < 5000)
+                {
+                    _connected = true;
+                    Thread.Sleep(5000 - (int)Delta);
+                }
+                else
+                    _connected = false;
+            }
+        }
 
+        public void StartConnectPingThread(IPAddress PingAddr, int PING_PORT)
+        {
+            base._connectPingThread = new Thread(() => StartPing(PingAddr, PING_PORT));
+            base._connectPingThread.Start();
+        }
+
+        public void StopConnectPingThread()
+        {
+            lock (this)
+            {
+                base._connectPing = false;
+            }
+        }
         /// <summary>
         /// Start capturing audio from mic and send to the server.
         /// </summary>

@@ -94,5 +94,29 @@ namespace Network.Properties {
                 this["BUFFER_SIZE"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("41666")]
+        public int PING_PORT_OUT_SERVER {
+            get {
+                return ((int)(this["PING_PORT_OUT_SERVER"]));
+            }
+            set {
+                this["PING_PORT_OUT_SERVER"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("41667")]
+        public int PING_PORT_IN_SERVER {
+            get {
+                return ((int)(this["PING_PORT_IN_SERVER"]));
+            }
+            set {
+                this["PING_PORT_IN_SERVER"] = value;
+            }
+        }
     }
 }

@@ -20,5 +20,11 @@
     <Setting Name="BUFFER_SIZE" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">100</Value>
     </Setting>
+    <Setting Name="PING_PORT_OUT_SERVER" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">41666</Value>
+    </Setting>
+    <Setting Name="PING_PORT_IN_SERVER" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">41667</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

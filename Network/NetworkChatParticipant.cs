@@ -23,6 +23,11 @@ namespace Network
 
         protected NamedPipeClientStream _micPipe;
 
+        private bool _listenPing;
+        protected bool _connectPing;
+        private Thread _listenPingThread;
+        protected Thread _connectPingThread;
+
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
 
@@ -40,8 +45,71 @@ namespace Network
 
         protected NetworkChatParticipant()
         {
+            _connectPing = false;
+            _listenPing = false;
             _receiving = false;
+            _listenPing = false;
             Addr = NetworkHelper.GetLocalIPAddress();
+        }
+        protected void ListenPingThread(IPAddress PingAddr, int PING_PORT)
+        {
+            TcpListener listener = new TcpListener(PingAddr, PING_PORT);
+            listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            TcpClient tcpClient;
+            Int32 sleepTime = 200;
+            listener.Server.ReceiveTimeout = 5000;
+            listener.Server.SendTimeout = 5000;
+            listener.Start();
+            _listenPing = true;
+            while (_listenPing)
+            {
+                // Step 0: Client connection
+                if (!listener.Pending())
+                {
+                    Thread.Sleep(sleepTime);  // choose a number (in milliseconds) that makes sense
+                    continue;           // skip to next iteration of loop
+                }
+                tcpClient = listener.AcceptTcpClient();
+                tcpClient.Close();
+            }
+        }
+
+        public void StartListenPingThread(IPAddress PingAddr, int PING_PORT)
+        {
+            _listenPingThread = new Thread(() => ListenPingThread(PingAddr, PING_PORT));
+            _listenPingThread.Start();
+        }
+
+        public void StopListenPingThread()
+        {
+            lock (this)
+            {
+                _listenPing = false;
+            }
+        }
+
+
+        protected bool StartAsyncPing(IPAddress PingAddr, int PING_PORT)
+        {
+            using (TcpClient tcp = new TcpClient())
+            {
+                IAsyncResult ar = tcp.BeginConnect(PingAddr, PING_PORT, null, null);
+                System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
+                try
+                {
+                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5), false))
+                    {
+                        tcp.Close();
+                        return false;
+                    }
+                    tcp.EndConnect(ar);
+                }
+                finally
+                {
+                    wh.Close();
+                }
+            }
+            return true;
         }
 
         protected void StartReceiving()
