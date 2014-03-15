@@ -22,7 +22,7 @@ namespace Network
         /// When set to false server will shut down in several seconds.
         /// </summary>
         private volatile bool _isWorking;
-
+        private int pingSendWaitTimeOut = 10000;
         /// <summary>
         /// Cliens collection should be modified only from
         /// WPF dispacher thread to be properly updated on UI.
@@ -183,7 +183,7 @@ namespace Network
 
         public void StartPing()
         {
-            int TimeOut = 5000;
+            int TimeOut = pingSendWaitTimeOut;
             base._connectPing = true;
             while (base._connectPing == true)
             {
@@ -322,7 +322,7 @@ namespace Network
 
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
-            StartListenPingThread(IPAddress.Any, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
+            StartListenPingThread(NetworkHelper.GetLocalIPAddress(), Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
             StartConnectPingThread();
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();

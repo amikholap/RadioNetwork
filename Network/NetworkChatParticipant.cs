@@ -27,6 +27,7 @@ namespace Network
         protected bool _connectPing;
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
+        private int pingWaitAccept = 8;     // in sec
 
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
@@ -56,22 +57,17 @@ namespace Network
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             TcpClient tcpClient;
-            Int32 sleepTime = 200;
-            listener.Server.ReceiveTimeout = 5000;
-            listener.Server.SendTimeout = 5000;
+            listener.Server.ReceiveTimeout = 50000;
+            listener.Server.SendTimeout = 100;
             listener.Start();
             _listenPing = true;
             while (_listenPing)
             {
                 // Step 0: Client connection
-                if (!listener.Pending())
-                {
-                    Thread.Sleep(sleepTime);  // choose a number (in milliseconds) that makes sense
-                    continue;           // skip to next iteration of loop
-                }
                 tcpClient = listener.AcceptTcpClient();
                 tcpClient.Close();
             }
+            listener.Stop();
         }
 
         public void StartListenPingThread(IPAddress PingAddr, int PING_PORT)
@@ -94,7 +90,7 @@ namespace Network
                 System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
                 try
                 {
-                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5), false))
+                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(pingWaitAccept), false))
                     {
                         tcp.Close();
                         return false;

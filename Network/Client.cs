@@ -17,6 +17,7 @@ namespace Network
         private IPAddress _servAddr;
         private UdpClient _streamClient;
         private bool _connected;
+        private int pingWaitReply = 7000;
         /// <summary>
         /// Client's callsign.
         /// </summary>
@@ -165,20 +166,24 @@ namespace Network
         protected void StartPing(IPAddress PingAddr, int PING_PORT)
         {
             double Delta = 0;
+            bool th = false;
             DateTime dtStart;
             base._connectPing = true;
             while (base._connectPing == true)
             {
                 dtStart = DateTime.Now;
-                StartAsyncPing(PingAddr, PING_PORT);
+                th = StartAsyncPing(PingAddr, PING_PORT);
                 Delta = (DateTime.Now - dtStart).TotalMilliseconds;
-                if (Delta < 5000)
+                if (Delta < pingWaitReply || th == true)
                 {
                     _connected = true;
-                    Thread.Sleep(5000 - (int)Delta);
+                    Thread.Sleep(pingWaitReply - (int)Delta);
                 }
                 else
+                {
                     _connected = false;
+                    throw new System.ArgumentException("Server is not not responding", "Ping server");
+                }
             }
         }
 
@@ -255,6 +260,8 @@ namespace Network
             _servAddr = serverAddr;
             UpdateClientInfo();
             base.Start();
+            StartListenPingThread(NetworkHelper.GetLocalIPAddress(), Network.Properties.Settings.Default.PING_PORT_OUT_SERVER);
+            StartConnectPingThread(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
         }
 
         /// <summary>
@@ -263,6 +270,10 @@ namespace Network
         public override void Stop()
         {
             base.Stop();
+            StopConnectPingThread();
+            StopListenPingThread();
+            _connected = false;
+            Thread.Sleep(1000);    // let worker threads finish
         }
     }
 }
