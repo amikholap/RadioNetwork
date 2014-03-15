@@ -255,6 +255,8 @@ namespace Network
                 _servAddr = serverIPs.First();
                 UpdateClientInfo();
                 base.Start();
+                StartListenPingThread(_servAddr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER);
+                StartConnectPingThread(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
             }
         }
 
@@ -264,6 +266,8 @@ namespace Network
         public new void Stop()
         {
             base.Stop();
+            StopConnectPingThread();
+            StopListenPingThread();
             _connected = false;
             Thread.Sleep(1000);    // let worker threads finish
         }
