@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using Logic;
 
 
+
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
 
@@ -33,8 +34,8 @@ namespace RadioNetwork
         private void StartClient()
         {
             string callsign = _cdc.Callsign;
-            int fr = int.Parse(_cdc.Fr);
-            int ft = int.Parse(_cdc.Ft);
+            var fr = UInt32.Parse(_cdc.Fr);
+            var ft = UInt32.Parse(_cdc.Ft);
 
             Controller.StartClient(callsign, fr, ft);
         }
@@ -54,9 +55,8 @@ namespace RadioNetwork
             PushToTalkButton.ClickMode = ClickMode.Press;
             _isTalking = false;
 
-            this._sdc = new ServerDataContext();
-            this._cdc = new ClientDataContext();
-            this.DataContext = _cdc;
+            _cdc = new ClientDataContext();
+            ClientLayout.DataContext = _cdc;
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
@@ -76,6 +76,12 @@ namespace RadioNetwork
 
             Controller.Stop();
 
+            if (_cdc == null)
+            {
+                _cdc = new ClientDataContext();
+            }
+            ClientLayout.DataContext = _cdc;
+
             ServerLayout.Visibility = System.Windows.Visibility.Collapsed;
             ClientLayout.Visibility = System.Windows.Visibility.Visible;
         }
@@ -91,6 +97,9 @@ namespace RadioNetwork
             ServerModeMenuItem.IsChecked = true;
 
             StartServer();
+
+            _sdc = new ServerDataContext(Controller.Server);
+            ServerLayout.DataContext = _sdc;
 
             ClientLayout.Visibility = System.Windows.Visibility.Collapsed;
             ServerLayout.Visibility = System.Windows.Visibility.Visible;

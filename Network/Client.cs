@@ -14,36 +14,50 @@ namespace Network
 {
     public class Client : NetworkChatParticipant
     {
-        private IPAddress _serverIP;
+        private IPAddress _servAddr;
+        private UdpClient _streamClient;
         private bool _connected;
         /// <summary>
         /// Client's callsign.
         /// </summary>
-        /// 
-        
         public string Callsign { get; set; }
         /// <summary>
         /// Receive frequency.
         /// </summary>
-        public int Fr { get; set; }
+        public UInt32 Fr { get; set; }
         /// <summary>
         /// Transmit frequency.
         /// </summary>
-        public int Ft { get; set; }
+        public UInt32 Ft { get; set; }
+        /// <summary>
+        /// IP multicast group where the client will send audio data.
+        /// </summary>
+        public IPAddress TransmitMulticastGroupAddr { get; set; }
+        /// <summary>
+        /// IP multicast group where the client will listen for audio data.
+        /// </summary>
+        public IPAddress ReceiveMulticastGroupAddr { get; set; }
 
 
-        public Client(string callsign, int fr, int ft)
+        public Client(string callsign, UInt32 fr, UInt32 ft)
             : base()
         {
             Callsign = callsign;
             Fr = fr;
             Ft = ft;
+            UpdateMulticastAddrs();
         }
 
-        public Client(IPAddress addr, string callsign, int fr, int ft)
+        public Client(IPAddress addr, string callsign, UInt32 fr, UInt32 ft)
             : this(callsign, fr, ft)
         {
             Addr = addr;
+        }
+
+        protected void UpdateMulticastAddrs()
+        {
+            TransmitMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Ft);
+            ReceiveMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Fr);
         }
 
         private IEnumerable<IPAddress> DetectServers()
@@ -51,7 +65,7 @@ namespace Network
             Byte[] dgram = new byte[256];
             List<IPAddress> serverIPs = new List<IPAddress>();
 
-            UdpClient udpClient = InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient udpClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             udpClient.EnableBroadcast = true;
             // determine port && BroadcastAddr
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -102,12 +116,13 @@ namespace Network
         public void UpdateClientInfo()
         {
             Byte[] dgram = new Byte[256];
-            IPEndPoint ipEndPoint = new IPEndPoint(_serverIP, Network.Properties.Settings.Default.TCP_PORT);
+            IPEndPoint ipEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.TCP_PORT);
             TcpClient tcpClient = new TcpClient();
 
             try
             {
                 tcpClient.Connect(ipEndPoint);
+
                 string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
                 dgram = System.Text.Encoding.UTF8.GetBytes(message);
                 using (NetworkStream ns = tcpClient.GetStream())
@@ -126,15 +141,23 @@ namespace Network
             }
         }
 
-        protected override void DataReceived(IPAddress addr, byte[] data)
+        /// <summary>
+        /// Additionally prepare a UDP connection to the server.
+        /// </summary>
+        public override void PrepareStreaming()
         {
-            if (!this.Addr.Equals(addr))
-            {
-                AudioHelper.AddSamples(data);
-            }
+            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            base.PrepareStreaming();
         }
 
-
+        /// <summary>
+        /// Close UDP connection to the server.
+        /// </summary>
+        public override void StopStreaming()
+        {
+            base.StopStreaming();
+            _streamClient.Close();
+        }
         protected void StartPing(IPAddress PingAddr, int PING_PORT)
         {
             double Delta = 0;
@@ -168,31 +191,79 @@ namespace Network
                 base._connectPing = false;
             }
         }
+        /// <summary>
+        /// Start capturing audio from mic and send to the server.
+        /// </summary>
+        protected override void StartStreamingLoop()
+        {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
+
+            if (_servAddr == null)
+            {
+                return;
+            }
+            IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+
+            while (true)
+            {
+                _micPipe.Read(buffer, 0, buffer.Length);
+                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
+            }
+        }
+
+        /// <summary>
+        /// Start receiving audio from a multicast address derived from Fr and send it to player buffer.
+        /// </summary>
+        protected override void StartReceivingLoop()
+        {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.MAX_BUFFER_SIZE];
+
+            UdpClient client = NetworkHelper.InitUdpClient();
+            // client.ExclusiveAddressUse = false;
+            client.JoinMulticastGroup(ReceiveMulticastGroupAddr);
+
+            IPEndPoint localEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.MULTICAST_PORT);
+            client.Client.Bind(localEP);
+
+            _receiving = true;
+            while (_receiving)
+            {
+                try
+                {
+                    buffer = client.Receive(ref localEP);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                    continue;
+                }
+
+                // add received data to the player queue
+                AudioHelper.AddSamples(buffer);
+            }
+            client.Close();
+        }
 
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
-        public void Start()
+        public new void Start()
         {
             IEnumerable<IPAddress> serverIPs = DetectServers();
             if (serverIPs.Count() > 0)
             {
-                _serverIP = serverIPs.First();
+                _servAddr = serverIPs.First();
                 UpdateClientInfo();
                 base.Start();
-                //StartListenPingThread(_serverIP, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER);
-                //StartConnectPingThread(_serverIP, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);                
             }
         }
 
         /// <summary>
         /// Stop client.
         /// </summary>
-        public void Stop()
+        public new void Stop()
         {
-            base.Stop();            
-            //StopConnectPingThread();
-            //StopListenPingThread();
+            base.Stop();
             _connected = false;
             Thread.Sleep(1000);    // let worker threads finish
         }

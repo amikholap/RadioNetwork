@@ -21,6 +21,16 @@ namespace Logic
 
         public static ControllerMode Mode { get; set; }
 
+        public static Client Client
+        {
+            get { return _client; }
+        }
+
+        public static Server Server
+        {
+            get { return _server; }
+        }
+
         static Controller()
         {
             _client = null;
@@ -34,7 +44,7 @@ namespace Logic
         /// <param name="callsign"></param>
         /// <param name="fr"></param>
         /// <param name="ft"></param>
-        public static void StartClient(string callsign, int fr, int ft)
+        public static void StartClient(string callsign, UInt32 fr, UInt32 ft)
         {
             if (Mode != ControllerMode.Client)
             {
@@ -49,7 +59,6 @@ namespace Logic
                 {
                     _client.Start();
                     Mode = ControllerMode.Client;
-
                 }
                 catch (Exception e)
                 {
@@ -112,6 +121,9 @@ namespace Logic
                 case ControllerMode.Client:
                     _client.StartStreaming();
                     break;
+                case ControllerMode.Server:
+                    _server.StartStreaming();
+                    break;
             }
         }
 
@@ -121,6 +133,9 @@ namespace Logic
             {
                 case ControllerMode.Client:
                     _client.StopStreaming();
+                    break;
+                case ControllerMode.Server:
+                    _server.StopStreaming();
                     break;
             }
         }

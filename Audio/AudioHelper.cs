@@ -36,29 +36,8 @@ namespace Audio
         public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
             // pipe for audio data from mic
-            if (_micPipe != null)
-            {
-                _micPipe.Close();
-            }
             _micPipe = new NamedPipeServerStream("mic", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            _micPipe.BeginWaitForConnection((r) =>
-            {
-                try
-                {
-                    _micPipe.EndWaitForConnection(r);
-                }
-                catch (Exception e)
-                {
-                    if (e is IOException || e is ObjectDisposedException)
-                    {
-                        // the pipe was closed before a connection could be established
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }, null);
+            _micPipe.BeginWaitForConnection((r) => _micPipe.EndWaitForConnection(r), null);
 
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;
@@ -83,8 +62,14 @@ namespace Audio
             {
                 // recording hasn't started
             }
+            _micPipe.Close();
         }
 
+        /// <summary>
+        /// Prepare to play audio.
+        /// Data to play is provided using AddSamples.
+        /// </summary>
+        /// <param name="codec"></param>
         public static void StartPlaying(INetworkChatCodec codec)
         {
             // data provider for WaveOut

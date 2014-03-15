@@ -8,22 +8,22 @@
     <Setting Name="TCP_PORT" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">41854</Value>
     </Setting>
-    <Setting Name="BUFFER_SIZE" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">500</Value>
+    <Setting Name="MULTICAST_PORT" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">41856</Value>
+    </Setting>
+    <Setting Name="SERVER_AUDIO_PORT" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">41855</Value>
     </Setting>
     <Setting Name="MAX_BUFFER_SIZE" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">1048576</Value>
     </Setting>
-    <Setting Name="AUDIO_RECEIVE_PORT" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">41855</Value>
-    </Setting>
-    <Setting Name="AUDIO_TRANSMIT_PORT" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">41856</Value>
-    </Setting>
-    <Setting Name="PING_PORT_IN_SERVER" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">41666</Value>
+    <Setting Name="BUFFER_SIZE" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
     </Setting>
     <Setting Name="PING_PORT_OUT_SERVER" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">41666</Value>
+    </Setting>
+    <Setting Name="PING_PORT_IN_SERVER" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">41667</Value>
     </Setting>
   </Settings>

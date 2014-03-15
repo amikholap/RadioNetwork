@@ -1,6 +1,7 @@
 ﻿using Audio;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -21,13 +22,29 @@ namespace Network
         /// When set to false server will shut down in several seconds.
         /// </summary>
         private volatile bool _isWorking;
-        private List<Client> _clients;
+
+        /// <summary>
+        /// Cliens collection should be modified only from
+        /// WPF dispacher thread to be properly updated on UI.
+        /// To accomplish this use Dispatcher.Invoke.
+        /// </summary>
+        private ObservableCollection<Client> _clients;
+        private Dictionary<IPAddress, UdpClient> _mcastClients;
+
+        public ObservableCollection<Client> Clients
+        {
+            get
+            {
+                return _clients;
+            }
+        }
 
         public Server()
             : base()
         {
             _isWorking = true;
-            _clients = new List<Client>();
+            _clients = new ObservableCollection<Client>();
+            _mcastClients = new Dictionary<IPAddress, UdpClient>();
         }
 
         /// <summary>
@@ -37,7 +54,7 @@ namespace Network
         private void ListenNewClients()
         {
             IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
-            UdpClient client = InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient client = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             client.EnableBroadcast = true;
 
             // listen for new clients
@@ -81,7 +98,6 @@ namespace Network
             client.Close();
         }
 
-
         /// <summary>
         /// Listens on TCP_PORT for any client actions such as
         /// conecting and updating 
@@ -102,9 +118,9 @@ namespace Network
                     {
                         IPAddress clientAddr;    // client's IP address
                         string callsign;         // client's callsign
-                        int fr, ft;              // client's receive and transmit frequencies
+                        UInt32 fr, ft;           // client's receive and transmit frequencies
 
-                        var buf = new byte[100];
+                        var buf = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
                         string[] lines = request.Split('\n');
@@ -119,8 +135,8 @@ namespace Network
                                 try
                                 {
                                     callsign = lines[1];
-                                    fr = int.Parse(lines[2].Split(',')[0]);
-                                    ft = int.Parse(lines[2].Split(',')[1]);
+                                    fr = UInt32.Parse(lines[2].Split(',')[0]);
+                                    ft = UInt32.Parse(lines[2].Split(',')[1]);
                                 }
                                 catch (Exception e)
                                 {
@@ -133,19 +149,21 @@ namespace Network
 
                                 // add a new client to the list only if
                                 // a client with such IP address doesn't exist
-                                if (!_clients.Exists(c => c.Addr == clientAddr))
+                                Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
+                                if (existingClient == null)
                                 {
-                                    _clients.Add(new Client(clientAddr, callsign, fr, ft));
+                                    Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
                                     logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
-                                    break;
                                 }
-
-                                // a client with such IP address already exists
-                                // update it
-                                Client client = _clients.Find(c => c.Addr == clientAddr);
-                                client.Callsign = callsign;
-                                client.Fr = fr;
-                                client.Ft = ft;
+                                else
+                                {
+                                    // a client with such IP address already exists
+                                    // update it
+                                    existingClient.Callsign = callsign;
+                                    existingClient.Fr = fr;
+                                    existingClient.Ft = ft;
+                                }
+                                UpdateMulticastClients();
 
                                 break;
                             default:
@@ -161,14 +179,6 @@ namespace Network
                 }
             }
             listener.Stop();
-        }
-
-        protected override void DataReceived(IPAddress addr, byte[] data)
-        {
-            if (!this.Addr.Equals(addr))
-            {
-                AudioHelper.AddSamples(data);
-            }
         }
 
         public void StartPing()
@@ -207,9 +217,108 @@ namespace Network
         /// It spawns several threads for listening and processing.
         /// client messages.
         /// </summary>
-        public void Start()
+        /// <summary>
+        /// Update UDPClients for multicast groups.
+        /// </summary>
+        private void UpdateMulticastClients()
+        {
+            // already initialized multicast groups
+            var currentAddrs = _mcastClients.Keys;
+            // a fresh list of required mmulticast groups
+            var newAddrs = _clients.Select(c => c.TransmitMulticastGroupAddr).Distinct().ToArray();
+
+            List<IPAddress> toAdd = newAddrs.Except(currentAddrs).ToList();
+            List<IPAddress> toRemove = currentAddrs.Except(newAddrs).ToList();
+
+            // initialize UdpClients for new clients
+            foreach (IPAddress addr in toAdd)
+            {
+                UdpClient client = NetworkHelper.InitUdpClient();
+                client.JoinMulticastGroup(addr);
+                _mcastClients[addr] = client;
+            }
+
+            // close UdpClients for disconnected clients
+            foreach (IPAddress addr in toRemove)
+            {
+                UdpClient client = _mcastClients[addr];
+                _mcastClients.Remove(addr);
+                client.DropMulticastGroup(addr);
+                client.Close();
+            }
+        }
+
+        protected override void StartStreamingLoop()
+        {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
+
+            while (true)
+            {
+                _micPipe.Read(buffer, 0, buffer.Length);
+                foreach (var item in _mcastClients)
+                {
+                    item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                }
+            }
+        }
+
+        protected override void StartReceivingLoop()
+        {
+            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
+            ClientActivity lastActive = new ClientActivity();
+
+            IPEndPoint clientEP = null;
+            IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            UdpClient client = NetworkHelper.InitUdpClient(anyClientEP);
+
+            _receiving = true;
+            while (_receiving)
+            {
+                try
+                {
+                    buffer = client.Receive(ref clientEP);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                    continue;
+                }
+
+                // change active client if it wasn't set or was silent for too long
+                if (lastActive.Client == null || DateTime.Now - lastActive.last_talked > TimeSpan.FromSeconds(0.5))
+                {
+                    lastActive.Client = _clients.FirstOrDefault(c => c.Addr.Equals(clientEP.Address));
+                }
+
+                // process audio data only from active client
+                if (lastActive.Client != null && clientEP.Address.Equals(lastActive.Client.Addr))
+                {
+                    // add received data to the player queue
+                    AudioHelper.AddSamples(buffer);
+
+                    // spread server message to all clients
+                    foreach (var item in _mcastClients)
+                    {
+                        item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    }
+
+                    // update last_talked timestamp
+                    lastActive.last_talked = DateTime.Now;
+                }
+            }
+
+            client.Close();
+        }
+
+        /// <summary>
+        /// Launch the server.
+        /// It spawns several threads for listening and processing.
+        /// client messages.
+        /// </summary>
+        public new void Start()
         {
             base.Start();
+
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
             StartListenPingThread(IPAddress.Any, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
@@ -221,13 +330,18 @@ namespace Network
         /// <summary>
         /// Stop the server.
         /// </summary>
-        public void Stop()
+        public new void Stop()
         {
-            base.Stop();
+            _isWorking = false;
             StopConnectPingThread();
             StopListenPingThread();
-            _isWorking = false;
             Thread.Sleep(1000);    // let worker threads finish
+
+            // close all UdpClients
+            Dispatcher.Invoke((Action)(() => _clients.Clear()));
+            UpdateMulticastClients();
+
+            base.Stop();
         }
     }
 }

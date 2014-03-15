@@ -71,7 +71,52 @@
                 <Button Name="PushToTalkButton" Grid.ColumnSpan="2" Grid.Row="5" Margin="25,5,25,0" Click="PushToTalkButton_Click">Тангента</Button>
             </Grid>
         </Grid>
-        <Grid Name="ServerLayout" Visibility="Collapsed" >
+
+        <Grid Name="ServerLayout" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="3*" MinHeight="150" />
+                <RowDefinition Height="5*" />
+                <RowDefinition Height="2*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Column="0" Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="4*" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+                <Label Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left">Позывной</Label>
+                <TextBox Name="ServerCallsignInput" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch">
+                    <TextBox.Text>
+                        <Binding Path="Callsign" Mode="TwoWay">
+                            <Binding.ValidationRules>
+                                <ExceptionValidationRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+
+                <DataGrid Name="ClientsDataGrid" Grid.ColumnSpan="2" Grid.Row="1" AutoGenerateColumns="False" ItemsSource="{Binding Clients}" >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Позывной" IsReadOnly="True" Binding="{Binding Path=Callsign}" Width="*" >
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Ч. пер." IsReadOnly="True" Binding="{Binding Path=Ft}" >
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Ч. пр." IsReadOnly="True" Binding="{Binding Path=Fr}" >
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Button Name="ServerPushToTalkButton" Grid.ColumnSpan="2" Grid.Row="2" Margin="25,5,25,0" Click="PushToTalkButton_Click">Тангента</Button>
+            </Grid>
 
         </Grid>
     </StackPanel>
