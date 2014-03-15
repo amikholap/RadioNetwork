@@ -15,6 +15,7 @@ namespace Network
     public class Client : NetworkChatParticipant
     {
         private IPAddress _servAddr;
+        private UdpClient _streamClient;
 
         /// <summary>
         /// Client's callsign.
@@ -138,6 +139,24 @@ namespace Network
             {
                 tcpClient.Close();
             }
+        }
+
+        /// <summary>
+        /// Additionally prepare a UDP connection to the server.
+        /// </summary>
+        public override void PrepareStreaming()
+        {
+            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            base.PrepareStreaming();
+        }
+
+        /// <summary>
+        /// Close UDP connection to the server.
+        /// </summary>
+        public override void StopStreaming()
+        {
+            base.StopStreaming();
+            _streamClient.Close();
         }
 
         /// <summary>

@@ -18,7 +18,6 @@ namespace Network
 
         protected volatile bool _receiving;
 
-        protected UdpClient _streamClient;
         private Thread _streamingThread;
 
         protected NamedPipeClientStream _micPipe;
@@ -57,10 +56,8 @@ namespace Network
         /// <summary>
         /// Initialize UDP client and mic pipe and start capturing audio.
         /// </summary>
-        protected void PrepareStreaming()
+        public virtual void PrepareStreaming()
         {
-            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-
             // capture audio stream from mic and write it to "mic" named pipe
             AudioHelper.StartCapture(new UncompressedPcmChatCodec());
 
@@ -79,12 +76,11 @@ namespace Network
             _streamingThread.Start();
         }
 
-        public void StopStreaming()
+        public virtual void StopStreaming()
         {
             AudioHelper.StopCapture();
             _streamingThread.Abort();
             _micPipe.Close();
-            _streamClient.Close();
         }
 
         public void Start()
