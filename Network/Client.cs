@@ -218,7 +218,7 @@ namespace Network
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
-        public override void Start(IPAddress serverAddr)
+        public void Start(IPAddress serverAddr)
         {
             _servAddr = serverAddr;
             UpdateClientInfo();
