@@ -238,14 +238,20 @@ namespace Network
             {
                 UdpClient client = NetworkHelper.InitUdpClient();
                 client.JoinMulticastGroup(addr);
-                _mcastClients[addr] = client;
+                lock (_mcastClients)
+                {
+                    _mcastClients[addr] = client;
+                }
             }
 
             // close UdpClients for disconnected clients
             foreach (IPAddress addr in toRemove)
             {
                 UdpClient client = _mcastClients[addr];
-                _mcastClients.Remove(addr);
+                lock (_mcastClients)
+                {
+                    _mcastClients.Remove(addr);
+                }
                 client.DropMulticastGroup(addr);
                 client.Close();
             }
@@ -258,9 +264,12 @@ namespace Network
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                foreach (var item in _mcastClients.ToArray())
+                lock (_mcastClients)
                 {
-                    item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    foreach (var item in _mcastClients)
+                    {
+                        item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    }
                 }
             }
         }
@@ -300,9 +309,12 @@ namespace Network
                     AudioHelper.AddSamples(buffer);
 
                     // spread server message to all clients
-                    foreach (var item in _mcastClients.ToArray())
+                    lock (_mcastClients)
                     {
-                        item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                        foreach (var item in _mcastClients)
+                        {
+                            item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
+                        }
                     }
 
                     // update last_talked timestamp

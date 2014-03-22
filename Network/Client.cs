@@ -175,12 +175,10 @@ namespace Network
                 Delta = (DateTime.Now - dtStart).TotalMilliseconds;
                 if (Delta < pingWaitReply || th == true)
                 {
-                    _connected = true;
                     Thread.Sleep(pingWaitReply - (int)Delta);
                 }
                 else
                 {
-                    _connected = false;
                     throw new System.ArgumentException("Server is not not responding", "Ping server");
                 }
             }
@@ -271,7 +269,6 @@ namespace Network
             base.Stop();
             StopConnectPingThread();
             StopListenPingThread();
-            _connected = false;
             Thread.Sleep(1000);    // let worker threads finish
         }
     }
