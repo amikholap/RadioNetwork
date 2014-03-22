@@ -25,7 +25,7 @@ namespace Network
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
 
-        private int pingWaitAccept = 1000;
+        private int pingWaitAccept = 2000;
         protected NamedPipeClientStream _micPipe;
 
         protected virtual void StartStreamingLoop() { }
@@ -50,22 +50,20 @@ namespace Network
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             TcpClient tcpClient;
-            Int32 sleepTime = 200;
-            listener.Server.ReceiveTimeout = 500;
-            listener.Server.SendTimeout = 500;
+            listener.Server.ReceiveTimeout = 30000;
+            listener.Server.SendTimeout = 30000;
             listener.Start();
             _listenPing = true;
             while (_listenPing)
             {
                 // Step 0: Client connection
-                if (!listener.Pending())
+                if (listener.Pending())
                 {
-                    Thread.Sleep(sleepTime);  // choose a number (in milliseconds) that makes sense
-                    continue;           // skip to next iteration of loop
+                    tcpClient = listener.AcceptTcpClient();
+                    tcpClient.Close();
                 }
-                tcpClient = listener.AcceptTcpClient();
-                tcpClient.Close();
             }
+            listener.Stop();
         }
 
         public void StartListenPingThread(IPAddress PingAddr, int PING_PORT)
@@ -94,6 +92,9 @@ namespace Network
                         return false;
                     }
                     tcp.EndConnect(ar);
+                }
+                catch (SocketException)
+                {
                 }
                 finally
                 {
