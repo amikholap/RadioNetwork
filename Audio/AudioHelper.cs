@@ -96,12 +96,18 @@ namespace Audio
             }
         }
 
+        /// <summary>
+        /// Set output volume to zero.
+        /// </summary>
         public static void Mute()
         {
             _volume = _waveOut.Volume;
             _waveOut.Volume = 0;
         }
 
+        /// <summary>
+        /// Restore output volume.
+        /// </summary>
         public static void UnMute()
         {
             _waveOut.Volume = _volume;

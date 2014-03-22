@@ -227,8 +227,12 @@ namespace Network
         {
             // already initialized multicast groups
             var currentAddrs = _mcastClients.Keys;
-            // a fresh list of required mmulticast groups
-            var newAddrs = _clients.Select(c => c.TransmitMulticastGroupAddr).Distinct().ToArray();
+
+            // get all disctinct multicast addresses for transmitting
+            // and receiving and update the list of UdpClients
+            var trAddrs = _clients.Select(c => c.TransmitMulticastGroupAddr).Distinct();
+            var recAddrs = _clients.Select(c => c.ReceiveMulticastGroupAddr).Distinct();
+            var newAddrs = trAddrs.Union(recAddrs).ToList();
 
             List<IPAddress> toAdd = newAddrs.Except(currentAddrs).ToList();
             List<IPAddress> toRemove = currentAddrs.Except(newAddrs).ToList();
@@ -257,6 +261,9 @@ namespace Network
             }
         }
 
+        /// <summary>
+        /// Send audio from mic to all clients.
+        /// </summary>
         protected override void StartStreamingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
@@ -264,12 +271,9 @@ namespace Network
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                lock (_mcastClients)
+                foreach (var addr in _clients.Select(c => c.ReceiveMulticastGroupAddr).Distinct().ToList())
                 {
-                    foreach (var item in _mcastClients)
-                    {
-                        item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
-                    }
+                    _mcastClients[addr].Send(buffer, buffer.Length, new IPEndPoint(addr, Network.Properties.Settings.Default.MULTICAST_PORT));
                 }
             }
         }
@@ -308,20 +312,14 @@ namespace Network
                     // add received data to the player queue
                     AudioHelper.AddSamples(buffer);
 
-                    // spread server message to all clients
-                    lock (_mcastClients)
-                    {
-                        foreach (var item in _mcastClients)
-                        {
-                            item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
-                        }
-                    }
+                    // spread the message to other clients with that freq
+                    var mAddr = lastActive.Client.TransmitMulticastGroupAddr;
+                    _mcastClients[mAddr].Send(buffer, buffer.Length, new IPEndPoint(mAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
 
                     // update last_talked timestamp
                     lastActive.last_talked = DateTime.Now;
                 }
             }
-
             client.Close();
         }
 
