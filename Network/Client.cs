@@ -17,6 +17,7 @@ namespace Network
         private IPAddress _servAddr;
         private UdpClient _streamClient;
         private int pingWaitReply = 2000;
+
         /// <summary>
         /// Client's callsign.
         /// </summary>
@@ -39,6 +40,9 @@ namespace Network
         public IPAddress ReceiveMulticastGroupAddr { get; set; }
 
 
+        public event EventHandler<EventArgs> ServerQuit;
+
+
         public Client(string callsign, UInt32 fr, UInt32 ft)
             : base()
         {
@@ -52,6 +56,14 @@ namespace Network
             : this(callsign, fr, ft)
         {
             Addr = addr;
+        }
+
+        protected virtual void OnServerQuit(EventArgs e)
+        {
+            // a temporary variable is required to keep it thread-safe
+            var temp = ServerQuit;
+            if (temp != null)
+                temp(this, e);
         }
 
         protected void UpdateMulticastAddrs()
@@ -162,6 +174,7 @@ namespace Network
             base.StopStreaming();
             _streamClient.Close();
         }
+
         protected void StartPing(IPAddress PingAddr, int PING_PORT)
         {
             double Delta = 0;
@@ -192,11 +205,9 @@ namespace Network
 
         public void StopConnectPingThread()
         {
-            lock (this)
-            {
-                base._connectPing = false;
-            }
+            base._connectPing = false;
         }
+
         /// <summary>
         /// Start capturing audio from mic and send to the server.
         /// </summary>

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
 
@@ -55,22 +54,15 @@ namespace Logic
                 _client = new Client(callsign, fr, ft);
 
                 // find a server and connect to it
-                try
+                var servers = _client.DetectServers().ToList();
+                if (servers.Count == 0)
                 {
-                    var servers = _client.DetectServers().ToList();
-                    if (servers.Count == 0)
-                    {
-                    }
-                    else
-                    {
-                        _client.Start(servers[0]);
-                        Mode = ControllerMode.Client;
-                    }
+                    throw new RNException("Сервер не найден.");
                 }
-                catch (Exception e)
+                else
                 {
-                    Mode = ControllerMode.None;
-                    logger.Error("Unhandled exception while starting client.", e);
+                    _client.Start(servers[0]);
+                    Mode = ControllerMode.Client;
                 }
             }
         }

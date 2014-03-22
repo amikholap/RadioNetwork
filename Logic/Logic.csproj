@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Controller.cs" />
     <Compile Include="ControllerMode.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

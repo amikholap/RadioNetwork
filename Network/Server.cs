@@ -209,10 +209,7 @@ namespace Network
 
         public void StopConnectPingThread()
         {
-            lock (this)
-            {
-                base._connectPing = false;
-            }
+            base._connectPing = false;
         }
 
         /// <summary>
@@ -242,20 +239,14 @@ namespace Network
             {
                 UdpClient client = NetworkHelper.InitUdpClient();
                 client.JoinMulticastGroup(addr);
-                lock (_mcastClients)
-                {
-                    _mcastClients[addr] = client;
-                }
+                _mcastClients[addr] = client;
             }
 
             // close UdpClients for disconnected clients
             foreach (IPAddress addr in toRemove)
             {
                 UdpClient client = _mcastClients[addr];
-                lock (_mcastClients)
-                {
-                    _mcastClients.Remove(addr);
-                }
+                _mcastClients.Remove(addr);
                 client.DropMulticastGroup(addr);
                 client.Close();
             }

@@ -17,27 +17,19 @@ namespace Network
     {
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
+        private volatile bool _listenPing;
+        protected volatile bool _connectPing;
         protected volatile bool _receiving;
 
         private Thread _streamingThread;
-
-        protected NamedPipeClientStream _micPipe;
-
-        private volatile bool _listenPing;
-        protected bool _connectPing;
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
+
         private int pingWaitAccept = 1000;
+        protected NamedPipeClientStream _micPipe;
 
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
-
-        /// <summary>
-        /// Callback that is executed when any audio data is received.
-        /// </summary>
-        /// <param name="addr"></param>
-        /// <param name="data"></param>
-        protected virtual void DataReceived(IPAddress addr, byte[] data) { }
 
         /// <summary>
         /// Machine's IP address.
@@ -52,6 +44,7 @@ namespace Network
             _listenPing = false;
             Addr = NetworkHelper.GetLocalIPAddress();
         }
+
         protected void ListenPingThread(IPAddress PingAddr, int PING_PORT)
         {
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
