@@ -160,7 +160,7 @@ namespace Network
         /// <summary>
         /// Additionally prepare a UDP connection to the server.
         /// </summary>
-        public override void PrepareStreaming()
+        protected override void PrepareStreaming()
         {
             _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
             base.PrepareStreaming();
@@ -175,7 +175,7 @@ namespace Network
             _streamClient.Close();
         }
 
-        protected void StartPing(IPAddress PingAddr, int PING_PORT)
+        protected override void StartSendPingLoop()
         {
             double Delta = 0;
             bool th = false;
@@ -184,7 +184,7 @@ namespace Network
             while (base._connectPing == true)
             {
                 dtStart = DateTime.Now;
-                th = StartAsyncPing(PingAddr, PING_PORT);
+                th = StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
                 Delta = (DateTime.Now - dtStart).TotalMilliseconds;
                 if (Delta < pingWaitReply || th == true)
                 {
@@ -195,17 +195,6 @@ namespace Network
                     throw new System.ArgumentException("Server is not not responding", "Ping server");
                 }
             }
-        }
-
-        public void StartConnectPingThread(IPAddress PingAddr, int PING_PORT)
-        {
-            base._connectPingThread = new Thread(() => StartPing(PingAddr, PING_PORT));
-            base._connectPingThread.Start();
-        }
-
-        public void StopConnectPingThread()
-        {
-            base._connectPing = false;
         }
 
         /// <summary>
@@ -268,8 +257,6 @@ namespace Network
             _servAddr = serverAddr;
             UpdateClientInfo();
             base.Start();
-            StartListenPingThread(NetworkHelper.GetLocalIPAddress(), Network.Properties.Settings.Default.PING_PORT_OUT_SERVER);
-            StartConnectPingThread(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
         }
 
         /// <summary>
@@ -278,8 +265,6 @@ namespace Network
         public override void Stop()
         {
             base.Stop();
-            StopConnectPingThread();
-            StopListenPingThread();
             Thread.Sleep(1000);    // let worker threads finish
         }
     }

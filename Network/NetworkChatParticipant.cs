@@ -28,6 +28,7 @@ namespace Network
         private int pingWaitAccept = 2000;
         protected NamedPipeClientStream _micPipe;
 
+        protected virtual void StartSendPingLoop() { }
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
 
@@ -45,7 +46,7 @@ namespace Network
             Addr = NetworkHelper.GetLocalIPAddress();
         }
 
-        protected void ListenPingThread(IPAddress PingAddr, int PING_PORT)
+        protected void StartListenPingLoop(IPAddress PingAddr, int PING_PORT)
         {
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -66,17 +67,27 @@ namespace Network
             listener.Stop();
         }
 
-        public void StartListenPingThread(IPAddress PingAddr, int PING_PORT)
+        protected void StartListenPing()
         {
-            _listenPingThread = new Thread(() => ListenPingThread(PingAddr, PING_PORT));
+            _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER));
             _listenPingThread.Start();
         }
 
-        public void StopListenPingThread()
+        protected void StartSendPing()
+        {
+            _connectPingThread = new Thread(() => StartSendPingLoop());
+            _connectPingThread.Start();
+        }
+
+        protected void StopListenPing()
         {
             _listenPing = false;
         }
 
+        protected void StopSendPing()
+        {
+            _connectPing = false;
+        }
 
         protected bool StartAsyncPing(IPAddress PingAddr, int PING_PORT)
         {
@@ -117,7 +128,7 @@ namespace Network
         /// <summary>
         /// Initialize UDP client and mic pipe and start capturing audio.
         /// </summary>
-        public virtual void PrepareStreaming()
+        protected virtual void PrepareStreaming()
         {
             // capture audio stream from mic and write it to "mic" named pipe
             AudioHelper.StartCapture(new UncompressedPcmChatCodec());
@@ -150,10 +161,14 @@ namespace Network
         {
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
+            StartListenPing();
+            StartSendPing();
         }
 
         public virtual void Stop()
         {
+            StopSendPing();
+            StopListenPing();
             StopReceiving();
             AudioHelper.StopPlaying();
         }

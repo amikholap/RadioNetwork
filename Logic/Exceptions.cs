@@ -15,9 +15,4 @@ namespace Logic
         public RNException(string message)
             : base(message) { }
     }
-
-    [Serializable]
-    public class NetworkException : RNException
-    {
-    }
 }

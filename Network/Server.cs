@@ -183,7 +183,7 @@ namespace Network
             listener.Stop();
         }
 
-        public void StartPing()
+        protected override void StartSendPingLoop()
         {
             int TimeOut = pingSendWaitTimeOut;
             base._connectPing = true;
@@ -201,22 +201,6 @@ namespace Network
             }
         }
 
-        public void StartConnectPingThread()
-        {
-            base._connectPingThread = new Thread(() => this.StartPing());
-            base._connectPingThread.Start();
-        }
-
-        public void StopConnectPingThread()
-        {
-            base._connectPing = false;
-        }
-
-        /// <summary>
-        /// Launch the server.
-        /// It spawns several threads for listening and processing.
-        /// client messages.
-        /// </summary>
         /// <summary>
         /// Update UDPClients for multicast groups.
         /// </summary>
@@ -325,8 +309,6 @@ namespace Network
 
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
-            StartListenPingThread(NetworkHelper.GetLocalIPAddress(), Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
-            StartConnectPingThread();
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
         }
@@ -337,8 +319,6 @@ namespace Network
         public override void Stop()
         {
             _isWorking = false;
-            StopConnectPingThread();
-            StopListenPingThread();
             Thread.Sleep(1000);    // let worker threads finish
 
             // close all UdpClients
