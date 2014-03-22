@@ -14,6 +14,7 @@ namespace Audio
     public static class AudioHelper
     {
         private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+        private static float _volume;
         private static BufferedWaveProvider _playBuffer;
         private static NamedPipeServerStream _micPipe;
         private static WaveInEvent _waveIn;
@@ -93,6 +94,17 @@ namespace Audio
             {
                 _waveOut.Stop();
             }
+        }
+
+        public static void Mute()
+        {
+            _volume = _waveOut.Volume;
+            _waveOut.Volume = 0;
+        }
+
+        public static void UnMute()
+        {
+            _waveOut.Volume = _volume;
         }
 
         public static void AddSamples(byte[] samples)

@@ -22,7 +22,9 @@ namespace Network
         /// When set to false server will shut down in several seconds.
         /// </summary>
         private volatile bool _isWorking;
-        private int pingSendWaitTimeOut = 10000;
+
+        private int pingSendWaitTimeOut = 1000;
+
         /// <summary>
         /// Cliens collection should be modified only from
         /// WPF dispacher thread to be properly updated on UI.
@@ -256,7 +258,7 @@ namespace Network
             while (true)
             {
                 _micPipe.Read(buffer, 0, buffer.Length);
-                foreach (var item in _mcastClients)
+                foreach (var item in _mcastClients.ToArray())
                 {
                     item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
                 }
@@ -298,7 +300,7 @@ namespace Network
                     AudioHelper.AddSamples(buffer);
 
                     // spread server message to all clients
-                    foreach (var item in _mcastClients)
+                    foreach (var item in _mcastClients.ToArray())
                     {
                         item.Value.Send(buffer, buffer.Length, new IPEndPoint(item.Key, Network.Properties.Settings.Default.MULTICAST_PORT));
                     }

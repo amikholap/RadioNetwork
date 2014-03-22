@@ -27,7 +27,7 @@ namespace Network
         protected bool _connectPing;
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
-        private int pingWaitAccept = 8;     // in sec
+        private int pingWaitAccept = 1000;
 
         protected virtual void StartStreamingLoop() { }
         protected virtual void StartReceivingLoop() { }
@@ -90,7 +90,7 @@ namespace Network
                 System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
                 try
                 {
-                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(pingWaitAccept), false))
+                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(pingWaitAccept), false))
                     {
                         tcp.Close();
                         return false;
@@ -136,10 +136,12 @@ namespace Network
             PrepareStreaming();
             _streamingThread = new Thread(StartStreamingLoop);
             _streamingThread.Start();
+            AudioHelper.Mute();
         }
 
         public virtual void StopStreaming()
         {
+            AudioHelper.UnMute();
             AudioHelper.StopCapture();
             _streamingThread.Abort();
             _micPipe.Close();
