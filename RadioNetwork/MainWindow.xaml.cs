@@ -52,7 +52,8 @@ namespace RadioNetwork
         {
             InitializeComponent();
 
-            PushToTalkButton.ClickMode = ClickMode.Press;
+            ClientPushToTalkButton.ClickMode = ClickMode.Press;
+            ServerPushToTalkButton.ClickMode = ClickMode.Press;
             _isTalking = false;
 
             _cdc = new ClientDataContext();
@@ -117,15 +118,16 @@ namespace RadioNetwork
 
         private void PushToTalkButton_Click(object sender, RoutedEventArgs e)
         {
+            Button btn = (Button)sender;
             if (_isTalking)
             {
-                PushToTalkButton.ClickMode = ClickMode.Press;
+                btn.ClickMode = ClickMode.Press;
                 Controller.StopTalking();
                 _isTalking = false;
             }
             else
             {
-                PushToTalkButton.ClickMode = ClickMode.Release;
+                btn.ClickMode = ClickMode.Release;
                 Controller.StartTalking();
                 _isTalking = true;
             }

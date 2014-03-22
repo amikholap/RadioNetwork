@@ -68,7 +68,7 @@
                 </TextBox>
                 <Button Name="ConnectButton" Grid.ColumnSpan="2" Grid.Row="3" Margin="25,5,25,0" Click="ConnectButton_Click" >Подключиться</Button>
                 <Button Name="DisconnectButton" Grid.ColumnSpan="2" Grid.Row="4" Margin="25,5,25,0" Click="DisconnectButton_Click">Отключиться</Button>
-                <Button Name="PushToTalkButton" Grid.ColumnSpan="2" Grid.Row="5" Margin="25,5,25,0" Click="PushToTalkButton_Click">Тангента</Button>
+                <Button Name="ClientPushToTalkButton" Grid.ColumnSpan="2" Grid.Row="5" Margin="25,5,25,0" Click="PushToTalkButton_Click">Тангента</Button>
             </Grid>
         </Grid>
 
