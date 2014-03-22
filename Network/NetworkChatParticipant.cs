@@ -57,17 +57,22 @@ namespace Network
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             TcpClient tcpClient;
-            listener.Server.ReceiveTimeout = 50000;
-            listener.Server.SendTimeout = 100;
+            Int32 sleepTime = 200;
+            listener.Server.ReceiveTimeout = 500;
+            listener.Server.SendTimeout = 500;
             listener.Start();
             _listenPing = true;
             while (_listenPing)
             {
                 // Step 0: Client connection
+                if (!listener.Pending())
+                {
+                    Thread.Sleep(sleepTime);  // choose a number (in milliseconds) that makes sense
+                    continue;           // skip to next iteration of loop
+                }
                 tcpClient = listener.AcceptTcpClient();
                 tcpClient.Close();
             }
-            listener.Stop();
         }
 
         public void StartListenPingThread(IPAddress PingAddr, int PING_PORT)
