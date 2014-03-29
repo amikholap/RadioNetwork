@@ -192,6 +192,7 @@ namespace Network
                 }
                 else
                 {
+                    Stop();
                     throw new System.ArgumentException("Server is not not responding", "Ping server");
                 }
             }

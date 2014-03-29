@@ -66,11 +66,12 @@ namespace Network
 
         protected void StartListenPingLoop(IPAddress PingAddr, int PING_PORT)
         {
+            logger.Debug("ping listen from " + IPAddress.Parse(PingAddr.ToString()) + "port " + PING_PORT);
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             TcpClient tcpClient;
-            listener.Server.ReceiveTimeout = 30000;
-            listener.Server.SendTimeout = 30000;
+            listener.Server.ReceiveTimeout = 60000;
+            listener.Server.SendTimeout = 60000;
             listener.Start();
             _listenPing = true;
             while (_listenPing)
@@ -79,15 +80,22 @@ namespace Network
                 if (listener.Pending())
                 {
                     tcpClient = listener.AcceptTcpClient();
+                    logger.Debug(String.Format("ping listen accept SYN send from {0}", tcpClient.Client.RemoteEndPoint));
                     tcpClient.Close();
                 }
+                else
+                    Thread.Sleep(pingWaitAccept);
             }
             listener.Stop();
+            logger.Debug("ping listen accept stop");
         }
 
         protected void StartListenPing()
         {
-            _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER));
+            if(this is Server)
+                _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER));
+            else
+                _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER));
             _listenPingThread.Start();
         }
 
@@ -125,8 +133,10 @@ namespace Network
                 System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
                 try
                 {
+                    logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " start");
                     if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(pingWaitAccept), false))
                     {
+                        logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " failed");
                         tcp.Close();
                         return false;
                     }
@@ -134,12 +144,14 @@ namespace Network
                 }
                 catch (SocketException)
                 {
+                    logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " SocketException");
                 }
                 finally
                 {
                     wh.Close();
                 }
             }
+            logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " successful");
             return true;
         }
 
