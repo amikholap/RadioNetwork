@@ -23,7 +23,7 @@ namespace Network
         /// </summary>
         private volatile bool _isWorking;
 
-        private int pingSendWaitTimeOut = 3000;
+        private int pingSendWaitTimeOut = 5000;
 
         /// <summary>
         /// Cliens collection should be modified only from

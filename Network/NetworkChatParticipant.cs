@@ -25,7 +25,7 @@ namespace Network
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
 
-        private int pingWaitAccept = 2000;
+        private int pingWaitAccept = 6000;
         protected NamedPipeClientStream _micPipe;
 
         protected virtual void StartSendPingLoop() { }
