@@ -289,9 +289,16 @@ namespace Network
                 {
                     // spread the message to other clients with that freq
                     var mAddr = lastActive.Client.TransmitMulticastGroupAddr;
-                    _mcastClients[mAddr].Send(buffer, buffer.Length, new IPEndPoint(mAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    try
+                    {
+                        _mcastClients[mAddr].Send(buffer, buffer.Length, new IPEndPoint(mAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        // all clients with the Fr may be already disconnected
+                    }
 
-                    // update last_talked timestamp
+                    // update last_talked timestmap
                     lastActive.last_talked = DateTime.Now;
 
                     OnDataReceived(buffer);
