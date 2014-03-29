@@ -10,12 +10,17 @@ using System.Text;
 using System.Threading;
 using System.Windows.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Network
 {
     public class NetworkChatParticipant : DispatcherObject
     {
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
+
+        private int pingWaitAccept = 8000;
+        protected INetworkChatCodec _codec;
+        protected NamedPipeClientStream _micPipe;
 
         private volatile bool _listenPing;
         protected volatile bool _connectPing;
@@ -24,9 +29,6 @@ namespace Network
         private Thread _streamingThread;
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
-
-        private int pingWaitAccept = 6000;
-        protected NamedPipeClientStream _micPipe;
 
         protected virtual void StartSendPingLoop() { }
         protected virtual void StartStreamingLoop() { }
@@ -44,6 +46,22 @@ namespace Network
             _receiving = false;
             _listenPing = false;
             Addr = NetworkHelper.GetLocalIPAddress();
+
+            _codec = new UncompressedPcmChatCodec();
+
+            InitWavFile();
+        }
+
+        protected void InitWavFile()
+        {
+            string historyDir = Path.Combine(Directory.GetCurrentDirectory(), "history");
+            if (!Directory.Exists(historyDir))
+            {
+                Directory.CreateDirectory(historyDir);
+            }
+            string filename = DateTime.Now.ToString("yyyy/MM/dd-HH/mm/ss") + ".wav";
+            string filepath = Path.Combine(historyDir, filename);
+            FileStream f = File.Create(filepath);
         }
 
         protected void StartListenPingLoop(IPAddress PingAddr, int PING_PORT)
@@ -71,6 +89,16 @@ namespace Network
         {
             _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER));
             _listenPingThread.Start();
+        }
+
+        /// <summary>
+        /// Process received data.
+        /// </summary>
+        /// <param name="data"></param>
+        protected void OnDataReceived(byte[] data)
+        {
+            // add the data to the player queue
+            AudioHelper.AddSamples(data);
         }
 
         protected void StartSendPing()
@@ -131,7 +159,7 @@ namespace Network
         protected virtual void PrepareStreaming()
         {
             // capture audio stream from mic and write it to "mic" named pipe
-            AudioHelper.StartCapture(new UncompressedPcmChatCodec());
+            AudioHelper.StartCapture(_codec);
 
             // open pipe to read audio data from microphone
             _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);

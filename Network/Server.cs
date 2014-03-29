@@ -253,6 +253,9 @@ namespace Network
             }
         }
 
+        /// <summary>
+        /// Receive data from one client at a time and send it to the corresponding mcast group.
+        /// </summary>
         protected override void StartReceivingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
@@ -284,15 +287,14 @@ namespace Network
                 // process audio data only from active client
                 if (lastActive.Client != null && clientEP.Address.Equals(lastActive.Client.Addr))
                 {
-                    // add received data to the player queue
-                    AudioHelper.AddSamples(buffer);
-
                     // spread the message to other clients with that freq
                     var mAddr = lastActive.Client.TransmitMulticastGroupAddr;
                     _mcastClients[mAddr].Send(buffer, buffer.Length, new IPEndPoint(mAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
 
                     // update last_talked timestamp
                     lastActive.last_talked = DateTime.Now;
+
+                    OnDataReceived(buffer);
                 }
             }
             client.Close();

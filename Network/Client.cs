@@ -16,7 +16,7 @@ namespace Network
     {
         private IPAddress _servAddr;
         private UdpClient _streamClient;
-        private int pingWaitReply = 4000;
+        private int pingWaitReply = 7000;
 
         /// <summary>
         /// Client's callsign.
@@ -242,9 +242,7 @@ namespace Network
                     // timeout
                     continue;
                 }
-
-                // add received data to the player queue
-                AudioHelper.AddSamples(buffer);
+                OnDataReceived(buffer);
             }
             client.Close();
         }
