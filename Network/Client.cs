@@ -16,7 +16,7 @@ namespace Network
     {
         private IPAddress _servAddr;
         private UdpClient _streamClient;
-        private int pingWaitReply = 2500;
+        private int pingWaitReply = 7000;
 
         /// <summary>
         /// Client's callsign.
@@ -192,6 +192,7 @@ namespace Network
                 }
                 else
                 {
+                    Stop();
                     throw new System.ArgumentException("Server is not not responding", "Ping server");
                 }
             }

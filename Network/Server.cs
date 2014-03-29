@@ -23,7 +23,7 @@ namespace Network
         /// </summary>
         private volatile bool _isWorking;
 
-        private int pingSendWaitTimeOut = 3000;
+        private int pingSendWaitTimeOut = 5000;
 
         /// <summary>
         /// Cliens collection should be modified only from
@@ -193,7 +193,7 @@ namespace Network
                 {
                     if (base.StartAsyncPing(client.Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER) == false)
                     {
-
+                        logger.Debug("ping remove " + IPAddress.Parse(client.Addr.ToString()));
                         Dispatcher.Invoke((Action)(() => _clients.Remove(client)));  // remove non-ping client
                     }
                 }
@@ -306,7 +306,6 @@ namespace Network
         public override void Start()
         {
             base.Start();
-
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
             listenNewClientsThread.Start();
