@@ -19,6 +19,7 @@ namespace Audio
         private static NamedPipeServerStream _micPipe;
         private static WaveInEvent _waveIn;
         private static WaveOut _waveOut;
+        private static WaveFileWriter _audioLog;
 
         static AudioHelper()
         {
@@ -97,6 +98,23 @@ namespace Audio
         }
 
         /// <summary>
+        /// Start logging audio data to a file.
+        /// </summary>
+        public static void StartLogging(string path, INetworkChatCodec codec)
+        {
+            _audioLog = new WaveFileWriter(path, codec.RecordFormat);
+        }
+
+        /// <summary>
+        /// Stop logging audio.
+        /// </summary>
+        public static void StopLogging()
+        {
+            _audioLog.Close();
+            _audioLog = null;
+        }
+
+        /// <summary>
         /// Set output volume to zero.
         /// </summary>
         public static void Mute()
@@ -113,9 +131,17 @@ namespace Audio
             _waveOut.Volume = _volume;
         }
 
+        /// <summary>
+        /// Add samples to the playback queue and try to log them.
+        /// </summary>
+        /// <param name="samples"></param>
         public static void AddSamples(byte[] samples)
         {
             _playBuffer.AddSamples(samples, 0, samples.Length);
+            if (_audioLog != null)
+            {
+                _audioLog.Write(samples, 0, samples.Length);
+            }
         }
     }
 }

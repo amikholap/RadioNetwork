@@ -16,7 +16,7 @@ namespace Network
     {
         private IPAddress _servAddr;
         private UdpClient _streamClient;
-        private int pingWaitReply = 7000;
+        private int pingWaitReply = 2000;
 
         /// <summary>
         /// Client's callsign.

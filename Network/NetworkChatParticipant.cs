@@ -18,7 +18,7 @@ namespace Network
     {
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
-        private int pingWaitAccept = 8000;
+        private int pingWaitAccept = 3000;
         protected INetworkChatCodec _codec;
         protected NamedPipeClientStream _micPipe;
 
@@ -48,20 +48,22 @@ namespace Network
             Addr = NetworkHelper.GetLocalIPAddress();
 
             _codec = new UncompressedPcmChatCodec();
-
-            InitWavFile();
         }
 
         protected void InitWavFile()
         {
             string historyDir = Path.Combine(Directory.GetCurrentDirectory(), "history");
-            if (!Directory.Exists(historyDir))
             {
                 Directory.CreateDirectory(historyDir);
             }
             string filename = DateTime.Now.ToString("yyyy/MM/dd-HH/mm/ss") + ".wav";
             string filepath = Path.Combine(historyDir, filename);
-            FileStream f = File.Create(filepath);
+            AudioHelper.StartLogging(filepath, _codec);
+        }
+
+        protected void CloseWavFile()
+        {
+            AudioHelper.StopLogging();
         }
 
         protected void StartListenPingLoop(IPAddress PingAddr, int PING_PORT)
@@ -92,7 +94,7 @@ namespace Network
 
         protected void StartListenPing()
         {
-            if(this is Server)
+            if (this is Server)
                 _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER));
             else
                 _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER));
@@ -199,6 +201,7 @@ namespace Network
 
         public virtual void Start()
         {
+            InitWavFile();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
             StartListenPing();
@@ -211,6 +214,7 @@ namespace Network
             StopListenPing();
             StopReceiving();
             AudioHelper.StopPlaying();
+            CloseWavFile();
         }
     }
 }
