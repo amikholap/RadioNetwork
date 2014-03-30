@@ -23,6 +23,11 @@ namespace Network
         /// </summary>
         private volatile bool _isWorking;
 
+        /// <summary>
+        /// Details for the last time someone talked.
+        /// </summary>
+        private ClientActivity _lastTalked;
+
         private int pingSendWaitTimeOut = 5000;
 
         /// <summary>
@@ -237,40 +242,98 @@ namespace Network
         }
 
         /// <summary>
-        /// Send audio from mic to all clients.
+        /// Take a chunk from the output queue and send it
+        /// to the input queue with server context.
+        /// This will set the highest priority.
         /// </summary>
-        protected override void StartStreamingLoop()
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void audio_OutputDataAvailable(object sender, AudioIOEventArgs e)
         {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-
-            while (true)
+            if (e.Item != null)
             {
-                _micPipe.Read(buffer, 0, buffer.Length);
-                foreach (var addr in _clients.Select(c => c.ReceiveMulticastGroupAddr).Distinct().ToList())
-                {
-                    _mcastClients[addr].Send(buffer, buffer.Length, new IPEndPoint(addr, Network.Properties.Settings.Default.MULTICAST_PORT));
-                }
+                AudioIO.AddInputData(e.Item.Data, this);
             }
         }
 
         /// <summary>
-        /// Receive data from one client at a time and send it to the corresponding mcast group.
+        /// Receive data from self or a single client at a time and route it to mcast groups.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void audio_InputDataAvailable(object sender, AudioIOEventArgs e)
+        {
+            // drop last talked client lock after 0.5s of inactivity
+            if (_lastTalked != null && (DateTime.Now - _lastTalked.Timestamp).Milliseconds > 500)
+            {
+                // fire ClientChanged event
+                _lastTalked = null;
+            }
+
+            if (e.Item == null)
+            {
+                return;
+            }
+
+            if (e.Item.Context is Server)
+            {
+                // interrupt any current speaker and send server message to all clients
+                foreach (IPAddress mcastAddr in _mcastClients.Keys)
+                {
+                    try
+                    {
+                        _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                    }
+                }
+                _lastTalked = new ClientActivity((NetworkChatParticipant)e.Item.Context, e.Item.Timestamp);
+            }
+
+            else if (e.Item.Context is Client)
+            {
+                // check that either no one talked last time
+                // or it was the client from e.Item.Context
+                if (_lastTalked == null)
+                {
+                    _lastTalked = new ClientActivity((NetworkChatParticipant)e.Item.Context, e.Item.Timestamp);
+                }
+                if (_lastTalked.Talker != e.Item.Context)
+                {
+                    return;
+                }
+
+                // spread the message to other clients with that freq
+                IPAddress mcastAddr = ((Client)_lastTalked.Talker).TransmitMulticastGroupAddr;
+                try
+                {
+                    _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+                }
+                catch (KeyNotFoundException)
+                {
+                }
+            }
+            base.audio_InputDataAvailable(sender, e);
+        }
+
+        /// <summary>
+        /// Receive audio data from clients and add it to the input queue.
         /// </summary>
         protected override void StartReceivingLoop()
         {
             byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-            ClientActivity lastActive = new ClientActivity();
 
             IPEndPoint clientEP = null;
-            IPEndPoint anyClientEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            UdpClient client = NetworkHelper.InitUdpClient(anyClientEP);
+            UdpClient udpClient = NetworkHelper.InitUdpClient(new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.SERVER_AUDIO_PORT));
+            Client client;
 
             _receiving = true;
             while (_receiving)
             {
                 try
                 {
-                    buffer = client.Receive(ref clientEP);
+                    buffer = udpClient.Receive(ref clientEP);
                 }
                 catch (SocketException)
                 {
@@ -278,33 +341,13 @@ namespace Network
                     continue;
                 }
 
-                // change active client if it wasn't set or was silent for too long
-                if (lastActive.Client == null || DateTime.Now - lastActive.last_talked > TimeSpan.FromSeconds(0.5))
+                client = _clients.FirstOrDefault(c => c.Addr.Equals(clientEP.Address));
+                if (client != null)
                 {
-                    lastActive.Client = _clients.FirstOrDefault(c => c.Addr.Equals(clientEP.Address));
-                }
-
-                // process audio data only from active client
-                if (lastActive.Client != null && clientEP.Address.Equals(lastActive.Client.Addr))
-                {
-                    // spread the message to other clients with that freq
-                    var mAddr = lastActive.Client.TransmitMulticastGroupAddr;
-                    try
-                    {
-                        _mcastClients[mAddr].Send(buffer, buffer.Length, new IPEndPoint(mAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
-                    }
-                    catch (KeyNotFoundException)
-                    {
-                        // all clients with the Fr may be already disconnected
-                    }
-
-                    // update last_talked timestmap
-                    lastActive.last_talked = DateTime.Now;
-
-                    OnDataReceived(buffer);
+                    AudioIO.AddInputData(buffer, client);
                 }
             }
-            client.Close();
+            udpClient.Close();
         }
 
         /// <summary>

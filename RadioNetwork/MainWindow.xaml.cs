@@ -52,6 +52,8 @@ namespace RadioNetwork
         {
             InitializeComponent();
 
+            Controller.Init();
+
             ClientPushToTalkButton.ClickMode = ClickMode.Press;
             ServerPushToTalkButton.ClickMode = ClickMode.Press;
             _isTalking = false;
@@ -63,6 +65,7 @@ namespace RadioNetwork
         void OnWindowClosing(object sender, CancelEventArgs e)
         {
             Controller.Stop();
+            Controller.ShutDown();
         }
 
         /// <summary>

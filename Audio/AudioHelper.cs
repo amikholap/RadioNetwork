@@ -16,7 +16,6 @@ namespace Audio
         private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
         private static float _volume;
         private static BufferedWaveProvider _playBuffer;
-        private static NamedPipeServerStream _micPipe;
         private static WaveInEvent _waveIn;
         private static WaveOut _waveOut;
         private static WaveFileWriter _audioLog;
@@ -25,46 +24,29 @@ namespace Audio
         {
             _waveIn = new WaveInEvent();
             _waveIn.BufferMilliseconds = 50;
-            _waveIn.DataAvailable += (sender, e) => { _micPipe.Write(e.Buffer, 0, e.BytesRecorded); };
+            _waveIn.DataAvailable += (sender, e) =>
+            {
+                AudioIO.AddOutputData(e.Buffer, null);
+            };
         }
 
         /// <summary>
-        /// Capture audio stream from the specified input device in codec's format
-        /// and write it to the "mic" named pipe.
+        /// Capture audio stream from the specified input device
+        /// in codec's format and add it to the output queue.
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="codec"></param>
         /// <param name="inputDeviceNumber"></param>
         public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
-            // pipe for audio data from mic
-            _micPipe = new NamedPipeServerStream("mic", PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            _micPipe.BeginWaitForConnection((r) => _micPipe.EndWaitForConnection(r), null);
-
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;
-            try
-            {
-                _waveIn.StartRecording();
-            }
-            catch (InvalidOperationException)
-            {
-                // already recording
-                return;
-            }
+            _waveIn.StartRecording();
         }
 
         public static void StopCapture()
         {
-            try
-            {
-                _waveIn.StopRecording();
-            }
-            catch (NAudio.MmException)
-            {
-                // recording hasn't started
-            }
-            _micPipe.Close();
+            _waveIn.StopRecording();
         }
 
         /// <summary>

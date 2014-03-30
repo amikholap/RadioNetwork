@@ -11,7 +11,13 @@ namespace Network
     /// </summary>
     class ClientActivity
     {
-        public Client Client { get; set; }
-        public DateTime last_talked { get; set; }
+        public NetworkChatParticipant Talker { get; set; }
+        public DateTime Timestamp { get; set; }
+
+        public ClientActivity(NetworkChatParticipant talker, DateTime timestamp)
+        {
+            Talker = talker;
+            Timestamp = timestamp;
+        }
     }
 }

@@ -1,10 +1,11 @@
-﻿using log4net;
+﻿using Audio;
 using Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using log4net;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
@@ -35,6 +36,21 @@ namespace Logic
             _client = null;
             _server = null;
             Mode = ControllerMode.None;
+        }
+
+        /// <summary>
+        /// Initialize internal services.
+        /// </summary>
+        public static void Init()
+        {
+            AudioIO.StartTicking();
+        }
+        /// <summary>
+        /// Shutdown internal services.
+        /// </summary>
+        public static void ShutDown()
+        {
+            AudioIO.StopTicking();
         }
 
         /// <summary>

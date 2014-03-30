@@ -60,10 +60,10 @@ namespace Network
 
         protected virtual void OnServerQuit(EventArgs e)
         {
-            // a temporary variable is required to keep it thread-safe
-            var temp = ServerQuit;
-            if (temp != null)
-                temp(this, e);
+            if (ServerQuit != null)
+            {
+                ServerQuit(this, e);
+            }
         }
 
         protected void UpdateMulticastAddrs()
@@ -157,24 +157,6 @@ namespace Network
             }
         }
 
-        /// <summary>
-        /// Additionally prepare a UDP connection to the server.
-        /// </summary>
-        protected override void PrepareStreaming()
-        {
-            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
-            base.PrepareStreaming();
-        }
-
-        /// <summary>
-        /// Close UDP connection to the server.
-        /// </summary>
-        public override void StopStreaming()
-        {
-            base.StopStreaming();
-            _streamClient.Close();
-        }
-
         protected override void StartSendPingLoop()
         {
             double Delta = 0;
@@ -199,23 +181,35 @@ namespace Network
         }
 
         /// <summary>
-        /// Start capturing audio from mic and send to the server.
+        /// Send audio from a microphone to the server.
         /// </summary>
-        protected override void StartStreamingLoop()
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void audio_OutputDataAvailable(object sender, AudioIOEventArgs e)
         {
-            byte[] buffer = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
-
-            if (_servAddr == null)
+            if (e.Item != null)
             {
-                return;
+                try
+                {
+                    _streamClient.Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT));
+                }
+                catch (ObjectDisposedException)
+                {
+                    // NAudio may send some more data after stopped
+                    // but this UDP client may be already destroyed.
+                }
             }
-            IPEndPoint serverEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+        }
 
-            while (true)
-            {
-                _micPipe.Read(buffer, 0, buffer.Length);
-                _streamClient.Send(buffer, buffer.Length, serverEndPoint);
-            }
+        public override void StartStreaming()
+        {
+            _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            base.StartStreaming();
+        }
+        public override void StopStreaming()
+        {
+            base.StopStreaming();
+            _streamClient.Close();
         }
 
         /// <summary>
@@ -243,7 +237,7 @@ namespace Network
                     // timeout
                     continue;
                 }
-                OnDataReceived(buffer);
+                AudioIO.AddInputData(buffer, this);
             }
             client.Close();
         }

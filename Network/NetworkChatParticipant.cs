@@ -20,24 +20,32 @@ namespace Network
 
         private int pingWaitAccept = 3000;
         protected INetworkChatCodec _codec;
-        protected NamedPipeClientStream _micPipe;
 
         private volatile bool _listenPing;
         protected volatile bool _connectPing;
         protected volatile bool _receiving;
 
-        private Thread _streamingThread;
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
-
-        protected virtual void StartSendPingLoop() { }
-        protected virtual void StartStreamingLoop() { }
-        protected virtual void StartReceivingLoop() { }
 
         /// <summary>
         /// Machine's IP address.
         /// </summary>
         public IPAddress Addr { get; set; }
+
+        protected virtual void StartSendPingLoop() { }
+        protected virtual void StartReceivingLoop() { }
+
+        protected virtual void audio_OutputDataAvailable(object sender, AudioIOEventArgs e) { }
+        protected virtual void audio_InputDataAvailable(object sender, AudioIOEventArgs e)
+        {
+            // add the chunk to the playback buffer
+            if (e.Item != null)
+            {
+                Console.Write(".");
+                AudioHelper.AddSamples(e.Item.Data);
+            }
+        }
 
         protected NetworkChatParticipant()
         {
@@ -45,8 +53,8 @@ namespace Network
             _listenPing = false;
             _receiving = false;
             _listenPing = false;
-            Addr = NetworkHelper.GetLocalIPAddress();
 
+            Addr = NetworkHelper.GetLocalIPAddress();
             _codec = new UncompressedPcmChatCodec();
         }
 
@@ -56,7 +64,7 @@ namespace Network
             {
                 Directory.CreateDirectory(historyDir);
             }
-            string filename = DateTime.Now.ToString("yyyy/MM/dd-HH/mm/ss") + ".wav";
+            string filename = DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss") + ".wav";
             string filepath = Path.Combine(historyDir, filename);
             AudioHelper.StartLogging(filepath, _codec);
         }
@@ -99,16 +107,6 @@ namespace Network
             else
                 _listenPingThread = new Thread(() => StartListenPingLoop(Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER));
             _listenPingThread.Start();
-        }
-
-        /// <summary>
-        /// Process received data.
-        /// </summary>
-        /// <param name="data"></param>
-        protected void OnDataReceived(byte[] data)
-        {
-            // add the data to the player queue
-            AudioHelper.AddSamples(data);
         }
 
         protected void StartSendPing()
@@ -168,35 +166,18 @@ namespace Network
         }
 
         /// <summary>
-        /// Initialize UDP client and mic pipe and start capturing audio.
-        /// </summary>
-        protected virtual void PrepareStreaming()
-        {
-            // capture audio stream from mic and write it to "mic" named pipe
-            AudioHelper.StartCapture(_codec);
-
-            // open pipe to read audio data from microphone
-            _micPipe = new NamedPipeClientStream(".", "mic", PipeDirection.In);
-            _micPipe.Connect();
-        }
-
-        /// <summary>
         /// Start listening for audio stream from mic and passing it to the server.
         /// </summary>
-        public void StartStreaming()
+        public virtual void StartStreaming()
         {
-            PrepareStreaming();
-            _streamingThread = new Thread(StartStreamingLoop);
-            _streamingThread.Start();
             AudioHelper.Mute();
+            AudioHelper.StartCapture(_codec);
         }
 
         public virtual void StopStreaming()
         {
-            AudioHelper.UnMute();
             AudioHelper.StopCapture();
-            _streamingThread.Abort();
-            _micPipe.Close();
+            AudioHelper.UnMute();
         }
 
         public virtual void Start()
@@ -204,12 +185,16 @@ namespace Network
             InitWavFile();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
+            AudioIO.InputTick += audio_InputDataAvailable;
+            AudioIO.OutputTick += audio_OutputDataAvailable;
             StartListenPing();
             StartSendPing();
         }
 
         public virtual void Stop()
         {
+            AudioIO.InputTick -= audio_InputDataAvailable;
+            AudioIO.OutputTick -= audio_OutputDataAvailable;
             StopSendPing();
             StopListenPing();
             StopReceiving();
