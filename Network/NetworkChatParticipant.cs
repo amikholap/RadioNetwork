@@ -22,6 +22,7 @@ namespace Network
         protected INetworkChatCodec _codec;
 
         private volatile bool _listenPing;
+        protected volatile bool _muted;
         protected volatile bool _connectPing;
         protected volatile bool _receiving;
 
@@ -42,7 +43,6 @@ namespace Network
             // add the chunk to the playback buffer
             if (e.Item != null)
             {
-                Console.Write(".");
                 AudioHelper.AddSamples(e.Item.Data);
             }
         }
@@ -53,12 +53,13 @@ namespace Network
             _listenPing = false;
             _receiving = false;
             _listenPing = false;
+            _muted = false;
 
             Addr = NetworkHelper.GetLocalIPAddress();
             _codec = new UncompressedPcmChatCodec();
         }
 
-        protected void InitWavFile()
+        protected void StartLoggingAudio()
         {
             string historyDir = Path.Combine(Directory.GetCurrentDirectory(), "history");
             {
@@ -66,10 +67,11 @@ namespace Network
             }
             string filename = DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss") + ".wav";
             string filepath = Path.Combine(historyDir, filename);
+
             AudioHelper.StartLogging(filepath, _codec);
         }
 
-        protected void CloseWavFile()
+        protected void StopLoggingAudio()
         {
             AudioHelper.StopLogging();
         }
@@ -130,7 +132,7 @@ namespace Network
             using (TcpClient tcp = new TcpClient())
             {
                 IAsyncResult ar = tcp.BeginConnect(PingAddr, PING_PORT, null, null);
-                System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
+                WaitHandle wh = ar.AsyncWaitHandle;
                 try
                 {
                     logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " start");
@@ -166,23 +168,38 @@ namespace Network
         }
 
         /// <summary>
-        /// Start listening for audio stream from mic and passing it to the server.
+        /// Stop playing any incoming audio data.
+        /// </summary>
+        public void Mute()
+        {
+            _muted = true;
+        }
+        /// <summary>
+        /// Resume recording incoming audio data.
+        /// </summary>
+        public void UnMute()
+        {
+            _muted = false;
+        }
+
+        /// <summary>
+        /// Start capturing data from mic.
         /// </summary>
         public virtual void StartStreaming()
         {
-            AudioHelper.Mute();
             AudioHelper.StartCapture(_codec);
         }
-
+        /// <summary>
+        /// Stop capturing data from mic.
+        /// </summary>
         public virtual void StopStreaming()
         {
             AudioHelper.StopCapture();
-            AudioHelper.UnMute();
         }
 
         public virtual void Start()
         {
-            InitWavFile();
+            StartLoggingAudio();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
             AudioIO.InputTick += audio_InputDataAvailable;
@@ -190,7 +207,6 @@ namespace Network
             StartListenPing();
             StartSendPing();
         }
-
         public virtual void Stop()
         {
             AudioIO.InputTick -= audio_InputDataAvailable;
@@ -199,7 +215,7 @@ namespace Network
             StopListenPing();
             StopReceiving();
             AudioHelper.StopPlaying();
-            CloseWavFile();
+            StopLoggingAudio();
         }
     }
 }

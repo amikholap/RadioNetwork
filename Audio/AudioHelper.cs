@@ -14,7 +14,6 @@ namespace Audio
     public static class AudioHelper
     {
         private static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
-        private static float _volume;
         private static BufferedWaveProvider _playBuffer;
         private static WaveInEvent _waveIn;
         private static WaveOut _waveOut;
@@ -79,12 +78,22 @@ namespace Audio
             }
         }
 
+        private static void AudioLogTickCallback(object sender, AudioIOEventArgs e)
+        {
+            if (e.Item != null)
+            {
+                _audioLog.Write(e.Item.Data, 0, e.Item.Data.Length);
+            }
+        }
+
         /// <summary>
         /// Start logging audio data to a file.
         /// </summary>
         public static void StartLogging(string path, INetworkChatCodec codec)
         {
             _audioLog = new WaveFileWriter(path, codec.RecordFormat);
+            AudioIO.InputTick += AudioLogTickCallback;
+            AudioIO.OutputTick += AudioLogTickCallback;
         }
 
         /// <summary>
@@ -92,25 +101,9 @@ namespace Audio
         /// </summary>
         public static void StopLogging()
         {
+            AudioIO.InputTick -= AudioLogTickCallback;
+            AudioIO.OutputTick -= AudioLogTickCallback;
             _audioLog.Close();
-            _audioLog = null;
-        }
-
-        /// <summary>
-        /// Set output volume to zero.
-        /// </summary>
-        public static void Mute()
-        {
-            _volume = _waveOut.Volume;
-            _waveOut.Volume = 0;
-        }
-
-        /// <summary>
-        /// Restore output volume.
-        /// </summary>
-        public static void UnMute()
-        {
-            _waveOut.Volume = _volume;
         }
 
         /// <summary>
@@ -120,10 +113,6 @@ namespace Audio
         public static void AddSamples(byte[] samples)
         {
             _playBuffer.AddSamples(samples, 0, samples.Length);
-            if (_audioLog != null)
-            {
-                _audioLog.Write(samples, 0, samples.Length);
-            }
         }
     }
 }

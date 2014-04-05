@@ -204,11 +204,17 @@ namespace Network
         public override void StartStreaming()
         {
             _streamClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.SERVER_AUDIO_PORT);
+            if (Ft == Fr)
+            {
+                // prevent echo
+                Mute();
+            }
             base.StartStreaming();
         }
         public override void StopStreaming()
         {
             base.StopStreaming();
+            UnMute();
             _streamClient.Close();
         }
 
@@ -237,7 +243,10 @@ namespace Network
                     // timeout
                     continue;
                 }
-                AudioIO.AddInputData(buffer, this);
+                if (!_muted)
+                {
+                    AudioIO.AddInputData(buffer, this);
+                }
             }
             client.Close();
         }

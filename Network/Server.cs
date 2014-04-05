@@ -250,7 +250,7 @@ namespace Network
         /// <param name="e"></param>
         protected override void audio_OutputDataAvailable(object sender, AudioIOEventArgs e)
         {
-            if (e.Item != null)
+            if (e.Item != null && !_muted)
             {
                 AudioIO.AddInputData(e.Item.Data, this);
             }
@@ -348,6 +348,17 @@ namespace Network
                 }
             }
             udpClient.Close();
+        }
+
+        public override void StartStreaming()
+        {
+            Mute();
+            base.StartStreaming();
+        }
+        public override void StopStreaming()
+        {
+            base.StopStreaming();
+            UnMute();
         }
 
         /// <summary>
