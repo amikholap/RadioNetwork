@@ -58,7 +58,7 @@ namespace Audio
             // data provider for WaveOut
             _playBuffer = new BufferedWaveProvider(codec.RecordFormat);
             // BufferDuration == lag
-            _playBuffer.BufferDuration = new TimeSpan(hours: 0, minutes: 0, seconds: 1);
+            _playBuffer.BufferDuration = TimeSpan.FromMilliseconds(150);
             _playBuffer.DiscardOnBufferOverflow = true;
 
             // output device
@@ -84,6 +84,12 @@ namespace Audio
             {
                 _audioLog.Write(e.Item.Data, 0, e.Item.Data.Length);
             }
+            else
+            {
+                // this array can be created only once
+                float[] silence = new float[(int)(AudioIO.TickInterval.TotalSeconds * _audioLog.WaveFormat.SampleRate)];
+                _audioLog.WriteSamples(silence, 0, silence.Length);
+            }
         }
 
         /// <summary>
@@ -92,8 +98,7 @@ namespace Audio
         public static void StartLogging(string path, INetworkChatCodec codec)
         {
             _audioLog = new WaveFileWriter(path, codec.RecordFormat);
-            AudioIO.InputTick += AudioLogTickCallback;
-            AudioIO.OutputTick += AudioLogTickCallback;
+            AudioIO.MergedTick += AudioLogTickCallback;
         }
 
         /// <summary>
@@ -101,8 +106,7 @@ namespace Audio
         /// </summary>
         public static void StopLogging()
         {
-            AudioIO.InputTick -= AudioLogTickCallback;
-            AudioIO.OutputTick -= AudioLogTickCallback;
+            AudioIO.MergedTick -= AudioLogTickCallback;
             _audioLog.Close();
         }
 

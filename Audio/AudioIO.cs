@@ -20,22 +20,36 @@ namespace Audio
         private static ConcurrentQueue<AudioQueueItem> _outputQueue;
 
         /// <summary>
-        /// Event that fires either when input data are available
-        /// with AudioQueueItem instance as an argument
-        /// or every `n` milliseconds with null argument if there are no data.
+        /// Interval between tick events.
+        /// </summary>
+        public static TimeSpan TickInterval { get; private set; }
+
+        /// <summary>
+        /// Event that fires in `TickInterval` intervals
+        /// with AudioQueueItem instance argument if input data available
+        /// or with null argument if there are no input data.
         /// </summary>
         public static event EventHandler<AudioIOEventArgs> InputTick;
         /// <summary>
-        /// Event that fires either when output data are available
-        /// with AudioQueueItem instance as an argument
-        /// or every `n` milliseconds with null argument if there are no data.
+        /// Event that fires in `TickInterval` intervals
+        /// with AudioQueueItem instance argument if output data available
+        /// or with null argument if there are no output data.
         /// </summary>
         public static event EventHandler<AudioIOEventArgs> OutputTick;
+        /// <summary>
+        /// Event that fires in `TickInterval` intervals
+        /// with AudioQueueItem instance argument containing merged input and output data
+        /// or with null argument if there are no audio data at all.
+        /// </summary>
+        public static event EventHandler<AudioIOEventArgs> MergedTick;
 
         static AudioIO()
         {
             _inputQueue = new ConcurrentQueue<AudioQueueItem>();
             _outputQueue = new ConcurrentQueue<AudioQueueItem>();
+
+            // this should probably be the same value as AudioHelper._waveIn.BufferMilliseconds
+            TickInterval = TimeSpan.FromMilliseconds(50);
         }
 
         private static void OnInputTick(AudioIOEventArgs e)
@@ -45,12 +59,18 @@ namespace Audio
                 InputTick(null, e);
             }
         }
-
         private static void OnOutputTick(AudioIOEventArgs e)
         {
             if (OutputTick != null)
             {
                 OutputTick(null, e);
+            }
+        }
+        private static void OnMergedTick(AudioIOEventArgs e)
+        {
+            if (OutputTick != null)
+            {
+                MergedTick(null, e);
             }
         }
 
@@ -72,18 +92,18 @@ namespace Audio
         }
         private static void StartTickingLoop()
         {
-            bool haveData;
             AudioQueueItem item;
+            byte[] mergedData;
 
             _isTicking = true;
             while (_isTicking)
             {
-                haveData = false;
+                mergedData = null;
 
                 if (_inputQueue.TryDequeue(out item))
                 {
                     OnInputTick(new AudioIOEventArgs(item));
-                    haveData = true;
+                    mergedData = item.Data;
                 }
                 else
                 {
@@ -93,17 +113,32 @@ namespace Audio
                 if (_outputQueue.TryDequeue(out item))
                 {
                     OnOutputTick(new AudioIOEventArgs(item));
-                    haveData = true;
+                    if (mergedData != null)
+                    {
+                        Array.Resize(ref mergedData, mergedData.Length + item.Data.Length);
+                        item.Data.CopyTo(mergedData, mergedData.Length - item.Data.Length);
+                    }
+                    else
+                    {
+                        mergedData = item.Data;
+                    }
+                    mergedData = item.Data;
                 }
                 else
                 {
                     OnOutputTick(new AudioIOEventArgs(null));
                 }
 
-                if (!haveData)
+                if (mergedData != null)
                 {
-                    Thread.Sleep(50);
+                    OnMergedTick(new AudioIOEventArgs(new AudioQueueItem(mergedData, DateTime.Now, null)));
                 }
+                else
+                {
+                    OnMergedTick(new AudioIOEventArgs(null));
+                }
+
+                Thread.Sleep(TickInterval);
             }
         }
 
