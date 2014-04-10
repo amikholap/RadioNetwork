@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace Network
         private volatile bool _isWorking;
 
         /// <summary>
-        /// Details for the last time someone talked.
+        /// Details about the current talker.
         /// </summary>
         private ClientActivity _lastTalked;
 
@@ -46,12 +47,23 @@ namespace Network
             }
         }
 
+        public event EventHandler<TalkerChangedEventArgs> TalkerChanged;
+
         public Server()
             : base()
         {
             _isWorking = true;
             _clients = new ObservableCollection<Client>();
             _mcastClients = new Dictionary<IPAddress, UdpClient>();
+            _lastTalked = new ClientActivity(null, DateTime.MinValue);
+        }
+
+        protected void OnTalkerChanged(TalkerChangedEventArgs e)
+        {
+            if (TalkerChanged != null)
+            {
+                TalkerChanged(this, e);
+            }
         }
 
         /// <summary>
@@ -250,9 +262,28 @@ namespace Network
         /// <param name="e"></param>
         protected override void audio_OutputDataAvailable(object sender, AudioIOEventArgs e)
         {
-            if (e.Item != null && !_muted)
+            if (e.Item == null)
             {
-                AudioIO.AddInputData(e.Item.Data, this);
+                return;
+            }
+
+            _lastTalked.Timestamp = e.Item.Timestamp;
+            if (_lastTalked.Talker != this)
+            {
+                _lastTalked.Talker = this;
+                OnTalkerChanged(new TalkerChangedEventArgs(_lastTalked.Talker));
+            }
+
+            // interrupt any current speaker and send server message to all clients
+            foreach (IPAddress mcastAddr in _mcastClients.Keys)
+            {
+                try
+                {
+                    _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+                }
+                catch (KeyNotFoundException)
+                {
+                }
             }
         }
 
@@ -263,11 +294,11 @@ namespace Network
         /// <param name="e"></param>
         protected override void audio_InputDataAvailable(object sender, AudioIOEventArgs e)
         {
-            // drop last talked client lock after 0.5s of inactivity
-            if (_lastTalked != null && (DateTime.Now - _lastTalked.Timestamp).Milliseconds > 500)
+            // drop last talked lock after 0.3s of inactivity
+            if ((DateTime.Now - _lastTalked.Timestamp).Milliseconds > 300 && _lastTalked.Talker != null)
             {
-                // fire ClientChanged event
-                _lastTalked = null;
+                _lastTalked.Talker = null;
+                OnTalkerChanged(new TalkerChangedEventArgs(null));
             }
 
             if (e.Item == null)
@@ -275,45 +306,33 @@ namespace Network
                 return;
             }
 
-            if (e.Item.Context is Server)
+            // ensure that only clients can produce input data
+            Debug.Assert(e.Item.Context is Client);
+
+            // check that either no one talked last time
+            // or it was the client from e.Item.Context
+            if (_lastTalked.Talker == null)
             {
-                // interrupt any current speaker and send server message to all clients
-                foreach (IPAddress mcastAddr in _mcastClients.Keys)
-                {
-                    try
-                    {
-                        _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
-                    }
-                    catch (KeyNotFoundException)
-                    {
-                    }
-                }
-                _lastTalked = new ClientActivity((NetworkChatParticipant)e.Item.Context, e.Item.Timestamp);
+                _lastTalked.Talker = (Client)e.Item.Context;
+                _lastTalked.Timestamp = e.Item.Timestamp;
+                OnTalkerChanged(new TalkerChangedEventArgs(_lastTalked.Talker));
+            }
+            if (_lastTalked.Talker != e.Item.Context)
+            {
+                return;
             }
 
-            else if (e.Item.Context is Client)
+            // spread the message to other clients with that freq
+            IPAddress mcastAddr = ((Client)_lastTalked.Talker).TransmitMulticastGroupAddr;
+            try
             {
-                // check that either no one talked last time
-                // or it was the client from e.Item.Context
-                if (_lastTalked == null)
-                {
-                    _lastTalked = new ClientActivity((NetworkChatParticipant)e.Item.Context, e.Item.Timestamp);
-                }
-                if (_lastTalked.Talker != e.Item.Context)
-                {
-                    return;
-                }
-
-                // spread the message to other clients with that freq
-                IPAddress mcastAddr = ((Client)_lastTalked.Talker).TransmitMulticastGroupAddr;
-                try
-                {
-                    _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
-                }
-                catch (KeyNotFoundException)
-                {
-                }
+                _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
             }
+            catch (KeyNotFoundException)
+            {
+                // this client may already disconnect
+            }
+
             base.audio_InputDataAvailable(sender, e);
         }
 
@@ -331,15 +350,11 @@ namespace Network
             _receiving = true;
             while (_receiving)
             {
-                try
+                while (udpClient.Available == 0)
                 {
-                    buffer = udpClient.Receive(ref clientEP);
+                    Thread.Sleep(100);
                 }
-                catch (SocketException)
-                {
-                    // timeout
-                    continue;
-                }
+                buffer = udpClient.Receive(ref clientEP);
 
                 client = _clients.FirstOrDefault(c => c.Addr.Equals(clientEP.Address));
                 if (client != null)
