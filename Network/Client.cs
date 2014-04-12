@@ -160,11 +160,13 @@ namespace Network
                     case "busy":
                         {
                             OnClientEvent(new ExceptionArgs("Позывной уже используется, задайте другой позывной"));
+                            this.Stop();
                             break;
                         }
                     case "use":
                         {
                             OnClientEvent(new ExceptionArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
+                            this.Stop();
                             break;
                         }
                     case "free":
