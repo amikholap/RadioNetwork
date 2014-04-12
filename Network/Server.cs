@@ -161,48 +161,67 @@ namespace Network
                                     logger.Error("Unhandled exception while listening clients' info.", e);
                                     continue;
                                 }
+                                // get client's IP address
+                                clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
                                 int a = 0;
                                 foreach(Client item in Clients)
                                 {
                                     if (String.Compare(callsign, item.Callsign) == 0)
                                     {
                                         a = 1;
+                                        break;
+                                    }
+                                    if (clientAddr.Equals(item.Addr))
+                                    {
+                                        a = 2;
+                                        break;
                                     }
                                 }
-                                if (a == 0) // client callsign is free
+                                switch (a)
                                 {
-                                    String message = "free";
-                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                    // send data 'free' to client
-                                    ns.Write(data, 0, data.Length);
-                                    // get client's IP address
-                                    clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
+                                    case 0:     // if same client ipaddress is not exist and callsign is free
+                                        {
+                                            String message = "free";
+                                            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                            // send data 'free' to client
+                                            ns.Write(data, 0, data.Length);
 
-                                    // add a new client to the list only if
-                                    // a client with such IP address doesn't exist
-                                    Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
-                                    if (existingClient == null)
-                                    {
-                                        Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
-                                        logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
-                                    }
-                                    else
-                                    {
-                                        // a client with such IP address already exists
-                                        // update it
-                                        existingClient.Callsign = callsign;
-                                        existingClient.Fr = fr;
-                                        existingClient.Ft = ft;
-                                    }
-                                    UpdateMulticastClients();
+                                            // add a new client to the list only if
+                                            // a client with such IP address doesn't exist
+                                            Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
+                                            if (existingClient == null)
+                                            {
+                                                Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
+                                                logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
+                                            }
+                                            else
+                                            {
+                                                // a client with such IP address already exists
+                                                // update it
+                                                existingClient.Callsign = callsign;
+                                                existingClient.Fr = fr;
+                                                existingClient.Ft = ft;
+                                            }
+                                            UpdateMulticastClients();
+                                            break;
+                                        }
+                                    case 1:     // if callsign is busy
+                                        {
+                                            String message = "busy";
+                                            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                            // send data 'busy' to client
+                                            ns.Write(data, 0, data.Length);
+                                            break;
+                                        }
+                                    default:    // if same client ipaddress exist in _clients
+                                        {
+                                            String message = "use";
+                                            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                            // send data 'use' to client
+                                            ns.Write(data, 0, data.Length);
+                                            break;
+                                        }
                                 }
-                                else        // client callsign is busy
-                                {
-                                    String message = "busy";
-                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                    // send data 'busy' to client
-                                    ns.Write(data, 0, data.Length);
-                                }     
                                 break;
                             default:
                                 // unknown format

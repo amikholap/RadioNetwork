@@ -155,10 +155,28 @@ namespace Network
                     Int32 bytes = ns.Read(data, 0, data.Length);
                     responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 }
-                if (String.Compare(responseData, "busy") == 0)
-                    OnClientEvent(new ExceptionArgs("Позывной уже используется, задайте другой позывной"));                    
-                else
-                    OnClientEvent(new ExceptionArgs("Информация на сервере обновлена"));
+                switch (responseData)
+                {
+                    case "busy":
+                        {
+                            OnClientEvent(new ExceptionArgs("Позывной уже используется, задайте другой позывной"));
+                            break;
+                        }
+                    case "use":
+                        {
+                            OnClientEvent(new ExceptionArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
+                            break;
+                        }
+                    case "free":
+                        {
+                            OnClientEvent(new ExceptionArgs("Информация на сервере обновлена"));
+                            break;
+                        }
+                    default:
+                        {
+                            break;
+                        }
+                }                    
             }
             catch (Exception e)
             {
