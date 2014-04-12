@@ -16,7 +16,7 @@ namespace Network
     {
         private IPAddress _servAddr;
         private UdpClient _streamClient;
-        private int pingWaitReply = 2000;
+        private int pingWaitReply = 9000;
 
         /// <summary>
         /// Client's callsign.
@@ -207,7 +207,7 @@ namespace Network
                 }
                 else
                 {
-                    if ((pingWaitReply - (int)Delta) > 0)
+                    if ((pingWaitReply - (int)Delta) > 500)
                         Thread.Sleep(pingWaitReply - (int)Delta);
                 }
             }

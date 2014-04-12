@@ -29,7 +29,7 @@ namespace Network
         /// </summary>
         private ClientActivity _lastTalked;
 
-        private int pingSendWaitTimeOut = 5000;
+        private int pingSendWaitTimeOut = 6000;
 
         /// <summary>
         /// Cliens collection should be modified only from

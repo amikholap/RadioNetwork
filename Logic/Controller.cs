@@ -84,7 +84,6 @@ namespace Logic
                 {                    
                     _client.Start(servers[0]);
                     Mode = ControllerMode.Client;
-                    throw new RNException("Соединение с сервером установлено");
                 }
             }
         }
