@@ -249,7 +249,14 @@ namespace Network
                     if (base.StartAsyncPing(client.Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER) == false)
                     {
                         logger.Debug("ping remove " + IPAddress.Parse(client.Addr.ToString()));
-                        Dispatcher.Invoke((Action)(() => _clients.Remove(client)));  // remove non-ping client
+                        try
+                        {
+                            Dispatcher.Invoke((Action)(() => _clients.Remove(client)));  // remove non-ping client
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            // main window closed
+                        }
                     }
                 }
                 Thread.Sleep(TimeOut);
@@ -388,9 +395,10 @@ namespace Network
             _receiving = true;
             while (_receiving)
             {
-                while (udpClient.Available == 0)
+                if (udpClient.Available == 0)
                 {
                     Thread.Sleep(100);
+                    continue;
                 }
                 buffer = udpClient.Receive(ref clientEP);
 
@@ -426,6 +434,7 @@ namespace Network
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
+            this.TalkerChanged += SpeechRecognizer.Server_TalkerChanged;
         }
 
         /// <summary>
@@ -433,6 +442,8 @@ namespace Network
         /// </summary>
         public override void Stop()
         {
+            this.TalkerChanged -= SpeechRecognizer.Server_TalkerChanged;
+
             _isWorking = false;
             Thread.Sleep(1000);    // let worker threads finish
 
