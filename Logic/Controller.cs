@@ -31,6 +31,11 @@ namespace Logic
             get { return _server; }
         }
 
+        static void Client_ShowMess(object sender, ExceptionArgs e)
+        {
+            _client.Dispatcher.BeginInvoke(new Action (() => { new RNException(e.Message); }), null);
+        }
+
         static Controller()
         {
             _client = null;
@@ -68,7 +73,7 @@ namespace Logic
 
                 // create Client instance
                 _client = new Client(callsign, fr, ft);
-
+                _client.ClientEvent += Client_ShowMess;
                 // find a server and connect to it
                 var servers = _client.DetectServers().ToList();
                 if (servers.Count == 0)
@@ -119,6 +124,7 @@ namespace Logic
             switch (Mode)
             {
                 case ControllerMode.Client:
+                    _client.ClientEvent -= Client_ShowMess;
                     _client.Stop();
                     break;
                 case ControllerMode.Server:

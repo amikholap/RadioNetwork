@@ -38,10 +38,16 @@ namespace Network
         /// IP multicast group where the client will listen for audio data.
         /// </summary>
         public IPAddress ReceiveMulticastGroupAddr { get; set; }
-
+        
 
         public event EventHandler<EventArgs> ServerQuit;
+        public event EventHandler<ExceptionArgs> ClientEvent;
 
+        public virtual void OnClientEvent(ExceptionArgs e)
+        {
+            if (ClientEvent != null)
+                ClientEvent(this, e);
+        }
 
         public Client(string callsign, UInt32 fr, UInt32 ft)
             : base()
@@ -145,6 +151,7 @@ namespace Network
                 {
                     ns.Write(dgram, 0, dgram.Length);
                 }
+                OnClientEvent(new ExceptionArgs("Информация на сервере обновлена"));
             }
             catch (Exception e)
             {
@@ -168,14 +175,15 @@ namespace Network
                 dtStart = DateTime.Now;
                 th = StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
                 Delta = (DateTime.Now - dtStart).TotalMilliseconds;
-                if (Delta < pingWaitReply || th == true)
+                if (th == false)
                 {
-                    Thread.Sleep(pingWaitReply - (int)Delta);
+                    Stop();
+                    OnClientEvent(new ExceptionArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
                 }
                 else
                 {
-                    Stop();
-                    throw new System.ArgumentException("Server is not not responding", "Ping server");
+                    if ((pingWaitReply - (int)Delta) > 0)
+                        Thread.Sleep(pingWaitReply - (int)Delta);
                 }
             }
         }
