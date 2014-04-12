@@ -147,11 +147,18 @@ namespace Network
 
                 string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
                 dgram = System.Text.Encoding.UTF8.GetBytes(message);
+                String responseData = String.Empty;
+                Byte[] data = new Byte[64];
                 using (NetworkStream ns = tcpClient.GetStream())
                 {
                     ns.Write(dgram, 0, dgram.Length);
+                    Int32 bytes = ns.Read(data, 0, data.Length);
+                    responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 }
-                OnClientEvent(new ExceptionArgs("Информация на сервере обновлена"));
+                if (String.Compare(responseData, "busy") == 0)
+                    OnClientEvent(new ExceptionArgs("Позывной уже используется, задайте другой позывной"));                    
+                else
+                    OnClientEvent(new ExceptionArgs("Информация на сервере обновлена"));
             }
             catch (Exception e)
             {

@@ -138,7 +138,6 @@ namespace Network
                         IPAddress clientAddr;    // client's IP address
                         string callsign;         // client's callsign
                         UInt32 fr, ft;           // client's receive and transmit frequencies
-
                         var buf = new byte[Network.Properties.Settings.Default.BUFFER_SIZE];
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
@@ -162,28 +161,48 @@ namespace Network
                                     logger.Error("Unhandled exception while listening clients' info.", e);
                                     continue;
                                 }
-
-                                // get client's IP address
-                                clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
-
-                                // add a new client to the list only if
-                                // a client with such IP address doesn't exist
-                                Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
-                                if (existingClient == null)
+                                int a = 0;
+                                foreach(Client item in Clients)
                                 {
-                                    Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
-                                    logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
+                                    if (String.Compare(callsign, item.Callsign) == 0)
+                                    {
+                                        a = 1;
+                                    }
                                 }
-                                else
+                                if (a == 0) // client callsign is free
                                 {
-                                    // a client with such IP address already exists
-                                    // update it
-                                    existingClient.Callsign = callsign;
-                                    existingClient.Fr = fr;
-                                    existingClient.Ft = ft;
-                                }
-                                UpdateMulticastClients();
+                                    String message = "free";
+                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                    // send data 'free' to client
+                                    ns.Write(data, 0, data.Length);
+                                    // get client's IP address
+                                    clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
 
+                                    // add a new client to the list only if
+                                    // a client with such IP address doesn't exist
+                                    Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
+                                    if (existingClient == null)
+                                    {
+                                        Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
+                                        logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
+                                    }
+                                    else
+                                    {
+                                        // a client with such IP address already exists
+                                        // update it
+                                        existingClient.Callsign = callsign;
+                                        existingClient.Fr = fr;
+                                        existingClient.Ft = ft;
+                                    }
+                                    UpdateMulticastClients();
+                                }
+                                else        // client callsign is busy
+                                {
+                                    String message = "busy";
+                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                    // send data 'busy' to client
+                                    ns.Write(data, 0, data.Length);
+                                }     
                                 break;
                             default:
                                 // unknown format
@@ -197,7 +216,7 @@ namespace Network
                     Thread.Sleep(500);
                 }
             }
-            listener.Stop();
+            listener.Stop();            
         }
 
         protected override void StartSendPingLoop()
