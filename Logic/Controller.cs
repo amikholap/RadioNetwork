@@ -33,7 +33,7 @@ namespace Logic
 
         static void Client_ShowMess(object sender, ExceptionArgs e)
         {
-            _client.Dispatcher.BeginInvoke(new Action (() => { new RNException(e.Message); }), null);
+            _client.Dispatcher.Invoke(new Action (() => { throw new RNException(e.Message); }), null);
         }
 
         static Controller()
@@ -78,12 +78,13 @@ namespace Logic
                 var servers = _client.DetectServers().ToList();
                 if (servers.Count == 0)
                 {
-                    throw new RNException("Сервер не найден.");
+                    throw new RNException("Сервер не найден");
                 }
                 else
-                {
+                {                    
                     _client.Start(servers[0]);
                     Mode = ControllerMode.Client;
+                    throw new RNException("Соединение с сервером установлено");
                 }
             }
         }
