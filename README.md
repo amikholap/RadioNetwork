@@ -5,6 +5,6 @@ RadioNetwork
 
 Зависимости
 ===========
-sox.exe
-zlib1.dll
-libFLAC.dll
+* sox.exe
+* zlib1.dll
+* libFLAC.dll
