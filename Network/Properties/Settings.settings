@@ -26,5 +26,8 @@
     <Setting Name="PING_PORT_IN_SERVER" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">41667</Value>
     </Setting>
+    <Setting Name="TIMESTAMP_FORMAT" Type="System.String" Scope="User">
+      <Value Profile="(Default)">yyyy.MM.dd-HH.mm.ss</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

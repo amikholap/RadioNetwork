@@ -31,9 +31,9 @@ namespace Logic
             get { return _server; }
         }
 
-        static void Client_ShowMess(object sender, ExceptionArgs e)
+        static void Client_ServerDisconnected(object sender, ServerDisconnectedEventArgs e)
         {
-            _client.Dispatcher.Invoke(new Action (() => { throw new RNException(e.Message); }), null);
+            _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
         }
 
         static Controller()
@@ -73,7 +73,7 @@ namespace Logic
 
                 // create Client instance
                 _client = new Client(callsign, fr, ft);
-                _client.ClientEvent += Client_ShowMess;
+                _client.ServerDisconnected += Client_ServerDisconnected;
                 // find a server and connect to it
                 var servers = _client.DetectServers().ToList();
                 if (servers.Count == 0)
@@ -81,10 +81,9 @@ namespace Logic
                     throw new RNException("Сервер не найден");
                 }
                 else
-                {                    
+                {
                     _client.Start(servers[0]);
                     Mode = ControllerMode.Client;
-                    throw new RNException("Соединение с сервером установлено");
                 }
             }
         }
@@ -92,7 +91,7 @@ namespace Logic
         /// <summary>
         /// Run application in server mode.
         /// </summary>
-        public static void StartServer()
+        public static void StartServer(string callsign)
         {
             if (Mode != ControllerMode.Server)
             {
@@ -100,7 +99,7 @@ namespace Logic
                 Stop();
 
                 // create Server instance
-                _server = new Server();
+                _server = new Server(callsign);
 
                 // try to start server
                 try
@@ -125,7 +124,7 @@ namespace Logic
             switch (Mode)
             {
                 case ControllerMode.Client:
-                    _client.ClientEvent -= Client_ShowMess;
+                    _client.ServerDisconnected -= Client_ServerDisconnected;
                     _client.Stop();
                     break;
                 case ControllerMode.Server:

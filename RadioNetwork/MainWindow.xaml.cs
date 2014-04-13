@@ -42,7 +42,16 @@ namespace RadioNetwork
 
         private void StartServer()
         {
-            Controller.StartServer();
+            string callsign;
+            if (_sdc == null)
+            {
+                callsign = "";
+            }
+            else
+            {
+                callsign = _sdc.Callsign;
+            }
+            Controller.StartServer(callsign);
         }
 
         /// <summary>
@@ -102,7 +111,10 @@ namespace RadioNetwork
 
             StartServer();
 
-            _sdc = new ServerDataContext(Controller.Server);
+            if (_sdc == null)
+            {
+                _sdc = new ServerDataContext(Controller.Server);
+            }
             ServerLayout.DataContext = _sdc;
 
             ClientLayout.Visibility = System.Windows.Visibility.Collapsed;

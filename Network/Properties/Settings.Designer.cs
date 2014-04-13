@@ -118,5 +118,17 @@ namespace Network.Properties {
                 this["PING_PORT_IN_SERVER"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("yyyy.MM.dd-HH.mm.ss")]
+        public string TIMESTAMP_FORMAT {
+            get {
+                return ((string)(this["TIMESTAMP_FORMAT"]));
+            }
+            set {
+                this["TIMESTAMP_FORMAT"] = value;
+            }
+        }
     }
 }

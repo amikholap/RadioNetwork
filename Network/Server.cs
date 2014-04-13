@@ -17,6 +17,8 @@ namespace Network
 {
     public class Server : NetworkChatParticipant
     {
+        #region Properties
+
         /// <summary>
         /// Indicates if server is running.
         /// True by default.
@@ -31,14 +33,14 @@ namespace Network
 
         private int pingSendWaitTimeOut = 5000;
 
+        private string _textLogFileName;
+
         /// <summary>
         /// Cliens collection should be modified only from
         /// WPF dispacher thread to be properly updated on UI.
         /// To accomplish this use Dispatcher.Invoke.
         /// </summary>
         private ObservableCollection<Client> _clients;
-        private Dictionary<IPAddress, UdpClient> _mcastClients;
-
         public ObservableCollection<Client> Clients
         {
             get
@@ -47,16 +49,43 @@ namespace Network
             }
         }
 
-        public event EventHandler<TalkerChangedEventArgs> TalkerChanged;
+        /// <summary>
+        /// A list of recognized phrases.
+        /// Same modification rules apply as in the _clients case.
+        /// </summary>
+        private ObservableCollection<String> _messages;
+        public ObservableCollection<String> Messages
+        {
+            get
+            {
+                return _messages;
+            }
+        }
 
-        public Server()
-            : base()
+        /// <summary>
+        /// A list of preinitialized multicast UDP clients.
+        /// </summary>
+        private Dictionary<IPAddress, UdpClient> _mcastClients;
+
+        #endregion
+
+        #region Constructors
+
+        public Server(string callsign)
+            : base(callsign)
         {
             _isWorking = true;
             _clients = new ObservableCollection<Client>();
+            _messages = new ObservableCollection<string>();
             _mcastClients = new Dictionary<IPAddress, UdpClient>();
             _lastTalked = new ClientActivity(null, DateTime.MinValue);
         }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<TalkerChangedEventArgs> TalkerChanged;
 
         protected void OnTalkerChanged(TalkerChangedEventArgs e)
         {
@@ -65,6 +94,123 @@ namespace Network
                 TalkerChanged(this, e);
             }
         }
+
+        #endregion
+
+        #region EventHandlers
+
+        /// <summary>
+        /// Take a chunk from the output queue and send it
+        /// to the input queue with server context.
+        /// This will set the highest priority.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void AudioIO_OutputDataAvailable(object sender, AudioIOEventArgs e)
+        {
+            if (e.Item == null)
+            {
+                return;
+            }
+
+            _lastTalked.Timestamp = e.Item.Timestamp;
+            if (_lastTalked.Talker != this)
+            {
+                NetworkChatParticipant prevTalker = _lastTalked.Talker;
+                _lastTalked.Talker = this;
+                OnTalkerChanged(new TalkerChangedEventArgs(prevTalker, _lastTalked.Talker));
+            }
+
+            // interrupt any current speaker and send server message to all clients
+            foreach (IPAddress mcastAddr in _mcastClients.Keys)
+            {
+                try
+                {
+                    _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+                }
+                catch (KeyNotFoundException)
+                {
+                }
+            }
+        }
+
+        /// <summary>
+        /// Receive data from self or a single client at a time and route it to mcast groups.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void AudioIO_InputDataAvailable(object sender, AudioIOEventArgs e)
+        {
+            // drop last talked lock after 0.3s of inactivity
+            if ((DateTime.Now - _lastTalked.Timestamp).Milliseconds > 300 && _lastTalked.Talker != null)
+            {
+                NetworkChatParticipant prevTalker = _lastTalked.Talker;
+                _lastTalked.Talker = null;
+                OnTalkerChanged(new TalkerChangedEventArgs(prevTalker, _lastTalked.Talker));
+            }
+
+            if (e.Item == null)
+            {
+                return;
+            }
+
+            // ensure that only clients can produce input data
+            Debug.Assert(e.Item.Context is Client);
+
+            // check that either no one talked last time
+            // or it was the client from e.Item.Context
+            if (_lastTalked.Talker == null)
+            {
+                NetworkChatParticipant prevTalker = _lastTalked.Talker;
+                _lastTalked.Talker = (Client)e.Item.Context;
+                _lastTalked.Timestamp = e.Item.Timestamp;
+                OnTalkerChanged(new TalkerChangedEventArgs(prevTalker, _lastTalked.Talker));
+            }
+            if (_lastTalked.Talker != e.Item.Context)
+            {
+                return;
+            }
+
+            // spread the message to other clients with that freq
+            IPAddress mcastAddr = ((Client)_lastTalked.Talker).TransmitMulticastGroupAddr;
+            try
+            {
+                _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
+            }
+            catch (KeyNotFoundException)
+            {
+                // this client may already disconnect
+            }
+
+            base.AudioIO_InputDataAvailable(sender, e);
+        }
+
+        protected void SpeechRecognizer_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        {
+            string message;
+            string line;  // dialogue line in format "<TimeStamp> Talker: Message."
+            DateTime ts;
+
+            if (e.Message.Length == 0)
+            {
+                message = "<неразборчиво>";
+            }
+            else
+            {
+                message = e.Message;
+            }
+
+            ts = DateTime.Now;
+            // truncate milliseconds
+            ts = new DateTime(ts.Year, ts.Month, ts.Day, ts.Hour, ts.Minute, ts.Second);
+
+            line = String.Format("<{0:g}> {1}: {2}", ts.TimeOfDay, e.Talker.Callsign, message);
+            Dispatcher.Invoke(() => { _messages.Add(line); });
+        }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// Listen on BROADCAST_PORT for any udp datagrams with client ip addresses.
@@ -164,7 +310,7 @@ namespace Network
                                 // get client's IP address
                                 clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
                                 int a = 0;
-                                foreach(Client item in Clients)
+                                foreach (Client item in Clients)
                                 {
                                     if (String.Compare(callsign, item.Callsign) == 0)
                                     {
@@ -235,7 +381,7 @@ namespace Network
                     Thread.Sleep(500);
                 }
             }
-            listener.Stop();            
+            listener.Stop();
         }
 
         protected override void StartSendPingLoop()
@@ -298,87 +444,19 @@ namespace Network
             }
         }
 
-        /// <summary>
-        /// Take a chunk from the output queue and send it
-        /// to the input queue with server context.
-        /// This will set the highest priority.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected override void audio_OutputDataAvailable(object sender, AudioIOEventArgs e)
+        private void InitTextLog()
         {
-            if (e.Item == null)
-            {
-                return;
-            }
-
-            _lastTalked.Timestamp = e.Item.Timestamp;
-            if (_lastTalked.Talker != this)
-            {
-                _lastTalked.Talker = this;
-                OnTalkerChanged(new TalkerChangedEventArgs(_lastTalked.Talker));
-            }
-
-            // interrupt any current speaker and send server message to all clients
-            foreach (IPAddress mcastAddr in _mcastClients.Keys)
-            {
-                try
-                {
-                    _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
-                }
-                catch (KeyNotFoundException)
-                {
-                }
-            }
+            _textLogFileName = BuildLogFilePath("txt");
         }
-
-        /// <summary>
-        /// Receive data from self or a single client at a time and route it to mcast groups.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected override void audio_InputDataAvailable(object sender, AudioIOEventArgs e)
+        private void DumpTextLog()
         {
-            // drop last talked lock after 0.3s of inactivity
-            if ((DateTime.Now - _lastTalked.Timestamp).Milliseconds > 300 && _lastTalked.Talker != null)
+            using (var f = File.CreateText(_textLogFileName))
             {
-                _lastTalked.Talker = null;
-                OnTalkerChanged(new TalkerChangedEventArgs(null));
+                foreach (string line in _messages)
+                {
+                    f.WriteLine(line);
+                }
             }
-
-            if (e.Item == null)
-            {
-                return;
-            }
-
-            // ensure that only clients can produce input data
-            Debug.Assert(e.Item.Context is Client);
-
-            // check that either no one talked last time
-            // or it was the client from e.Item.Context
-            if (_lastTalked.Talker == null)
-            {
-                _lastTalked.Talker = (Client)e.Item.Context;
-                _lastTalked.Timestamp = e.Item.Timestamp;
-                OnTalkerChanged(new TalkerChangedEventArgs(_lastTalked.Talker));
-            }
-            if (_lastTalked.Talker != e.Item.Context)
-            {
-                return;
-            }
-
-            // spread the message to other clients with that freq
-            IPAddress mcastAddr = ((Client)_lastTalked.Talker).TransmitMulticastGroupAddr;
-            try
-            {
-                _mcastClients[mcastAddr].Send(e.Item.Data, e.Item.Data.Length, new IPEndPoint(mcastAddr, Network.Properties.Settings.Default.MULTICAST_PORT));
-            }
-            catch (KeyNotFoundException)
-            {
-                // this client may already disconnect
-            }
-
-            base.audio_InputDataAvailable(sender, e);
         }
 
         /// <summary>
@@ -430,11 +508,14 @@ namespace Network
         public override void Start()
         {
             base.Start();
+            InitTextLog();
             Thread listenNewClientsThread = new Thread(this.ListenNewClients);
             Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
             listenNewClientsThread.Start();
             listenClientsInfoThread.Start();
             this.TalkerChanged += SpeechRecognizer.Server_TalkerChanged;
+            SpeechRecognizer.SpeechRecognized += SpeechRecognizer_SpeechRecognized;
+            SpeechRecognizer.Start(new UncompressedPcmChatCodec());
         }
 
         /// <summary>
@@ -442,6 +523,8 @@ namespace Network
         /// </summary>
         public override void Stop()
         {
+            SpeechRecognizer.Stop();
+            SpeechRecognizer.SpeechRecognized -= SpeechRecognizer_SpeechRecognized;
             this.TalkerChanged -= SpeechRecognizer.Server_TalkerChanged;
 
             _isWorking = false;
@@ -451,7 +534,11 @@ namespace Network
             Dispatcher.Invoke((Action)(() => _clients.Clear()));
             UpdateMulticastClients();
 
+            DumpTextLog();
+
             base.Stop();
         }
+
+        #endregion
     }
 }

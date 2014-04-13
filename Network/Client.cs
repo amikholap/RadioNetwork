@@ -19,10 +19,6 @@ namespace Network
         private int pingWaitReply = 2000;
 
         /// <summary>
-        /// Client's callsign.
-        /// </summary>
-        public string Callsign { get; set; }
-        /// <summary>
         /// Receive frequency.
         /// </summary>
         public UInt32 Fr { get; set; }
@@ -38,21 +34,20 @@ namespace Network
         /// IP multicast group where the client will listen for audio data.
         /// </summary>
         public IPAddress ReceiveMulticastGroupAddr { get; set; }
-        
+
 
         public event EventHandler<EventArgs> ServerQuit;
-        public event EventHandler<ExceptionArgs> ClientEvent;
+        public event EventHandler<ServerDisconnectedEventArgs> ServerDisconnected;
 
-        public virtual void OnClientEvent(ExceptionArgs e)
+        public virtual void OnClientEvent(ServerDisconnectedEventArgs e)
         {
-            if (ClientEvent != null)
-                ClientEvent(this, e);
+            if (ServerDisconnected != null)
+                ServerDisconnected(this, e);
         }
 
         public Client(string callsign, UInt32 fr, UInt32 ft)
-            : base()
+            : base(callsign)
         {
-            Callsign = callsign;
             Fr = fr;
             Ft = ft;
             UpdateMulticastAddrs();
@@ -159,24 +154,24 @@ namespace Network
                 {
                     case "busy":
                         {
-                            OnClientEvent(new ExceptionArgs("Позывной уже используется, задайте другой позывной"));
+                            OnClientEvent(new ServerDisconnectedEventArgs("Позывной уже используется, задайте другой позывной"));
                             break;
                         }
                     case "use":
                         {
-                            OnClientEvent(new ExceptionArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
+                            OnClientEvent(new ServerDisconnectedEventArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
                             break;
                         }
                     case "free":
                         {
-                            OnClientEvent(new ExceptionArgs("Информация на сервере обновлена"));
+                            OnClientEvent(new ServerDisconnectedEventArgs("Информация на сервере обновлена"));
                             break;
                         }
                     default:
                         {
                             break;
                         }
-                }                    
+                }
             }
             catch (Exception e)
             {
@@ -203,7 +198,7 @@ namespace Network
                 if (th == false)
                 {
                     Stop();
-                    OnClientEvent(new ExceptionArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
+                    OnClientEvent(new ServerDisconnectedEventArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
                 }
                 else
                 {
@@ -218,7 +213,7 @@ namespace Network
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected override void audio_OutputDataAvailable(object sender, AudioIOEventArgs e)
+        protected override void AudioIO_OutputDataAvailable(object sender, AudioIOEventArgs e)
         {
             if (e.Item != null)
             {

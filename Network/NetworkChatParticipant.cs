@@ -16,6 +16,8 @@ namespace Network
 {
     public class NetworkChatParticipant : DispatcherObject
     {
+        #region Properties
+
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
         private int pingWaitAccept = 3000;
@@ -34,11 +36,37 @@ namespace Network
         /// </summary>
         public IPAddress Addr { get; set; }
 
+        /// <summary>
+        /// Callsign of the radionetwork participant.
+        /// </summary>
+        public string Callsign { get; set; }
+
         protected virtual void StartSendPingLoop() { }
         protected virtual void StartReceivingLoop() { }
 
-        protected virtual void audio_OutputDataAvailable(object sender, AudioIOEventArgs e) { }
-        protected virtual void audio_InputDataAvailable(object sender, AudioIOEventArgs e)
+        #endregion
+
+        #region Constructors
+
+        protected NetworkChatParticipant(string callsign)
+        {
+            _connectPing = false;
+            _listenPing = false;
+            _receiving = false;
+            _listenPing = false;
+            _muted = false;
+            _codec = new UncompressedPcmChatCodec();
+
+            Addr = NetworkHelper.GetLocalIPAddress();
+            Callsign = callsign;
+        }
+
+        #endregion
+
+        #region EventHandlers
+
+        protected virtual void AudioIO_OutputDataAvailable(object sender, AudioIOEventArgs e) { }
+        protected virtual void AudioIO_InputDataAvailable(object sender, AudioIOEventArgs e)
         {
             // add the chunk to the playback buffer
             if (e.Item != null)
@@ -47,28 +75,31 @@ namespace Network
             }
         }
 
-        protected NetworkChatParticipant()
-        {
-            _connectPing = false;
-            _listenPing = false;
-            _receiving = false;
-            _listenPing = false;
-            _muted = false;
+        #endregion
 
-            Addr = NetworkHelper.GetLocalIPAddress();
-            _codec = new UncompressedPcmChatCodec();
+        #region Methods
+
+        /// <summary>
+        /// Return absolute path to file in log dir with now timestamp as name.
+        /// The file isn't created.
+        /// </summary>
+        /// <param name="extension"></param>
+        /// <returns></returns>
+        protected string BuildLogFilePath(string extension)
+        {
+            string logDir = Path.Combine(Directory.GetCurrentDirectory(), "log");
+            {
+                Directory.CreateDirectory(logDir);
+            }
+            string fileName = DateTime.Now.ToString(Network.Properties.Settings.Default.TIMESTAMP_FORMAT) + "." + extension;
+            string filePath = Path.Combine(logDir, fileName);
+            return filePath;
         }
 
         protected void StartLoggingAudio()
         {
-            string historyDir = Path.Combine(Directory.GetCurrentDirectory(), "history");
-            {
-                Directory.CreateDirectory(historyDir);
-            }
-            string filename = DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss") + ".wav";
-            string filepath = Path.Combine(historyDir, filename);
-
-            AudioHelper.StartLogging(filepath, _codec);
+            string logFilePath = BuildLogFilePath("wav");
+            AudioHelper.StartLogging(logFilePath, _codec);
         }
 
         protected void StopLoggingAudio()
@@ -202,20 +233,22 @@ namespace Network
             StartLoggingAudio();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
-            AudioIO.InputTick += audio_InputDataAvailable;
-            AudioIO.OutputTick += audio_OutputDataAvailable;
+            AudioIO.InputTick += AudioIO_InputDataAvailable;
+            AudioIO.OutputTick += AudioIO_OutputDataAvailable;
             StartListenPing();
             StartSendPing();
         }
         public virtual void Stop()
         {
-            AudioIO.InputTick -= audio_InputDataAvailable;
-            AudioIO.OutputTick -= audio_OutputDataAvailable;
+            AudioIO.InputTick -= AudioIO_InputDataAvailable;
+            AudioIO.OutputTick -= AudioIO_OutputDataAvailable;
             StopSendPing();
             StopListenPing();
             StopReceiving();
             AudioHelper.StopPlaying();
             StopLoggingAudio();
         }
+
+        #endregion
     }
 }

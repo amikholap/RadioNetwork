@@ -2,6 +2,7 @@
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -27,6 +28,24 @@ namespace Audio
             {
                 AudioIO.AddOutputData(e.Buffer, null);
             };
+        }
+
+        /// <summary>
+        /// Construct a valid WAVE file content from raw input.
+        /// </summary>
+        /// <param name="waveData"></param>
+        /// <param name="codec"></param>
+        /// <returns></returns>
+        public static byte[] ConstructWaveFileData(byte[] waveData, INetworkChatCodec codec)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new WaveFileWriter(stream, codec.RecordFormat))
+                {
+                    writer.Write(waveData, 0, waveData.Length);
+                }
+                return stream.ToArray();
+            }
         }
 
         /// <summary>
