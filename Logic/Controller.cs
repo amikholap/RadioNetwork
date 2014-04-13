@@ -31,7 +31,7 @@ namespace Logic
             get { return _server; }
         }
 
-        static void Client_ServerDisconnected(object sender, ServerDisconnectedEventArgs e)
+        static void Client_ServerDisconnected(object sender, ClientEventArgs e)
         {
             _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
         }

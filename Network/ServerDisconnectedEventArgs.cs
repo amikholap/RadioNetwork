@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Network
 {
-    public class ServerDisconnectedEventArgs : EventArgs
+    public class ClientEventArgs : EventArgs
     {
         public readonly string Message;
 
-        public ServerDisconnectedEventArgs(string msg)
+        public ClientEventArgs(string msg)
         {
             Message = msg;
         }

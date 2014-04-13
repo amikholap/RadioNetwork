@@ -20,7 +20,7 @@ namespace Network
 
         protected static readonly ILog logger = LogManager.GetLogger("RadioNetwork");
 
-        private int pingWaitAccept = 3000;
+        private int pingWaitAccept = 6000;
         protected INetworkChatCodec _codec;
 
         private volatile bool _listenPing;

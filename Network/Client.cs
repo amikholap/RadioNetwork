@@ -16,7 +16,7 @@ namespace Network
     {
         private IPAddress _servAddr;
         private UdpClient _streamClient;
-        private int pingWaitReply = 2000;
+        private int pingWaitReply = 9000;
 
         /// <summary>
         /// Receive frequency.
@@ -37,9 +37,9 @@ namespace Network
 
 
         public event EventHandler<EventArgs> ServerQuit;
-        public event EventHandler<ServerDisconnectedEventArgs> ServerDisconnected;
+        public event EventHandler<ClientEventArgs> ServerDisconnected;
 
-        public virtual void OnClientEvent(ServerDisconnectedEventArgs e)
+        public virtual void OnClientEvent(ClientEventArgs e)
         {
             if (ServerDisconnected != null)
                 ServerDisconnected(this, e);
@@ -154,17 +154,19 @@ namespace Network
                 {
                     case "busy":
                         {
-                            OnClientEvent(new ServerDisconnectedEventArgs("Позывной уже используется, задайте другой позывной"));
+                            OnClientEvent(new ClientEventArgs("Позывной уже используется, задайте другой позывной"));
+                            this.Stop();
                             break;
                         }
                     case "use":
                         {
-                            OnClientEvent(new ServerDisconnectedEventArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
+                            OnClientEvent(new ClientEventArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
+                            this.Stop();
                             break;
                         }
                     case "free":
                         {
-                            OnClientEvent(new ServerDisconnectedEventArgs("Информация на сервере обновлена"));
+                            OnClientEvent(new ClientEventArgs("Информация на сервере обновлена"));
                             break;
                         }
                     default:
@@ -198,11 +200,11 @@ namespace Network
                 if (th == false)
                 {
                     Stop();
-                    OnClientEvent(new ServerDisconnectedEventArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
+                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
                 }
                 else
                 {
-                    if ((pingWaitReply - (int)Delta) > 0)
+                    if ((pingWaitReply - (int)Delta) > 500)
                         Thread.Sleep(pingWaitReply - (int)Delta);
                 }
             }
