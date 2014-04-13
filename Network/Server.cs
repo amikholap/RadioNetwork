@@ -288,14 +288,13 @@ namespace Network
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
                         string[] lines = request.Split('\n');
-
                         switch (lines[0])    // first line specifies the action
                         {
                             case "UPDATE":
                                 // the message format is:
                                 //     UPDATE
                                 //     <callsign>
-                                //     <receive_frequency>,<transmit_frequency>
+                                //     <receive_frequency>,<transmit_frequency>                                
                                 try
                                 {
                                     callsign = lines[1];
@@ -307,66 +306,70 @@ namespace Network
                                     logger.Error("Unhandled exception while listening clients' info.", e);
                                     continue;
                                 }
-                                // get client's IP address
-                                clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
+                                // get client's IP address                                                               
                                 int a = 0;
+                                Client existingClient = null;
+                                clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
                                 foreach (Client item in Clients)
                                 {
-                                    if (String.Compare(callsign, item.Callsign) == 0)
-                                    {
-                                        a = 1;
-                                        break;
-                                    }
                                     if (clientAddr.Equals(item.Addr))
                                     {
-                                        a = 2;
-                                        break;
+                                        existingClient = _clients[_clients.IndexOf(item)];
                                     }
-                                }
-                                switch (a)
-                                {
-                                    case 0:     // if same client ipaddress is not exist and callsign is free
+                                    else
+                                    {
+                                        if (String.Compare(callsign, item.Callsign) == 0)
                                         {
-                                            String message = "free";
-                                            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                            // send data 'free' to client
-                                            ns.Write(data, 0, data.Length);
+                                            a = 1;
+                                            break;
+                                        }
+                                    }
 
-                                            // add a new client to the list only if
-                                            // a client with such IP address doesn't exist
-                                            Client existingClient = _clients.FirstOrDefault(c => c.Addr == clientAddr);
-                                            if (existingClient == null)
+                                }
+                                if (a == 0)
+                                // if same client ipaddress is not exist and callsign is free
+                                {
+                                    String message = "free";
+                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                    // send data 'free' to client
+                                    ns.Write(data, 0, data.Length);
+                                    // add a new client to the list only if
+                                    // a client with such IP address doesn't exist
+                                    if (existingClient == null)
+                                    {
+                                        Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
+                                        logger.Debug(String.Format("client connected: {0} {1} with freqs {2}, {3}", callsign, clientAddr, fr, ft));
+                                    }
+                                    else
+                                    {
+                                        // a client with such IP address already exists
+                                        // update it
+                                        /* interrupt ping in no lock operator, do not delete it */
+                                        //this._connectPingThread.Suspend();
+                                            lock (existingClient)
                                             {
-                                                Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
-                                                logger.Debug(String.Format("Client connected: {0} with freqs {1}, {2}", callsign, fr, ft));
-                                            }
-                                            else
-                                            {
-                                                // a client with such IP address already exists
-                                                // update it
+                                                /*
+                                                _clients[_clients.IndexOf(existingClient)].Callsign = callsign;
+                                                _clients[_clients.IndexOf(existingClient)].Fr = fr;
+                                                _clients[_clients.IndexOf(existingClient)].Ft = ft;
+                                                */
                                                 existingClient.Callsign = callsign;
                                                 existingClient.Fr = fr;
                                                 existingClient.Ft = ft;
                                             }
-                                            UpdateMulticastClients();
-                                            break;
-                                        }
-                                    case 1:     // if callsign is busy
-                                        {
-                                            String message = "busy";
-                                            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                            // send data 'busy' to client
-                                            ns.Write(data, 0, data.Length);
-                                            break;
-                                        }
-                                    default:    // if same client ipaddress exist in _clients
-                                        {
-                                            String message = "use";
-                                            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                            // send data 'use' to client
-                                            ns.Write(data, 0, data.Length);
-                                            break;
-                                        }
+                                           // this._connectPingThread.Resume();
+                                        logger.Debug(String.Format("client {0} reconnect to {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
+                                    }
+                                    UpdateMulticastClients();
+
+                                }
+                                else     // if callsign is busy
+                                {
+                                    String message = "busy";
+                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                    // send data 'busy' to client
+                                    ns.Write(data, 0, data.Length);
+                                    logger.Debug(String.Format("drop client: {0} {1} with freqs {2}, {3} is busy", callsign, clientAddr, fr, ft));
                                 }
                                 break;
                             default:
@@ -392,16 +395,19 @@ namespace Network
             {
                 foreach (Client client in _clients.ToArray())
                 {
-                    if (base.StartAsyncPing(client.Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER) == false)
+                    lock (client)
                     {
-                        logger.Debug("ping remove " + IPAddress.Parse(client.Addr.ToString()));
-                        try
+                        if (base.StartAsyncPing(client.Addr, Network.Properties.Settings.Default.PING_PORT_OUT_SERVER) == false)
                         {
-                            Dispatcher.Invoke((Action)(() => _clients.Remove(client)));  // remove non-ping client
-                        }
-                        catch (TaskCanceledException)
-                        {
-                            // main window closed
+                            logger.Debug("ping remove " + IPAddress.Parse(client.Addr.ToString()));
+                            try
+                            {
+                                Dispatcher.Invoke((Action)(() => _clients.Remove(client)));  // remove non-ping client
+                            }
+                            catch (TaskCanceledException)
+                            {
+                                // main window closed
+                            }
                         }
                     }
                 }
@@ -527,8 +533,7 @@ namespace Network
             SpeechRecognizer.SpeechRecognized -= SpeechRecognizer_SpeechRecognized;
             this.TalkerChanged -= SpeechRecognizer.Server_TalkerChanged;
 
-            _isWorking = false;
-            Thread.Sleep(1000);    // let worker threads finish
+            _isWorking = false;          
 
             // close all UdpClients
             Dispatcher.Invoke((Action)(() => _clients.Clear()));
@@ -537,6 +542,7 @@ namespace Network
             DumpTextLog();
 
             base.Stop();
+            Thread.Sleep(1000);    // let worker threads finish
         }
 
         #endregion

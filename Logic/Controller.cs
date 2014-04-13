@@ -66,11 +66,16 @@ namespace Logic
         /// <param name="ft"></param>
         public static void StartClient(string callsign, UInt32 fr, UInt32 ft)
         {
-            if (Mode != ControllerMode.Client)
+            string reply = String.Empty;
+            if (Mode == ControllerMode.Client && _client.ServAddr != null)
             {
+                reply = _client.UpdateClientInfo(callsign, fr, ft);
+            }
+            else
+            {
+
                 // stop any existing process
                 Stop();
-
                 // create Client instance
                 _client = new Client(callsign, fr, ft);
                 _client.ServerDisconnected += Client_ServerDisconnected;
@@ -78,13 +83,39 @@ namespace Logic
                 var servers = _client.DetectServers().ToList();
                 if (servers.Count == 0)
                 {
-                    throw new RNException("Сервер не найден");
+                    reply = "no server";
                 }
                 else
                 {
-                    _client.Start(servers[0]);
-                    Mode = ControllerMode.Client;
+                    reply = _client.Start(servers[0]);
                 }
+            }
+            switch (reply)
+            {
+                case "free":
+                    {
+                        _client.Callsign = callsign;
+                        _client.Fr = fr;
+                        _client.Ft = ft;
+                        Mode = ControllerMode.Client;
+                        _client.OnClientEvent(new ClientEventArgs("Информация на сервере обновлена"));
+                        break;
+                    }
+                case "busy":
+                    {
+                        _client.OnClientEvent(new ClientEventArgs("Позывной уже используется, задайте другой позывной"));
+                        break;
+                    }
+                case "no server":
+                    {
+                        _client.OnClientEvent(new ClientEventArgs("Сервер не найден"));
+                        break;
+                    }
+                default:
+                    {
+                        _client.OnClientEvent(new ClientEventArgs("Подключение невозможно, некорректный ответ от сервера"));
+                        break;
+                    }
             }
         }
 

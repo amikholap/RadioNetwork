@@ -109,7 +109,7 @@ namespace Network
 
         protected void StartListenPingLoop(IPAddress PingAddr, int PING_PORT)
         {
-            logger.Debug("ping listen from " + IPAddress.Parse(PingAddr.ToString()) + "port " + PING_PORT);
+            logger.Debug("ping listen from " + IPAddress.Parse(PingAddr.ToString()) + " port " + PING_PORT);
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             TcpClient tcpClient;
@@ -126,8 +126,6 @@ namespace Network
                     logger.Debug(String.Format("ping listen accept SYN send from {0}", tcpClient.Client.RemoteEndPoint));
                     tcpClient.Close();
                 }
-                else
-                    Thread.Sleep(pingWaitAccept);
             }
             listener.Stop();
             logger.Debug("ping listen accept stop");

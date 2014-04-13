@@ -29,6 +29,10 @@ namespace Network
         /// <summary>
         /// IP multicast group where the client will send audio data.
         /// </summary>
+        /// <summary>
+        /// Server IP
+        /// </summary>
+        public IPAddress ServAddr { get { return _servAddr; } }
         public IPAddress TransmitMulticastGroupAddr { get; set; }
         /// <summary>
         /// IP multicast group where the client will listen for audio data.
@@ -130,60 +134,49 @@ namespace Network
         /// <summary>
         /// Send to server updated info about this client to server.
         /// </summary>
-        public void UpdateClientInfo()
+        public string UpdateClientInfo(string NewCallsign, uint NewFr, uint NewFt)
         {
             Byte[] dgram = new Byte[256];
             IPEndPoint ipEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.TCP_PORT);
             TcpClient tcpClient = new TcpClient();
-
+            String responseData = String.Empty;
             try
             {
                 tcpClient.Connect(ipEndPoint);
-
-                string message = String.Format("UPDATE\n{0}\n{1},{2}", Callsign, Fr, Ft);
+                string message = String.Format("UPDATE\n{0}\n{1},{2}", NewCallsign, NewFr, NewFt);
                 dgram = System.Text.Encoding.UTF8.GetBytes(message);
-                String responseData = String.Empty;
+                logger.Debug(String.Format("send to server {0}: '{1}'", this._servAddr, dgram));
+
                 Byte[] data = new Byte[64];
+                Int32 bytes = 0, count = 0;
                 using (NetworkStream ns = tcpClient.GetStream())
                 {
                     ns.Write(dgram, 0, dgram.Length);
-                    Int32 bytes = ns.Read(data, 0, data.Length);
+                    while (count < 3 && bytes == 0)
+                    {
+                        Thread.Sleep(pingWaitReply / 9);
+                        bytes = ns.Read(data, 0, data.Length);
+                        count++;
+                    }
                     responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 }
-                switch (responseData)
-                {
-                    case "busy":
-                        {
-                            OnClientEvent(new ClientEventArgs("Позывной уже используется, задайте другой позывной"));
-                            this.Stop();
-                            break;
-                        }
-                    case "use":
-                        {
-                            OnClientEvent(new ClientEventArgs("Нельзя подключиться дважды с одного сетевого интерфейса"));
-                            this.Stop();
-                            break;
-                        }
-                    case "free":
-                        {
-                            OnClientEvent(new ClientEventArgs("Информация на сервере обновлена"));
-                            break;
-                        }
-                    default:
-                        {
-                            break;
-                        }
-                }
+                logger.Debug(String.Format("server {0} reply: '{1}'", this._servAddr, responseData));
+                /*
+                if(!(responseData == "free"))
+                {                         
+                   this.Stop();
+                }              
+                */
             }
             catch (Exception e)
             {
                 logger.Error("Unhandled exception while sending client's info.", e);
-                return;
             }
             finally
             {
                 tcpClient.Close();
             }
+            return responseData;
         }
 
         protected override void StartSendPingLoop()
@@ -199,12 +192,12 @@ namespace Network
                 Delta = (DateTime.Now - dtStart).TotalMilliseconds;
                 if (th == false)
                 {
-                    Stop();
+                    Stop();                    
                     OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
                 }
                 else
                 {
-                    if ((pingWaitReply - (int)Delta) > 500)
+                    if ((pingWaitReply - (int)Delta) > 300)
                         Thread.Sleep(pingWaitReply - (int)Delta);
                 }
             }
@@ -284,11 +277,15 @@ namespace Network
         /// <summary>
         /// Connect to a server and start streaming audio.
         /// </summary>
-        public void Start(IPAddress serverAddr)
+        public string Start(IPAddress serverAddr)
         {
             _servAddr = serverAddr;
-            UpdateClientInfo();
-            base.Start();
+            string reply;
+            if ((reply = UpdateClientInfo(Callsign, Fr, Ft)) == "free")
+            {
+                base.Start();
+            }
+            return reply;
         }
 
         /// <summary>
@@ -296,6 +293,7 @@ namespace Network
         /// </summary>
         public override void Stop()
         {
+            this._servAddr = null;
             base.Stop();
             Thread.Sleep(1000);    // let worker threads finish
         }
