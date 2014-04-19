@@ -345,19 +345,15 @@ namespace Network
                                         // a client with such IP address already exists
                                         // update it
                                         /* interrupt ping in no lock operator, do not delete it */
-                                        //this._connectPingThread.Suspend();
                                             lock (existingClient)
                                             {
-                                                /*
-                                                _clients[_clients.IndexOf(existingClient)].Callsign = callsign;
-                                                _clients[_clients.IndexOf(existingClient)].Fr = fr;
-                                                _clients[_clients.IndexOf(existingClient)].Ft = ft;
-                                                */
+                                                int index = _clients.IndexOf(existingClient);
+                                                Dispatcher.Invoke((Action)(() => _clients.Remove(existingClient)));
                                                 existingClient.Callsign = callsign;
                                                 existingClient.Fr = fr;
                                                 existingClient.Ft = ft;
+                                                Dispatcher.Invoke((Action)(() => _clients.Insert(index, existingClient)));                                                
                                             }
-                                           // this._connectPingThread.Resume();
                                         logger.Debug(String.Format("client {0} reconnect to {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
                                     }
                                     UpdateMulticastClients();

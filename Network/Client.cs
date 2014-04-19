@@ -154,19 +154,13 @@ namespace Network
                     ns.Write(dgram, 0, dgram.Length);
                     while (count < 3 && bytes == 0)
                     {
-                        Thread.Sleep(pingWaitReply / 9);
+                        Thread.Sleep((pingWaitReply / 9));
                         bytes = ns.Read(data, 0, data.Length);
                         count++;
                     }
                     responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 }
                 logger.Debug(String.Format("server {0} reply: '{1}'", this._servAddr, responseData));
-                /*
-                if(!(responseData == "free"))
-                {                         
-                   this.Stop();
-                }              
-                */
             }
             catch (Exception e)
             {
