@@ -185,7 +185,7 @@ namespace Network
                 th = StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
                 Delta = (DateTime.Now - dtStart).TotalMilliseconds;
                 if (th == false)
-                {
+                {                    
                     Stop();                    
                     OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
                 }
@@ -288,8 +288,7 @@ namespace Network
         public override void Stop()
         {
             // tell server that client forcing disconnect
-            // server reply does not matter
-            UpdateClientInfo(this.Callsign, this.Fr, this.Ft, "DELETE", 1);
+            // server reply does not matter            
             this._servAddr = null;
             base.Stop();
             Thread.Sleep(1000);    // let worker threads finish
