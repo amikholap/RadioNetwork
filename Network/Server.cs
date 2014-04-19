@@ -288,63 +288,64 @@ namespace Network
                         ns.Read(buf, 0, buf.Length);
                         string request = Encoding.UTF8.GetString(buf);
                         string[] lines = request.Split('\n');
+                        clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
                         switch (lines[0])    // first line specifies the action
                         {
                             case "UPDATE":
-                                // the message format is:
-                                //     UPDATE
-                                //     <callsign>
-                                //     <receive_frequency>,<transmit_frequency>                                
-                                try
                                 {
-                                    callsign = lines[1];
-                                    fr = UInt32.Parse(lines[2].Split(',')[0]);
-                                    ft = UInt32.Parse(lines[2].Split(',')[1]);
-                                }
-                                catch (Exception e)
-                                {
-                                    logger.Error("Unhandled exception while listening clients' info.", e);
-                                    continue;
-                                }
-                                // get client's IP address                                                               
-                                int a = 0;
-                                Client existingClient = null;
-                                clientAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
-                                foreach (Client item in Clients)
-                                {
-                                    if (clientAddr.Equals(item.Addr))
+                                    // the message format is:
+                                    //     UPDATE
+                                    //     <callsign>
+                                    //     <receive_frequency>,<transmit_frequency>                                
+                                    try
                                     {
-                                        existingClient = _clients[_clients.IndexOf(item)];
+                                        callsign = lines[1];
+                                        fr = UInt32.Parse(lines[2].Split(',')[0]);
+                                        ft = UInt32.Parse(lines[2].Split(',')[1]);
                                     }
-                                    else
+                                    catch (Exception e)
                                     {
-                                        if (String.Compare(callsign, item.Callsign) == 0)
+                                        logger.Error("Unhandled exception while listening clients' info.", e);
+                                        continue;
+                                    }
+                                    // get client's IP address                                                               
+                                    int a = 0;
+                                    Client existingClient = null;                                    
+                                    foreach (Client item in Clients)
+                                    {
+                                        if (clientAddr.Equals(item.Addr))
                                         {
-                                            a = 1;
-                                            break;
+                                            existingClient = _clients[_clients.IndexOf(item)];
                                         }
-                                    }
+                                        else
+                                        {
+                                            if (String.Compare(callsign, item.Callsign) == 0)
+                                            {
+                                                a = 1;
+                                                break;
+                                            }
+                                        }
 
-                                }
-                                if (a == 0)
-                                // if same client ipaddress is not exist and callsign is free
-                                {
-                                    String message = "free";
-                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                    // send data 'free' to client
-                                    ns.Write(data, 0, data.Length);
-                                    // add a new client to the list only if
-                                    // a client with such IP address doesn't exist
-                                    if (existingClient == null)
-                                    {
-                                        Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
-                                        logger.Debug(String.Format("client connected: {0} {1} with freqs {2}, {3}", callsign, clientAddr, fr, ft));
                                     }
-                                    else
+                                    if (a == 0)
+                                    // if same client ipaddress is not exist and callsign is free
                                     {
-                                        // a client with such IP address already exists
-                                        // update it
-                                        /* interrupt ping in no lock operator, do not delete it */
+                                        String message = "free";
+                                        Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                        // send data 'free' to client
+                                        ns.Write(data, 0, data.Length);
+                                        // add a new client to the list only if
+                                        // a client with such IP address doesn't exist
+                                        if (existingClient == null)
+                                        {
+                                            Dispatcher.Invoke((Action)(() => _clients.Add(new Client(clientAddr, callsign, fr, ft))));
+                                            logger.Debug(String.Format("client connected: {0} {1} with freqs {2}, {3}", callsign, clientAddr, fr, ft));
+                                        }
+                                        else
+                                        {
+                                            // a client with such IP address already exists
+                                            // update it
+                                            /* interrupt ping in no lock operator, do not delete it */
                                             lock (existingClient)
                                             {
                                                 int index = _clients.IndexOf(existingClient);
@@ -352,27 +353,55 @@ namespace Network
                                                 existingClient.Callsign = callsign;
                                                 existingClient.Fr = fr;
                                                 existingClient.Ft = ft;
-                                                Dispatcher.Invoke((Action)(() => _clients.Insert(index, existingClient)));                                                
+                                                Dispatcher.Invoke((Action)(() => _clients.Insert(index, existingClient)));
                                             }
-                                        logger.Debug(String.Format("client {0} reconnect to {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
+                                            logger.Debug(String.Format("client {0} reconnect to {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
+                                        }         
+                                    }
+                                    else     // if callsign is busy
+                                    {
+                                        String message = "busy";
+                                        Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                                        // send data 'busy' to client
+                                        ns.Write(data, 0, data.Length);
+                                        logger.Debug(String.Format("drop client: {0} {1} with freqs {2}, {3} is busy", callsign, clientAddr, fr, ft));
                                     }
                                     UpdateMulticastClients();
-
+                                    break;
                                 }
-                                else     // if callsign is busy
+                            case "DELETE":
                                 {
-                                    String message = "busy";
-                                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-                                    // send data 'busy' to client
-                                    ns.Write(data, 0, data.Length);
-                                    logger.Debug(String.Format("drop client: {0} {1} with freqs {2}, {3} is busy", callsign, clientAddr, fr, ft));
+                                    foreach (Client item in Clients)
+                                    {
+                                        if (clientAddr.Equals(item.Addr))
+                                        {
+                                            try
+                                            {
+                                                callsign = lines[1];
+                                                fr = UInt32.Parse(lines[2].Split(',')[0]);
+                                                ft = UInt32.Parse(lines[2].Split(',')[1]);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                logger.Error("Unhandled exception while listening clients' info.", e);
+                                                continue;
+                                            }
+                                            lock (item)
+                                            {
+                                                Dispatcher.Invoke((Action)(() => _clients.Remove(item))); 
+                                            }
+                                            logger.Debug(String.Format("client {0} disconnect {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
+                                            break;
+                                        }  
+                                    }
+                                    UpdateMulticastClients();
+                                    break;
                                 }
-                                break;
                             default:
                                 // unknown format
                                 Server.logger.Warn(request);
                                 continue;
-                        }
+                        }                        
                     }
                 }
                 else

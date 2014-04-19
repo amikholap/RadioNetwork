@@ -134,7 +134,7 @@ namespace Network
         /// <summary>
         /// Send to server updated info about this client to server.
         /// </summary>
-        public string UpdateClientInfo(string NewCallsign, uint NewFr, uint NewFt)
+        public string UpdateClientInfo(string NewCallsign, uint NewFr, uint NewFt, string NewMess = "UPDATE", int TryCount = 3)
         {
             Byte[] dgram = new Byte[256];
             IPEndPoint ipEndPoint = new IPEndPoint(_servAddr, Network.Properties.Settings.Default.TCP_PORT);
@@ -143,7 +143,7 @@ namespace Network
             try
             {
                 tcpClient.Connect(ipEndPoint);
-                string message = String.Format("UPDATE\n{0}\n{1},{2}", NewCallsign, NewFr, NewFt);
+                string message = String.Format("{0}\n{1}\n{2},{3}", NewMess, NewCallsign, NewFr, NewFt);
                 dgram = System.Text.Encoding.UTF8.GetBytes(message);
                 logger.Debug(String.Format("send to server {0}: '{1}'", this._servAddr, dgram));
 
@@ -152,7 +152,7 @@ namespace Network
                 using (NetworkStream ns = tcpClient.GetStream())
                 {
                     ns.Write(dgram, 0, dgram.Length);
-                    while (count < 3 && bytes == 0)
+                    while (count < TryCount && bytes == 0)
                     {
                         Thread.Sleep((pingWaitReply / 9));
                         bytes = ns.Read(data, 0, data.Length);
@@ -287,6 +287,9 @@ namespace Network
         /// </summary>
         public override void Stop()
         {
+            // tell server that client forcing disconnect
+            // server reply does not matter
+            this.UpdateClientInfo(this.Callsign, this.Fr, this.Ft, "DELETE", 0);
             this._servAddr = null;
             base.Stop();
             Thread.Sleep(1000);    // let worker threads finish

@@ -154,9 +154,9 @@ namespace Logic
         {
             switch (Mode)
             {
-                case ControllerMode.Client:
-                    _client.ServerDisconnected -= Client_ServerDisconnected;
+                case ControllerMode.Client:   
                     _client.Stop();
+                    _client.ServerDisconnected -= Client_ServerDisconnected;
                     break;
                 case ControllerMode.Server:
                     _server.Stop();
