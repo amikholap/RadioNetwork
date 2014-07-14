@@ -80,6 +80,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Controls\ControlsResourceDictionary.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -141,6 +145,10 @@
   <ItemGroup>
     <Resource Include="img\mode_button_client.jpg" />
     <Resource Include="img\mode_button_server.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\power_button_off.jpg" />
+    <Resource Include="img\power_button_on.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -6,70 +6,38 @@
         Title="Радиосеть" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Controls/ControlsResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </ResourceDictionary>
     </Window.Resources>
-    
+
     <Canvas Width="800" Height="488">
         <Canvas.Background>
-            <ImageBrush ImageSource="img/background.jpg"/>
+            <ImageBrush ImageSource="/img/background.jpg"/>
         </Canvas.Background>
+
         <Button Name="PushToTalkButton" Content="Тангента" Canvas.Left="676" Canvas.Top="438" Width="75" Click="PushToTalkButton_Click"/>
+
         <TextBox Height="48" Canvas.Left="331" Text="{Binding Path=Callsign}" Canvas.Top="32" Width="61" BorderThickness="0" Background="{x:Null}" FontFamily="Segoe Print" FontWeight="Bold" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="Wrap" MaxLength="13"/>
 
-        <ToggleButton x:Name="ModeToggleButton" Canvas.Left="115" Canvas.Top="360" Checked="ModeToggleButton_Checked" Unchecked="ModeToggleButton_Unchecked" Height="89" Width="177" ToolTip="Переключение режима работы" Cursor="Hand">
-            <!--ToggleButton.Background>
-                <ImageBrush ImageSource="img/mode_button_client.jpg"/>
-            </ToggleButton.Background-->
-            <ToggleButton.Style>
-                <Style TargetType="ToggleButton">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ToggleButton">
-                                <Grid>
-                                    <VisualStateManager.VisualStateGroups>
-                                        <VisualStateGroup x:Name="CheckStates">
-                                            <VisualState x:Name="Checked">
-                                                <Storyboard>
-                                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ModeToggleButtonImage"
-                                                                                   Storyboard.TargetProperty="Source">
-                                                        <DiscreteObjectKeyFrame KeyTime="0">
-                                                            <DiscreteObjectKeyFrame.Value>
-                                                                <BitmapImage UriSource="img/mode_button_server.jpg"/>
-                                                            </DiscreteObjectKeyFrame.Value>
-                                                        </DiscreteObjectKeyFrame>
-                                                    </ObjectAnimationUsingKeyFrames>
-                                                </Storyboard>
-                                            </VisualState>
-                                            <VisualState x:Name="Unchecked"/>
-                                        </VisualStateGroup>
-                                    </VisualStateManager.VisualStateGroups>
-                                    <Image x:Name="ModeToggleButtonImage"  Source="img/mode_button_client.jpg"/>
-                                    <ContentPresenter
-                                        x:Name="contentPresenter"
-                                        Content="{TemplateBinding Content}"
-                                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                        Margin="{TemplateBinding Padding}"/>
-                                </Grid>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ToggleButton.Style>
-        </ToggleButton>
+        <ToggleButton Name="ModeToggleButton" Style="{StaticResource ModeToggleButtonStyle}" Canvas.Left="115" Canvas.Top="360" Checked="ModeToggleButton_Checked" Unchecked="ModeToggleButton_Unchecked" Height="89" Width="177" ToolTip="Переключение режима работы" Cursor="Hand"/>
+
+        <ToggleButton Name="PowerToggleButton" Style="{StaticResource PowerToggleButtonStyle}" Canvas.Left="365" Canvas.Top="290" Height="25" Width="28" ToolTip="Переключение режима работы" Cursor="Hand" Checked="PowerToggleButton_Checked" Unchecked="PowerToggleButton_Unchecked"/>
 
         <Border Canvas.Left="126" Canvas.Top="32" Canvas.ZIndex="10">
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
             </Border.Effect>
-            <rn:NumericalImageTextBox x:Name="FrTextBox" Text="275" Height="51" Width="85" Canvas.ZIndex="0" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0"/>
+            <rn:NumericalImageTextBox x:Name="FrTextBox" Text="255"  Height="51" Width="85" Canvas.ZIndex="0" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0"/>
         </Border>
         <Border Canvas.Left="211" Canvas.Top="32" Canvas.ZIndex="10">
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
             </Border.Effect>
-            <rn:NumericalImageTextBox x:Name="FtTextBox" Text="355"  Height="51" Width="85" Canvas.ZIndex="0" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0"/>
+            <rn:NumericalImageTextBox x:Name="FtTextBox" Text="375" Height="51" Width="85" Canvas.ZIndex="0" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0"/>
         </Border>
     </Canvas>
 

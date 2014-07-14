@@ -85,16 +85,6 @@ namespace RadioNetwork
             Controller.ShutDown();
         }
 
-        private void ConnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            StartClient();
-        }
-
-        private void DisconnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            Controller.Stop();
-        }
-
         private void PushToTalkButton_Click(object sender, RoutedEventArgs e)
         {
             Button btn = (Button)sender;
@@ -122,9 +112,36 @@ namespace RadioNetwork
             SwitchToClientMode();
         }
 
+        /// <summary>
+        /// Switch to server mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ModeToggleButton_Checked(object sender, RoutedEventArgs e)
         {
             SwitchToServerMode();
+        }
+
+        /// <summary>
+        /// Connect to a server.
+        /// Available only in client mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PowerToggleButton_Checked(object sender, RoutedEventArgs e)
+        {
+            StartClient();
+        }
+
+        /// <summary>
+        /// Disconect from a server.
+        /// Available only in client mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PowerToggleButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Controller.Stop();
         }
     }
 }
