@@ -38,8 +38,8 @@ namespace Logic
 
         static Controller()
         {
-            _client = null;
-            _server = null;
+            _client = new Client("Тополь", 275, 355);
+            _server = new Server("Береза");
             Mode = ControllerMode.None;
         }
 
@@ -158,8 +158,9 @@ namespace Logic
                     if (_client.ServAddr != null)
                     {
                         _client.UpdateClientInfo(_client.Callsign, _client.Fr, _client.Ft, "DELETE", 0);
-                        _client.Stop(); 
-                    }                                       
+                        _client.Stop();
+                        _client.ServerDisconnected -= Client_ServerDisconnected;
+                    }
                     break;
                 case ControllerMode.Server:
                     _server.Stop();

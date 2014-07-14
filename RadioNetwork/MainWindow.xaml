@@ -1,123 +1,76 @@
 ﻿<Window x:Class="RadioNetwork.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:rn="clr-namespace:RadioNetwork.Controls"
         Closing="OnWindowClosing"
-        Title="Радиосеть" Height="250" Width="200">
-    <StackPanel>
-        <Menu IsMainMenu="True" >
-            <MenuItem Header="Настройки" >
-                <MenuItem Header="Режим работы" >
-                    <MenuItem Name="ClientModeMenuItem" Header="Клиент" IsCheckable="True" IsChecked="True" Click="ClientModeMenuItem_Click" />
-                    <MenuItem Name="ServerModeMenuItem" Header="Сервер" IsCheckable="True" Click="ServerModeMenuItem_Click" />
-                </MenuItem>
-            </MenuItem>
-        </Menu>
-        <Grid Name="ClientLayout" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
+        Title="Радиосеть" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight">
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="3*" MinHeight="150" />
-                <RowDefinition Height="5*" />
-                <RowDefinition Height="2*" />
-            </Grid.RowDefinitions>
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+    
+    <Canvas Width="800" Height="488">
+        <Canvas.Background>
+            <ImageBrush ImageSource="img/background.jpg"/>
+        </Canvas.Background>
+        <Button Name="PushToTalkButton" Content="Тангента" Canvas.Left="676" Canvas.Top="438" Width="75" Click="PushToTalkButton_Click"/>
+        <TextBox Height="48" Canvas.Left="331" Text="{Binding Path=Callsign}" Canvas.Top="32" Width="61" BorderThickness="0" Background="{x:Null}" FontFamily="Segoe Print" FontWeight="Bold" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="Wrap" MaxLength="13"/>
 
-            <Grid Grid.Column="0" Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="3*" />
-                </Grid.RowDefinitions>
-                <Label Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left">Позывной</Label>
-                <TextBox Name="CallsignInput" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch">
-                    <TextBox.Text>
-                        <Binding Path="Callsign" Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <ExceptionValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
-                </TextBox>
-                <Label Grid.Column="0" Grid.Row="1">Ч. пр.</Label>
-                <TextBox Name="FrInput" Grid.Column="1" Grid.Row="1">
-                    <TextBox.Text>
-                        <Binding Path="Fr" Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <ExceptionValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
-                </TextBox>
-                <Label Grid.Column="0" Grid.Row="2">Ч. пер.</Label>
-                <TextBox Name="FtInput" Grid.Column="1" Grid.Row="2">
-                    <TextBox.Text>
-                        <Binding Path="Ft" Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <ExceptionValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
-                </TextBox>
-                <Button Name="ConnectButton" Grid.ColumnSpan="2" Grid.Row="3" Margin="25,5,25,0" Click="ConnectButton_Click" >Подключиться</Button>
-                <Button Name="DisconnectButton" Grid.ColumnSpan="2" Grid.Row="4" Margin="25,5,25,0" Click="DisconnectButton_Click">Отключиться</Button>
-                <Button Name="ClientPushToTalkButton" Grid.ColumnSpan="2" Grid.Row="5" Margin="25,5,25,0" Click="PushToTalkButton_Click">Тангента</Button>
-            </Grid>
-        </Grid>
+        <ToggleButton x:Name="ModeToggleButton" Canvas.Left="115" Canvas.Top="360" Checked="ModeToggleButton_Checked" Unchecked="ModeToggleButton_Unchecked" Height="89" Width="177" ToolTip="Переключение режима работы" Cursor="Hand">
+            <!--ToggleButton.Background>
+                <ImageBrush ImageSource="img/mode_button_client.jpg"/>
+            </ToggleButton.Background-->
+            <ToggleButton.Style>
+                <Style TargetType="ToggleButton">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ToggleButton">
+                                <Grid>
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup x:Name="CheckStates">
+                                            <VisualState x:Name="Checked">
+                                                <Storyboard>
+                                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ModeToggleButtonImage"
+                                                                                   Storyboard.TargetProperty="Source">
+                                                        <DiscreteObjectKeyFrame KeyTime="0">
+                                                            <DiscreteObjectKeyFrame.Value>
+                                                                <BitmapImage UriSource="img/mode_button_server.jpg"/>
+                                                            </DiscreteObjectKeyFrame.Value>
+                                                        </DiscreteObjectKeyFrame>
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </VisualState>
+                                            <VisualState x:Name="Unchecked"/>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
+                                    <Image x:Name="ModeToggleButtonImage"  Source="img/mode_button_client.jpg"/>
+                                    <ContentPresenter
+                                        x:Name="contentPresenter"
+                                        Content="{TemplateBinding Content}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        Margin="{TemplateBinding Padding}"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ToggleButton.Style>
+        </ToggleButton>
 
-        <Grid Name="ServerLayout" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
+        <Border Canvas.Left="126" Canvas.Top="32" Canvas.ZIndex="10">
+            <Border.Effect>
+                <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
+            </Border.Effect>
+            <rn:NumericalImageTextBox x:Name="FrTextBox" Text="275" Height="51" Width="85" Canvas.ZIndex="0" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0"/>
+        </Border>
+        <Border Canvas.Left="211" Canvas.Top="32" Canvas.ZIndex="10">
+            <Border.Effect>
+                <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
+            </Border.Effect>
+            <rn:NumericalImageTextBox x:Name="FtTextBox" Text="355"  Height="51" Width="85" Canvas.ZIndex="0" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0"/>
+        </Border>
+    </Canvas>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="3*" MinHeight="150" />
-                <RowDefinition Height="5*" />
-                <RowDefinition Height="2*" />
-            </Grid.RowDefinitions>
-
-            <Grid Grid.Column="0" Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="4*" />
-                    <RowDefinition Height="1*" />
-                </Grid.RowDefinitions>
-                <Label Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left">Позывной</Label>
-                <TextBox Name="ServerCallsignInput" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch">
-                    <TextBox.Text>
-                        <Binding Path="Callsign" Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <ExceptionValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
-                </TextBox>
-
-                <DataGrid Name="ClientsDataGrid" Grid.ColumnSpan="2" Grid.Row="1" AutoGenerateColumns="False" ItemsSource="{Binding Clients}" >
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Позывной" IsReadOnly="True" Binding="{Binding Path=Callsign}" Width="*" >
-                        </DataGridTextColumn>
-                        <DataGridTextColumn Header="Ч. пер." IsReadOnly="True" Binding="{Binding Path=Ft}" >
-                        </DataGridTextColumn>
-                        <DataGridTextColumn Header="Ч. пр." IsReadOnly="True" Binding="{Binding Path=Fr}" >
-                        </DataGridTextColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-
-                <Button Name="ServerPushToTalkButton" Grid.ColumnSpan="2" Grid.Row="2" Margin="25,5,25,0" Click="PushToTalkButton_Click">Тангента</Button>
-            </Grid>
-
-        </Grid>
-    </StackPanel>
 </Window>

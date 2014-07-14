@@ -71,6 +71,7 @@ namespace Network
                 return;
             }
 
+            // TODO: don't increase buffer length each time
             Array.Resize(ref _buffer, _buffer.Length + e.Item.Data.Length);
             e.Item.Data.CopyTo(_buffer, _buffer.Length - e.Item.Data.Length);
         }

@@ -42,17 +42,21 @@ namespace RadioNetwork
 
         private void StartServer()
         {
-            string callsign;
-            if (_sdc == null)
-            {
-                callsign = "";
-            }
-            else
-            {
-                callsign = _sdc.Callsign;
-            }
-            Controller.StartServer(callsign);
+            Controller.StartServer(_sdc.Callsign);
         }
+
+        private void SwitchToClientMode()
+        {
+            Controller.Stop();
+            this.DataContext = _cdc;
+        }
+
+        private void SwitchToServerMode()
+        {
+            StartServer();
+            this.DataContext = _sdc;
+        }
+
 
         /// <summary>
         /// Entry point of application code.
@@ -63,62 +67,22 @@ namespace RadioNetwork
 
             Controller.Init();
 
-            ClientPushToTalkButton.ClickMode = ClickMode.Press;
-            ServerPushToTalkButton.ClickMode = ClickMode.Press;
+            _sdc = new ServerDataContext(Controller.Server);
+            _cdc = new ClientDataContext(Controller.Client);
+
+            // Initialize IsTalking state
+            PushToTalkButton.ClickMode = ClickMode.Press;
             _isTalking = false;
 
-            _cdc = new ClientDataContext();
-            ClientLayout.DataContext = _cdc;
+            // Start in client mode
+            ModeToggleButton.IsChecked = false;
+            SwitchToClientMode();
         }
 
         void OnWindowClosing(object sender, CancelEventArgs e)
         {
             Controller.Stop();
             Controller.ShutDown();
-        }
-
-        /// <summary>
-        /// Switch to client mode.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void ClientModeMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            ClientModeMenuItem.IsChecked = true;
-            ServerModeMenuItem.IsChecked = false;
-
-            Controller.Stop();
-
-            if (_cdc == null)
-            {
-                _cdc = new ClientDataContext();
-            }
-            ClientLayout.DataContext = _cdc;
-
-            ServerLayout.Visibility = System.Windows.Visibility.Collapsed;
-            ClientLayout.Visibility = System.Windows.Visibility.Visible;
-        }
-
-        /// <summary>
-        /// Switch to server mode.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void ServerModeMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            ClientModeMenuItem.IsChecked = false;
-            ServerModeMenuItem.IsChecked = true;
-
-            StartServer();
-
-            if (_sdc == null)
-            {
-                _sdc = new ServerDataContext(Controller.Server);
-            }
-            ServerLayout.DataContext = _sdc;
-
-            ClientLayout.Visibility = System.Windows.Visibility.Collapsed;
-            ServerLayout.Visibility = System.Windows.Visibility.Visible;
         }
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
@@ -146,6 +110,21 @@ namespace RadioNetwork
                 Controller.StartTalking();
                 _isTalking = true;
             }
+        }
+
+        /// <summary>
+        /// Switch to client mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ModeToggleButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SwitchToClientMode();
+        }
+
+        private void ModeToggleButton_Checked(object sender, RoutedEventArgs e)
+        {
+            SwitchToServerMode();
         }
     }
 }

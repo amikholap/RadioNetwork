@@ -39,6 +39,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -57,7 +58,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ServerDataContext.cs" />
+    <Compile Include="Controls\NumericalImageTextBox.xaml.cs">
+      <DependentUpon>NumericalImageTextBox.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DataContext\NetworkChatParticipantDataContext.cs" />
+    <Compile Include="DataContext\ServerDataContext.cs" />
+    <Page Include="Controls\NumericalImageTextBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -66,7 +75,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ClientDataContext.cs" />
+    <Compile Include="DataContext\ClientDataContext.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -89,6 +98,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -109,6 +119,28 @@
       <Project>{2cd08627-0bfd-47cc-bbd9-50a85242b475}</Project>
       <Name>Network</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\digits\0.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\background.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\digits\1.jpg" />
+    <Resource Include="img\digits\2.jpg" />
+    <Resource Include="img\digits\3.jpg" />
+    <Resource Include="img\digits\4.jpg" />
+    <Resource Include="img\digits\5.jpg" />
+    <Resource Include="img\digits\6.jpg" />
+    <Resource Include="img\digits\7.jpg" />
+    <Resource Include="img\digits\8.jpg" />
+    <Resource Include="img\digits\9.jpg" />
+    <Resource Include="img\digits\_.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\mode_button_client.jpg" />
+    <Resource Include="img\mode_button_server.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

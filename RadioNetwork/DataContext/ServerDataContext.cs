@@ -1,4 +1,5 @@
 ﻿using Network;
+using RadioNetwork.DataContext;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,30 +9,33 @@ using System.Threading.Tasks;
 
 namespace RadioNetwork
 {
-    class ServerDataContext
+    class ServerDataContext : NetworkChatParticipantDataContext
     {
-        private string _callsign;
         private Server _server;
 
         public ServerDataContext(Server server)
         {
-            _callsign = "Береза";
             _server = server;
+        }
+
+        public override bool IsClient
+        {
+            get { return false; }
         }
 
         public string Callsign
         {
             get
             {
-                return _callsign;
+                return _server.Callsign;
             }
             set
             {
-                _callsign = value;
                 if (String.IsNullOrWhiteSpace(value))
                 {
                     throw new ApplicationException("Позывной не указан.");
                 }
+                _server.Callsign = value;
             }
         }
 

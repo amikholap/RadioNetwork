@@ -68,7 +68,7 @@ namespace Audio
         }
         private static void OnMergedTick(AudioIOEventArgs e)
         {
-            if (OutputTick != null)
+            if (MergedTick != null)
             {
                 MergedTick(null, e);
             }

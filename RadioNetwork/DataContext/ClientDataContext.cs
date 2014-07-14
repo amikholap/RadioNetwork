@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Network;
+using RadioNetwork.DataContext;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,28 +8,30 @@ using System.Threading.Tasks;
 
 namespace RadioNetwork
 {
-    class ClientDataContext
+    class ClientDataContext : NetworkChatParticipantDataContext
     {
-        private string _callsign;
-        private int _fr, _ft;
+        private Client _client;
 
-        public ClientDataContext()
+        public ClientDataContext(Client client)
         {
-            _callsign = "Тополь";
-            _fr = 255;
-            _ft = 375;
+            _client = client;
+        }
+
+        public override bool IsClient
+        {
+            get { return true; }
         }
 
         public string Callsign
         {
-            get { return _callsign; }
+            get { return _client.Callsign; }
             set
             {
-                _callsign = value;
                 if (String.IsNullOrWhiteSpace(value))
                 {
                     throw new ApplicationException("Позывной не указан.");
                 }
+                _client.Callsign = value;
             }
         }
 
@@ -35,26 +39,30 @@ namespace RadioNetwork
         {
             get
             {
-                return _fr.ToString();
+                return _client.Fr.ToString();
             }
             set
             {
-                if (!int.TryParse(value, out _fr) || _fr <= 0)
+                uint fr;
+                if (!uint.TryParse(value, out fr))
                 {
                     throw new ApplicationException("Неправильное значение частоты приема.");
                 }
+                _client.Fr = fr;
             }
         }
 
         public string Ft
         {
-            get { return _ft.ToString(); }
+            get { return _client.Ft.ToString(); }
             set
             {
-                if (!int.TryParse(value, out _ft) || _ft <= 0)
+                uint ft;
+                if (!uint.TryParse(value, out ft))
                 {
                     throw new ApplicationException("Неправильное значение частоты приема.");
                 }
+                _client.Ft = ft;
             }
         }
     }
