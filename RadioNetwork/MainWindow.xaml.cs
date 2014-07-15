@@ -179,5 +179,19 @@ namespace RadioNetwork
                 input.Text += digit;
             }
         }
+
+        /// <summary>
+        /// Focus right input when left input is full.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FrTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            NumericalImageTextBox tb = (NumericalImageTextBox)sender;
+            if (tb.Text.Length >= tb.MaxLength)
+            {
+                FtTextBox.Focus();
+            }
+        }
     }
 }
