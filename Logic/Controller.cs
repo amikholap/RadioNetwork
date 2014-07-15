@@ -155,9 +155,11 @@ namespace Logic
             switch (Mode)
             {
                 case ControllerMode.Client:
-                    _client.UpdateClientInfo(_client.Callsign, _client.Fr, _client.Ft, "DELETE", 0);
-                    _client.Stop();
-                    _client.ServerDisconnected -= Client_ServerDisconnected;
+                    if (_client.ServAddr != null)
+                    {
+                        _client.UpdateClientInfo(_client.Callsign, _client.Fr, _client.Ft, "DELETE", 0);
+                        _client.Stop(); 
+                    }                                       
                     break;
                 case ControllerMode.Server:
                     _server.Stop();

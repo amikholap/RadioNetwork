@@ -180,9 +180,9 @@ namespace Network
             {
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
-                    IPAddress servAddr = _servAddr;
+                    IPAddress serverAddress = _servAddr;
                     Stop();                    
-                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", servAddr)));
+                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", serverAddress)));
                 }
                 Thread.Sleep(pingWaitReply);
             }
@@ -279,9 +279,9 @@ namespace Network
         public override void Stop()
         {
             // tell server that client forcing disconnect
-            // server reply does not matter            
-            this._servAddr = null;
+            // server reply does not matter           
             base.Stop();
+            _servAddr = null;
             Thread.Sleep(1000);    // let worker threads finish
         }
     }
