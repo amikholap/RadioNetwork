@@ -175,25 +175,16 @@ namespace Network
 
         protected override void StartSendPingLoop()
         {
-            double Delta = 0;
-            bool th = false;
-            DateTime dtStart;
             base._connectPing = true;
             while (base._connectPing == true)
             {
-                dtStart = DateTime.Now;
-                th = StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER);
-                Delta = (DateTime.Now - dtStart).TotalMilliseconds;
-                if (th == false)
-                {                    
-                    Stop();                    
-                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", _servAddr)));
-                }
-                else
+                if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
-                    if ((pingWaitReply - (int)Delta) > 300)
-                        Thread.Sleep(pingWaitReply - (int)Delta);
+                    IPAddress servAddr = _servAddr;
+                    Stop();                    
+                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", servAddr)));
                 }
+                Thread.Sleep(pingWaitReply);
             }
         }
 
