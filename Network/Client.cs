@@ -9,6 +9,7 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using System.IO.Pipes;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Network
 {
@@ -78,41 +79,33 @@ namespace Network
         }
 
         /// <summary>
-        /// Return a list of available server IP addresses.
+        /// Return a list of available servers.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<IPAddress> DetectServers()
+        public static IEnumerable<Server> DetectServers()
         {
-            Byte[] dgram = new byte[256];
-            List<IPAddress> serverIPs = new List<IPAddress>();
+            Byte[] dgram = new byte[0];
+            List<IPAddress> serverAddresses = new List<IPAddress>();
+            List<Server> servers = new List<Server>();
 
+            // prepare network requisites
             UdpClient udpClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
             udpClient.EnableBroadcast = true;
-            // determine port && BroadcastAddr
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
-            IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
 
-            // send BroadCast message "client" in byte[]
-            string request = "client";
-            dgram = Encoding.UTF8.GetBytes(request);
             // Blocks until a message returns on this socket from a remote host.
             udpClient.Send(dgram, dgram.Length, broadcastEndPoint);
 
-            // listen for server's reponse for 5 seconds
-            DateTime t = DateTime.Now;
+            DateTime startTime = DateTime.Now;
             try
             {
-                // wait for server's response for 5 seconds
-                while ((DateTime.Now - t) < TimeSpan.FromSeconds(5))
+                // wait for server responses for 5 seconds
+                while ((DateTime.Now - startTime) < TimeSpan.FromSeconds(5))
                 {
+                    IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
                     dgram = udpClient.Receive(ref anyEndPoint);
-                    string response = Encoding.UTF8.GetString(dgram);
-                    // data is in format {client,server}
-                    if (response == "server")
-                    {
-                        serverIPs.Add(anyEndPoint.Address);
-                        logger.Debug(String.Format("Found server: {0}", anyEndPoint.Address));
-                    }
+                    serverAddresses.Add(anyEndPoint.Address);
+                    logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
                 }
             }
             catch (SocketException)
@@ -128,7 +121,49 @@ namespace Network
                 udpClient.Close();
             }
 
-            return serverIPs;
+            foreach (var servAddr in serverAddresses)
+            {
+                Server s = GetServerDetails(servAddr);
+                if (s != null)
+                {
+                    servers.Add(s);
+                }
+            }
+
+            return servers;
+        }
+
+        /// <summary>
+        /// Fetch details for a server with the specified IP address.
+        /// Return a deserialized Server object or null if something went wrong.
+        /// </summary>
+        /// <param name="addr"></param>
+        /// <returns></returns>
+        private static Server GetServerDetails(IPAddress addr)
+        {
+            IPEndPoint ep = new IPEndPoint(addr, Properties.Settings.Default.SERVER_DETAILS_PORT);
+            TcpClient c = new TcpClient();
+            Server server = null;
+
+            try
+            {
+                c.Connect(ep);
+                using (NetworkStream ns = c.GetStream())
+                {
+                    BinaryFormatter bf = new BinaryFormatter();
+                    server = (Server)bf.Deserialize(ns);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error("Unhandled exception while fetching server details.", e);
+            }
+            finally
+            {
+                c.Close();
+            }
+
+            return server;
         }
 
         /// <summary>
@@ -181,7 +216,7 @@ namespace Network
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
                     IPAddress serverAddress = _servAddr;
-                    Stop();                    
+                    Stop();
                     OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", serverAddress)));
                 }
                 Thread.Sleep(pingWaitReply);

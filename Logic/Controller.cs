@@ -80,15 +80,16 @@ namespace Logic
                 // create Client instance
                 _client = new Client(callsign, fr, ft);
                 _client.ServerDisconnected += Client_ServerDisconnected;
+
                 // find a server and connect to it
-                var servers = _client.DetectServers().ToList();
+                var servers = Network.Client.DetectServers().ToList();
                 if (servers.Count == 0)
                 {
                     reply = "no server";
                 }
                 else
                 {
-                    reply = _client.Start(servers[0]);
+                    reply = _client.Start(servers[0].Addr);
                 }
             }
 
