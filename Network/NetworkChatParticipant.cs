@@ -167,7 +167,7 @@ namespace Network
                     logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " start");
                     if (ar.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(pingWaitAccept), true) == false)
                     {
-                        logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " failed");                        
+                        logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " failed");
                         return false;
                     }
                     tcp.EndConnect(ar);
@@ -178,7 +178,7 @@ namespace Network
                 }
                 finally
                 {
-                    wh.Close();                                        
+                    wh.Close();
                     tcp.Close();
                 }
             }

@@ -82,11 +82,11 @@ namespace Network
         /// Return a list of available servers.
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<Server> DetectServers()
+        public static IEnumerable<ServerSummary> DetectServers()
         {
             Byte[] dgram = new byte[0];
             List<IPAddress> serverAddresses = new List<IPAddress>();
-            List<Server> servers = new List<Server>();
+            List<ServerSummary> servers = new List<ServerSummary>();
 
             // prepare network requisites
             UdpClient udpClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
@@ -123,7 +123,7 @@ namespace Network
 
             foreach (var servAddr in serverAddresses)
             {
-                Server s = GetServerDetails(servAddr);
+                ServerSummary s = GetServerSummary(servAddr);
                 if (s != null)
                 {
                     servers.Add(s);
@@ -139,11 +139,13 @@ namespace Network
         /// </summary>
         /// <param name="addr"></param>
         /// <returns></returns>
-        private static Server GetServerDetails(IPAddress addr)
+        private static ServerSummary GetServerSummary(IPAddress addr)
         {
             IPEndPoint ep = new IPEndPoint(addr, Properties.Settings.Default.SERVER_DETAILS_PORT);
             TcpClient c = new TcpClient();
-            Server server = null;
+            c.ReceiveTimeout = 2000;
+
+            ServerSummary server = null;
 
             try
             {
@@ -151,12 +153,12 @@ namespace Network
                 using (NetworkStream ns = c.GetStream())
                 {
                     BinaryFormatter bf = new BinaryFormatter();
-                    server = (Server)bf.Deserialize(ns);
+                    server = (ServerSummary)bf.Deserialize(ns);
                 }
             }
             catch (Exception e)
             {
-                logger.Error("Unhandled exception while fetching server details.", e);
+                logger.Error("Unhandled exception while fetching server summary.", e);
             }
             finally
             {

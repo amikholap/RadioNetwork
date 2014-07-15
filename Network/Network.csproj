@@ -66,6 +66,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Server.cs" />
+    <Compile Include="ServerSummary.cs" />
     <Compile Include="SpeechRecognizer.cs" />
     <Compile Include="SpeechRecognizedEventArgs.cs" />
     <Compile Include="TalkerChangedEventArgs.cs" />

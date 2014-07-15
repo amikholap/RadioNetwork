@@ -257,9 +257,9 @@ namespace Network
         }
 
         /// <summary>
-        /// Respond with serialized `this`object to any connection at SERVER_DETAILS_PORT.
+        /// Respond with serialized summary of `this` to any connection at SERVER_DETAILS_PORT.
         /// </summary>
-        private void DetailsServer()
+        private void SummaryServer()
         {
             TcpListener listener = new TcpListener(IPAddress.Any, Properties.Settings.Default.SERVER_DETAILS_PORT);
             listener.Server.ReceiveTimeout = 1000;
@@ -275,7 +275,7 @@ namespace Network
                     using (NetworkStream ns = c.GetStream())
                     {
                         BinaryFormatter bf = new BinaryFormatter();
-                        bf.Serialize(ns, this);
+                        bf.Serialize(ns, new ServerSummary(this));
                     }
                 }
                 else
@@ -566,7 +566,7 @@ namespace Network
             InitTextLog();
 
             (new Thread(this.EchoServer)).Start();
-            (new Thread(this.DetailsServer)).Start();
+            (new Thread(this.SummaryServer)).Start();
             (new Thread(this.ListenClientsInfo)).Start();
 
             this.TalkerChanged += SpeechRecognizer.Server_TalkerChanged;
