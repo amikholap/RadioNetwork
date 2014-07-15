@@ -150,6 +150,18 @@
     <Resource Include="img\power_button_off.jpg" />
     <Resource Include="img\power_button_on.jpg" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\buttons\0.jpg" />
+    <Resource Include="img\buttons\1.jpg" />
+    <Resource Include="img\buttons\2.jpg" />
+    <Resource Include="img\buttons\3.jpg" />
+    <Resource Include="img\buttons\4.jpg" />
+    <Resource Include="img\buttons\5.jpg" />
+    <Resource Include="img\buttons\6.jpg" />
+    <Resource Include="img\buttons\7.jpg" />
+    <Resource Include="img\buttons\8.jpg" />
+    <Resource Include="img\buttons\9.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

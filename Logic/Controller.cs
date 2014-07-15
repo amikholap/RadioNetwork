@@ -64,9 +64,10 @@ namespace Logic
         /// <param name="callsign"></param>
         /// <param name="fr"></param>
         /// <param name="ft"></param>
-        public static void StartClient(string callsign, UInt32 fr, UInt32 ft)
+        public static bool StartClient(string callsign, UInt32 fr, UInt32 ft)
         {
             string reply = String.Empty;
+
             if (Mode == ControllerMode.Client && _client.ServAddr != null)
             {
                 reply = _client.UpdateClientInfo(callsign, fr, ft);
@@ -90,6 +91,7 @@ namespace Logic
                     reply = _client.Start(servers[0]);
                 }
             }
+
             switch (reply)
             {
                 case "free":
@@ -98,23 +100,22 @@ namespace Logic
                         _client.Fr = fr;
                         _client.Ft = ft;
                         Mode = ControllerMode.Client;
-                        _client.OnClientEvent(new ClientEventArgs("Информация на сервере обновлена"));
-                        break;
+                        return true;
                     }
                 case "busy":
                     {
                         _client.OnClientEvent(new ClientEventArgs("Позывной уже используется, задайте другой позывной"));
-                        break;
+                        return false;
                     }
                 case "no server":
                     {
-                        _client.OnClientEvent(new ClientEventArgs("Сервер не найден"));
-                        break;
+                        _client.OnClientEvent(new ClientEventArgs("Радиосеть не обнаружена."));
+                        return false;
                     }
                 default:
                     {
                         _client.OnClientEvent(new ClientEventArgs("Подключение невозможно, некорректный ответ от сервера"));
-                        break;
+                        return false;
                     }
             }
         }

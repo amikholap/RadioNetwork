@@ -14,6 +14,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Logic;
+using System.Windows.Controls.Primitives;
+using RadioNetwork.Controls;
 
 
 
@@ -30,32 +32,6 @@ namespace RadioNetwork
         private ClientDataContext _cdc;
         private ServerDataContext _sdc;
         private bool _isTalking;
-
-        private void StartClient()
-        {
-            string callsign = _cdc.Callsign;
-            var fr = UInt32.Parse(_cdc.Fr);
-            var ft = UInt32.Parse(_cdc.Ft);
-
-            Controller.StartClient(callsign, fr, ft);
-        }
-
-        private void StartServer()
-        {
-            Controller.StartServer(_sdc.Callsign);
-        }
-
-        private void SwitchToClientMode()
-        {
-            Controller.Stop();
-            this.DataContext = _cdc;
-        }
-
-        private void SwitchToServerMode()
-        {
-            StartServer();
-            this.DataContext = _sdc;
-        }
 
 
         /// <summary>
@@ -79,7 +55,51 @@ namespace RadioNetwork
             SwitchToClientMode();
         }
 
-        void OnWindowClosing(object sender, CancelEventArgs e)
+        private bool StartClient()
+        {
+            string callsign = _cdc.Callsign;
+            var fr = UInt32.Parse(_cdc.Fr);
+            var ft = UInt32.Parse(_cdc.Ft);
+
+            return Controller.StartClient(callsign, fr, ft);
+        }
+
+        private void StartServer()
+        {
+            Controller.StartServer(_sdc.Callsign);
+        }
+
+        private void SwitchToClientMode()
+        {
+            Controller.Stop();
+            this.DataContext = _cdc;
+        }
+
+        private void SwitchToServerMode()
+        {
+            StartServer();
+            this.DataContext = _sdc;
+        }
+
+        /// <summary>
+        /// Return a NumericalImageTextBox that awaits for input.
+        /// Left control is returned first.
+        /// </summary>
+        /// <returns></returns>
+        public NumericalImageTextBox GetCurrentFrequencyInput()
+        {
+            if (FrTextBox.Text.Length < FrTextBox.MaxLength)
+            {
+                return FrTextBox;
+            }
+            if (FtTextBox.Text.Length < FtTextBox.MaxLength)
+            {
+                return FtTextBox;
+            }
+            return null;
+        }
+
+        private void OnWindowClosing(object sender, CancelEventArgs e)
         {
             Controller.Stop();
             Controller.ShutDown();
@@ -130,7 +150,12 @@ namespace RadioNetwork
         /// <param name="e"></param>
         private void PowerToggleButton_Checked(object sender, RoutedEventArgs e)
         {
-            StartClient();
+            if (!StartClient())
+            {
+                // Back to unchecked state if something went wrong
+                ToggleButton b = (ToggleButton)sender;
+                b.IsChecked = false;
+            }
         }
 
         /// <summary>
@@ -142,6 +167,17 @@ namespace RadioNetwork
         private void PowerToggleButton_Unchecked(object sender, RoutedEventArgs e)
         {
             Controller.Stop();
+        }
+
+        private void DigitButton_Click(object sender, RoutedEventArgs e)
+        {
+            var input = this.GetCurrentFrequencyInput();
+
+            if (input != null)
+            {
+                char digit = ((Control)sender).Name.Last();
+                input.Text += digit;
+            }
         }
     }
 }
