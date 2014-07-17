@@ -78,48 +78,52 @@ namespace Network
             ReceiveMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Fr);
         }
 
-        /// <summary>
-        /// Return a list of available servers.
-        /// </summary>
-        /// <returns></returns>
         public static IEnumerable<ServerSummary> DetectServers()
         {
+            int waitTime = 1000;
             Byte[] dgram = new byte[0];
             List<IPAddress> serverAddresses = new List<IPAddress>();
             List<ServerSummary> servers = new List<ServerSummary>();
 
-            // prepare network requisites
-            UdpClient udpClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-            udpClient.EnableBroadcast = true;
-            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
-
-            // Blocks until a message returns on this socket from a remote host.
-            udpClient.Send(dgram, dgram.Length, broadcastEndPoint);
-
-            DateTime startTime = DateTime.Now;
+            UdpClient sendClient = NetworkHelper.InitUdpClient();
+            sendClient.EnableBroadcast = true;
+            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Properties.Settings.Default.BROADCAST_PORT);
             try
             {
-                // wait for server responses for 5 seconds
-                while ((DateTime.Now - startTime) < TimeSpan.FromSeconds(5))
-                {
-                    IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
-                    dgram = udpClient.Receive(ref anyEndPoint);
-                    serverAddresses.Add(anyEndPoint.Address);
-                    logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
-                }
+                sendClient.Send(dgram, dgram.Length, broadcastEndPoint);
             }
             catch (SocketException)
             {
                 // timeout
             }
-            catch (Exception e)
-            {
-                logger.Error("Unhandled exception while detecting servers.", e);
-            }
             finally
             {
-                udpClient.Close();
+                sendClient.Close();
             }
+
+            UdpClient receiveClient = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
+            receiveClient.Client.ReceiveTimeout = waitTime;
+            DateTime startTime = DateTime.Now;
+            IPEndPoint serverEP;
+
+            while (DateTime.Now - startTime < TimeSpan.FromMilliseconds(waitTime))
+            {
+                serverEP = null;
+                try
+                {
+                    receiveClient.Receive(ref serverEP);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                }
+                if (serverEP != null)
+                {
+                    serverAddresses.Add(serverEP.Address);
+                    logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
+                }
+            }
+            receiveClient.Close();
 
             foreach (var servAddr in serverAddresses)
             {
@@ -127,6 +131,74 @@ namespace Network
                 if (s != null)
                 {
                     servers.Add(s);
+                    break;
+                }
+            }
+
+            return servers;
+        }
+
+        /// <summary>
+        /// Return a list of available servers.
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<ServerSummary> DetectServers1()
+        {
+            int waitTime = 1000;
+            Byte[] dgram = new byte[0];
+            List<IPAddress> serverAddresses = new List<IPAddress>();
+            List<ServerSummary> servers = new List<ServerSummary>();
+
+            // place code that listen for server responses and fills serverAddresses in a callback function
+            AsyncCallback sendCallback = sendAR =>
+                {
+                    UdpClient sndClient = (UdpClient)sendAR.AsyncState;
+                    UdpClient receiveClient = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
+                    DateTime startTime = DateTime.Now;
+
+                    // save server IP address during receive callback
+                    AsyncCallback receiveCallback = receiveAR =>
+                        {
+                            IPEndPoint ep = null;
+                            UdpClient recvClient = (UdpClient)receiveAR.AsyncState;
+
+                            recvClient.EndReceive(receiveAR, ref ep);
+                            serverAddresses.Add(ep.Address);
+                            logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
+
+                            if (DateTime.Now - startTime < TimeSpan.FromMilliseconds(waitTime))
+                            {
+                                // `waitTime` isn't over - wait for more responses
+                                // recvClient.BeginReceive(receiveCallback, recvClient);
+                            }
+                            else
+                            {
+                                recvClient.Close();
+                            }
+                        };
+
+                    receiveClient.BeginReceive(receiveCallback, receiveClient);
+
+                    sndClient.EndSend(sendAR);
+                    sndClient.Close();
+                };
+
+            // ask every device in the local network
+            UdpClient sendClient = NetworkHelper.InitUdpClient();
+            sendClient.EnableBroadcast = true;
+            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Properties.Settings.Default.BROADCAST_PORT);
+            Task.Run(async () =>
+                {
+                    var result = await sendClient.SendAsync(dgram, dgram.Length, broadcastEndPoint);
+                });
+
+            foreach (var servAddr in serverAddresses)
+            {
+                ServerSummary s = GetServerSummary(servAddr);
+                if (s != null)
+                {
+                    servers.Add(s);
+                    break;
                 }
             }
 

@@ -14,8 +14,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Logic;
+using Network;
 using System.Windows.Controls.Primitives;
 using RadioNetwork.Controls;
+using System.Windows.Threading;
+using RadioNetwork.DataContext;
 
 
 
@@ -53,6 +56,10 @@ namespace RadioNetwork
             // Start in client mode
             ModeToggleButton.IsChecked = false;
             SwitchToClientMode();
+
+            // Launch reccuring task of updating server list
+            //Task.Run(new Action(() => { while (true) { this.UpdateAvailableServers(); } }));
+            this.UpdateAvailableServers();
         }
 
         private bool StartClient()
@@ -192,6 +199,33 @@ namespace RadioNetwork
             {
                 FtTextBox.Focus();
             }
+        }
+
+        /// <summary>
+        /// Update ItemsSource of available servers grid.
+        /// </summary>
+        private async void UpdateAvailableServers()
+        {
+            var servers = await Task.Run<IEnumerable<ServerSummary>>((Func<IEnumerable<ServerSummary>>)Controller.DetectServers);
+
+            // Check twice if any server disconnected.
+            // This helps to avoid network glitches.
+            if (servers.Count() < AvailableServers.Items.Count)
+            {
+                servers = await Task.Run<IEnumerable<ServerSummary>>((Func<IEnumerable<ServerSummary>>)Controller.DetectServers);
+            }
+
+            // Update the grid preserving selection
+            servers.OrderBy(ss => ss.Addr);
+
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                int si = AvailableServers.SelectedIndex;
+                AvailableServers.ItemsSource = servers;
+                AvailableServers.SelectedIndex = si;
+            }));
+
+            this.UpdateAvailableServers();
         }
     }
 }

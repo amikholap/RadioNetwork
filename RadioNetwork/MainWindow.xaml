@@ -28,6 +28,14 @@
             <rn:NumericalImageTextBox x:Name="FtTextBox" Text="255" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
         </Border>
 
+        <DataGrid Name="AvailableServers" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" Height="230" Width="325" Canvas.Left="440" Canvas.Top="33" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}"/>
+                <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Path=Addr}"/>
+                <DataGridTextColumn Header="Количество участников" Binding="{Binding Path=ClientCount}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
         <Button Name="Button1" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="143" Click="DigitButton_Click">
             <Button.Background>
                 <ImageBrush ImageSource="img/buttons/1.jpg"/>

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RadioNetwork.DataContext
 {
-    abstract class NetworkChatParticipantDataContext
+    public abstract class NetworkChatParticipantDataContext
     {
         public abstract bool IsClient
         {

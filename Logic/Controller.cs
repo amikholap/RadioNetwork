@@ -58,6 +58,11 @@ namespace Logic
             AudioIO.StopTicking();
         }
 
+        public static IEnumerable<ServerSummary> DetectServers()
+        {
+            return Network.Client.DetectServers();
+        }
+
         /// <summary>
         /// Run application in client mode.
         /// </summary>

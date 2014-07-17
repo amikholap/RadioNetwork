@@ -12,6 +12,8 @@ namespace RadioNetwork
     {
         private Client _client;
 
+        public IEnumerable<ServerSummary> AvailableServers { get; set; }
+
         public ClientDataContext(Client client)
         {
             _client = client;
