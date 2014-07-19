@@ -2,7 +2,7 @@
         Name="RNWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:rn="clr-namespace:RadioNetwork.Controls"
+        xmlns:rnc="clr-namespace:RadioNetwork.Controls"
         Closing="OnWindowClosing"
         Title="Радиосеть" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight">
 
@@ -19,22 +19,22 @@
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
             </Border.Effect>
-            <rn:NumericalImageTextBox x:Name="FrTextBox" Text="255"  Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01" PreviewTextInput="FrTextBox_PreviewTextInput"/>
+            <rnc:NumericalImageTextBox x:Name="FrTextBox" Text="255"  Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01" PreviewTextInput="FrTextBox_PreviewTextInput"/>
         </Border>
         <Border Canvas.Left="211" Canvas.Top="32" Canvas.ZIndex="10">
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
             </Border.Effect>
-            <rn:NumericalImageTextBox x:Name="FtTextBox" Text="255" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
+            <rnc:NumericalImageTextBox x:Name="FtTextBox" Text="255" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
         </Border>
 
-        <DataGrid Name="AvailableServers" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" Height="230" Width="325" Canvas.Left="440" Canvas.Top="33" AutoGenerateColumns="False">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}"/>
+        <rnc:PaperDataGrid x:Name="AvailableServers" Canvas.Left="436" Canvas.Top="32" Height="273" Width="335" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}">
+            <rnc:PaperDataGrid.Columns>
+                <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}" Width="*"/>
                 <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Path=Addr}"/>
-                <DataGridTextColumn Header="Количество участников" Binding="{Binding Path=ClientCount}"/>
-            </DataGrid.Columns>
-        </DataGrid>
+                <DataGridTextColumn Header="Участников" Binding="{Binding Path=ClientCount}"/>
+            </rnc:PaperDataGrid.Columns>
+        </rnc:PaperDataGrid>
 
         <Button Name="Button1" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="143" Click="DigitButton_Click">
             <Button.Background>

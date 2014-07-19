@@ -36,6 +36,14 @@ namespace RadioNetwork
         private ServerDataContext _sdc;
         private bool _isTalking;
 
+        /// <summary>
+        /// Show a message box with warning text.
+        /// </summary>
+        /// <param name="warning"></param>
+        public static void Warn(string warning)
+        {
+            MessageBox.Show(warning, "Внимание!", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
 
         /// <summary>
         /// Entry point of application code.
@@ -57,9 +65,11 @@ namespace RadioNetwork
             ModeToggleButton.IsChecked = false;
             SwitchToClientMode();
 
-            // Launch reccuring task of updating server list
-            //Task.Run(new Action(() => { while (true) { this.UpdateAvailableServers(); } }));
-            this.UpdateAvailableServers();
+            // Launch periodic task of updating server list
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(1);
+            timer.Start();
+            timer.Tick += this.UpdateAvailableServersTimer_Tick;
         }
 
         private bool StartClient()
@@ -68,7 +78,16 @@ namespace RadioNetwork
             var fr = UInt32.Parse(_cdc.Fr);
             var ft = UInt32.Parse(_cdc.Ft);
 
-            return Controller.StartClient(callsign, fr, ft);
+            if (AvailableServers.SelectedItem == null)
+            {
+                // server not chosen
+                RadioNetwork.MainWindow.Warn("Выберите, к какой радиосети подключиться.");
+                return false;
+            }
+
+            var servAddr = ((ServerSummary)AvailableServers.SelectedItem).Addr;
+
+            return Controller.StartClient(callsign, fr, ft, servAddr);
         }
 
         private void StartServer()
@@ -152,6 +171,8 @@ namespace RadioNetwork
         /// <summary>
         /// Connect to a server.
         /// Available only in client mode.
+        /// 
+        /// Return to unchecked state if something went wrong.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -159,9 +180,10 @@ namespace RadioNetwork
         {
             if (!StartClient())
             {
-                // Back to unchecked state if something went wrong
+                // something went wrong
                 ToggleButton b = (ToggleButton)sender;
                 b.IsChecked = false;
+                return;
             }
         }
 
@@ -204,28 +226,12 @@ namespace RadioNetwork
         /// <summary>
         /// Update ItemsSource of available servers grid.
         /// </summary>
-        private async void UpdateAvailableServers()
+        private void UpdateAvailableServersTimer_Tick(object sender, EventArgs e)
         {
-            var servers = await Task.Run<IEnumerable<ServerSummary>>((Func<IEnumerable<ServerSummary>>)Controller.DetectServers);
-
-            // Check twice if any server disconnected.
-            // This helps to avoid network glitches.
-            if (servers.Count() < AvailableServers.Items.Count)
-            {
-                servers = await Task.Run<IEnumerable<ServerSummary>>((Func<IEnumerable<ServerSummary>>)Controller.DetectServers);
-            }
-
-            // Update the grid preserving selection
-            servers.OrderBy(ss => ss.Addr);
-
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                int si = AvailableServers.SelectedIndex;
-                AvailableServers.ItemsSource = servers;
-                AvailableServers.SelectedIndex = si;
-            }));
-
-            this.UpdateAvailableServers();
+            var servers = Controller.AvailableServers;
+            int si = AvailableServers.SelectedIndex;
+            AvailableServers.ItemsSource = servers;
+            AvailableServers.SelectedIndex = si;
         }
     }
 }

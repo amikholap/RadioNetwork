@@ -21,13 +21,6 @@ namespace Network
         #region Properties
 
         /// <summary>
-        /// Indicates if server is running.
-        /// True by default.
-        /// When set to false server will shut down in several seconds.
-        /// </summary>
-        private volatile bool _isWorking;
-
-        /// <summary>
         /// Details about the current talker.
         /// </summary>
         private ClientActivity _lastTalked;
@@ -75,7 +68,6 @@ namespace Network
         public Server(string callsign)
             : base(callsign)
         {
-            _isWorking = true;
             _clients = new ObservableCollection<Client>();
             _messages = new ObservableCollection<string>();
             _mcastClients = new Dictionary<IPAddress, UdpClient>();
@@ -218,7 +210,7 @@ namespace Network
         /// </summary>
         private void EchoServer()
         {
-            UdpClient client = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient client = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
             client.EnableBroadcast = true;
 
             // listen for client requests
@@ -583,8 +575,6 @@ namespace Network
             SpeechRecognizer.SpeechRecognized -= SpeechRecognizer_SpeechRecognized;
             this.TalkerChanged -= SpeechRecognizer.Server_TalkerChanged;
 
-            _isWorking = false;
-
             // close all UdpClients
             Dispatcher.Invoke((Action)(() => _clients.Clear()));
             UpdateMulticastClients();
@@ -592,7 +582,6 @@ namespace Network
             DumpTextLog();
 
             base.Stop();
-            Thread.Sleep(1000);    // let worker threads finish
         }
 
         #endregion

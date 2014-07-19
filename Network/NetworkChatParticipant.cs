@@ -23,7 +23,15 @@ namespace Network
         private int pingWaitAccept = 6000;
         protected INetworkChatCodec _codec;
 
-        private volatile bool _listenPing;
+
+
+        /// <summary>
+        /// Tell working state.
+        /// True by default.
+        /// When set to false a shutdown will follow in several seconds.
+        /// </summary>
+        protected volatile bool _isWorking;
+        protected volatile bool _listenPing;
         protected volatile bool _muted;
         protected volatile bool _connectPing;
         protected volatile bool _receiving;
@@ -228,6 +236,7 @@ namespace Network
 
         public virtual void Start()
         {
+            _isWorking = true;
             StartLoggingAudio();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
@@ -245,6 +254,8 @@ namespace Network
             StopReceiving();
             AudioHelper.StopPlaying();
             StopLoggingAudio();
+            _isWorking = false;
+            Thread.Sleep(1000);    // let worker threads finish
         }
 
         #endregion

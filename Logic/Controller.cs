@@ -6,6 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using log4net;
+using System.Net;
+using System.Threading;
+using System.Diagnostics;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
@@ -19,7 +22,7 @@ namespace Logic
 
         private static ILog logger = LogManager.GetLogger("RadioNetwork");
 
-        public static ControllerMode Mode { get; set; }
+        public static ControllerMode Mode { get; private set; }
 
         public static Client Client
         {
@@ -31,6 +34,13 @@ namespace Logic
             get { return _server; }
         }
 
+        /// <summary>
+        /// Information about active servers in local network.
+        /// 
+        /// Functional only in client mode.
+        /// </summary>
+        public static IEnumerable<ServerSummary> AvailableServers { get; set; }
+
         static void Client_ServerDisconnected(object sender, ClientEventArgs e)
         {
             _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
@@ -41,6 +51,26 @@ namespace Logic
             _client = new Client("Тополь", 275, 355);
             _server = new Server("Береза");
             Mode = ControllerMode.None;
+
+            // Update available servers every second
+            Thread detectServersThread = new Thread(() =>
+            {
+                TimeSpan sleepTime;
+                TimeSpan interval = TimeSpan.FromSeconds(1);
+                DateTime lastUpdated = DateTime.Now;
+                while (true)
+                {
+                    AvailableServers = Network.Client.DetectServers();
+                    sleepTime = interval - (DateTime.Now - lastUpdated);
+                    if (sleepTime > TimeSpan.Zero)
+                    {
+                        Thread.Sleep(sleepTime);
+                    }
+                    lastUpdated = DateTime.Now;
+                }
+            });
+            detectServersThread.IsBackground = true;  // don't wait this thread to terminate on exit
+            detectServersThread.Start();
         }
 
         /// <summary>
@@ -58,18 +88,13 @@ namespace Logic
             AudioIO.StopTicking();
         }
 
-        public static IEnumerable<ServerSummary> DetectServers()
-        {
-            return Network.Client.DetectServers();
-        }
-
         /// <summary>
         /// Run application in client mode.
         /// </summary>
         /// <param name="callsign"></param>
         /// <param name="fr"></param>
         /// <param name="ft"></param>
-        public static bool StartClient(string callsign, UInt32 fr, UInt32 ft)
+        public static bool StartClient(string callsign, UInt32 fr, UInt32 ft, IPAddress servAddr)
         {
             string reply = String.Empty;
 
@@ -79,23 +104,14 @@ namespace Logic
             }
             else
             {
-
                 // stop any existing process
                 Stop();
+
                 // create Client instance
                 _client = new Client(callsign, fr, ft);
                 _client.ServerDisconnected += Client_ServerDisconnected;
 
-                // find a server and connect to it
-                var servers = Network.Client.DetectServers().ToList();
-                if (servers.Count == 0)
-                {
-                    reply = "no server";
-                }
-                else
-                {
-                    reply = _client.Start(servers[0].Addr);
-                }
+                reply = _client.Start(servAddr);
             }
 
             switch (reply)
@@ -111,11 +127,6 @@ namespace Logic
                 case "busy":
                     {
                         _client.OnClientEvent(new ClientEventArgs("Позывной уже используется, задайте другой позывной"));
-                        return false;
-                    }
-                case "no server":
-                    {
-                        _client.OnClientEvent(new ClientEventArgs("Радиосеть не обнаружена."));
                         return false;
                     }
                 default:

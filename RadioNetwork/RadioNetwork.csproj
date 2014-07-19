@@ -61,6 +61,7 @@
     <Compile Include="Controls\NumericalImageTextBox.xaml.cs">
       <DependentUpon>NumericalImageTextBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\PaperDataGrid.cs" />
     <Compile Include="DataContext\NetworkChatParticipantDataContext.cs" />
     <Compile Include="DataContext\ServerDataContext.cs" />
     <Page Include="Controls\NumericalImageTextBox.xaml">
@@ -81,6 +82,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Controls\ControlsResourceDictionary.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\PaperDataGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -161,6 +170,9 @@
     <Resource Include="img\buttons\7.jpg" />
     <Resource Include="img\buttons\8.jpg" />
     <Resource Include="img\buttons\9.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\paper.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

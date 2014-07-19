@@ -27,18 +27,25 @@ namespace Network
         /// Transmit frequency.
         /// </summary>
         public UInt32 Ft { get; set; }
-        /// <summary>
-        /// IP multicast group where the client will send audio data.
-        /// </summary>
+
         /// <summary>
         /// Server IP
         /// </summary>
         public IPAddress ServAddr { get { return _servAddr; } }
+
+        /// <summary>
+        /// IP multicast group where the client will send audio data.
+        /// </summary>
         public IPAddress TransmitMulticastGroupAddr { get; set; }
         /// <summary>
         /// IP multicast group where the client will listen for audio data.
         /// </summary>
         public IPAddress ReceiveMulticastGroupAddr { get; set; }
+
+        /// <summary>
+        /// A list of servers in a local network.
+        /// </summary>
+        public List<ServerSummary> AvailableServers { get; set; }
 
 
         public event EventHandler<EventArgs> ServerQuit;
@@ -139,73 +146,6 @@ namespace Network
         }
 
         /// <summary>
-        /// Return a list of available servers.
-        /// </summary>
-        /// <returns></returns>
-        public static IEnumerable<ServerSummary> DetectServers1()
-        {
-            int waitTime = 1000;
-            Byte[] dgram = new byte[0];
-            List<IPAddress> serverAddresses = new List<IPAddress>();
-            List<ServerSummary> servers = new List<ServerSummary>();
-
-            // place code that listen for server responses and fills serverAddresses in a callback function
-            AsyncCallback sendCallback = sendAR =>
-                {
-                    UdpClient sndClient = (UdpClient)sendAR.AsyncState;
-                    UdpClient receiveClient = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
-                    DateTime startTime = DateTime.Now;
-
-                    // save server IP address during receive callback
-                    AsyncCallback receiveCallback = receiveAR =>
-                        {
-                            IPEndPoint ep = null;
-                            UdpClient recvClient = (UdpClient)receiveAR.AsyncState;
-
-                            recvClient.EndReceive(receiveAR, ref ep);
-                            serverAddresses.Add(ep.Address);
-                            logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
-
-                            if (DateTime.Now - startTime < TimeSpan.FromMilliseconds(waitTime))
-                            {
-                                // `waitTime` isn't over - wait for more responses
-                                // recvClient.BeginReceive(receiveCallback, recvClient);
-                            }
-                            else
-                            {
-                                recvClient.Close();
-                            }
-                        };
-
-                    receiveClient.BeginReceive(receiveCallback, receiveClient);
-
-                    sndClient.EndSend(sendAR);
-                    sndClient.Close();
-                };
-
-            // ask every device in the local network
-            UdpClient sendClient = NetworkHelper.InitUdpClient();
-            sendClient.EnableBroadcast = true;
-            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Properties.Settings.Default.BROADCAST_PORT);
-            Task.Run(async () =>
-                {
-                    var result = await sendClient.SendAsync(dgram, dgram.Length, broadcastEndPoint);
-                });
-
-            foreach (var servAddr in serverAddresses)
-            {
-                ServerSummary s = GetServerSummary(servAddr);
-                if (s != null)
-                {
-                    servers.Add(s);
-                    break;
-                }
-            }
-
-            return servers;
-        }
-
-        /// <summary>
         /// Fetch details for a server with the specified IP address.
         /// Return a deserialized Server object or null if something went wrong.
         /// </summary>
@@ -284,8 +224,7 @@ namespace Network
 
         protected override void StartSendPingLoop()
         {
-            base._connectPing = true;
-            while (base._connectPing == true)
+            while (_isWorking)
             {
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
@@ -374,8 +313,8 @@ namespace Network
         public string Start(IPAddress serverAddr)
         {
             _servAddr = serverAddr;
-            string reply;
-            if ((reply = UpdateClientInfo(Callsign, Fr, Ft)) == "free")
+            string reply = UpdateClientInfo(Callsign, Fr, Ft);
+            if (reply == "free")
             {
                 base.Start();
             }
@@ -391,7 +330,6 @@ namespace Network
             // server reply does not matter           
             base.Stop();
             _servAddr = null;
-            Thread.Sleep(1000);    // let worker threads finish
         }
     }
 }
