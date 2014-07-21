@@ -228,10 +228,32 @@ namespace RadioNetwork
         /// </summary>
         private void UpdateAvailableServersTimer_Tick(object sender, EventArgs e)
         {
+            bool wasFocused = AvailableServers.HasFocus();
             var servers = Controller.AvailableServers;
             int si = AvailableServers.SelectedIndex;
+
+            // Update list of servers
             AvailableServers.ItemsSource = servers;
+            AvailableServers.UpdateLayout();
+
+            if (si == -1 && AvailableServers.Items.Count > 0)
+            {
+                // If nothing was selected select the first server
+                si = 0;
+            }
+
+            // Restore selection
             AvailableServers.SelectedIndex = si;
+
+            // Restore focus
+            if (wasFocused)
+            {
+                var row = (DataGridRow)AvailableServers.ItemContainerGenerator.ContainerFromIndex(si);
+                if (row != null)
+                {
+                    row.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                }
+            }
         }
     }
 }
