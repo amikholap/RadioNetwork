@@ -34,7 +34,6 @@ namespace RadioNetwork
     {
         private ClientDataContext _cdc;
         private ServerDataContext _sdc;
-        private bool _isTalking;
 
         /// <summary>
         /// Show a message box with warning text.
@@ -56,8 +55,6 @@ namespace RadioNetwork
 
             _sdc = new ServerDataContext(Controller.Server);
             _cdc = new ClientDataContext(Controller.Client);
-
-            _isTalking = false;
 
             // Start in client mode
             ModeToggleButton.IsChecked = false;
@@ -134,7 +131,6 @@ namespace RadioNetwork
             ImageToggleButton btn = (ImageToggleButton)sender;
             btn.ClickMode = ClickMode.Release;
             Controller.StartTalking();
-            _isTalking = true;
         }
 
         private void PushToTalkToggleButton_Unchecked(object sender, RoutedEventArgs e)
@@ -142,7 +138,6 @@ namespace RadioNetwork
             ImageToggleButton btn = (ImageToggleButton)sender;
             btn.ClickMode = ClickMode.Press;
             Controller.StopTalking();
-            _isTalking = false;
         }
 
         /// <summary>
