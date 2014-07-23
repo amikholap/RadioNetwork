@@ -14,6 +14,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 		Gmail.txt = Gmail.txt
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libz", "Libz", "{C8AE8B4D-98BB-4F07-9D7D-1F828BC0351C}"
+	ProjectSection(SolutionItems) = preProject
+		LibZ\doboz.libzcodec = LibZ\doboz.libzcodec
+		LibZ\libz.exe = LibZ\libz.exe
+		LibZ\lz4.libzcodec = LibZ\lz4.libzcodec
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

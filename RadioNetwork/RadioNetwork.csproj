@@ -188,7 +188,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>$(SolutionDir)\LibZ\libz.exe inject-dll --assembly $(TargetPath) --include *.dll --move</PostBuildEvent>
+    <PostBuildEvent>"$(SolutionDir)\LibZ\libz.exe" inject-dll --assembly "$(TargetPath)" --include *.dll --move</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
