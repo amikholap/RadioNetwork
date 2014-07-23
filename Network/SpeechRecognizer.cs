@@ -15,7 +15,7 @@ namespace Network
 
         private static string UploadWaveToGoogle(byte[] data, INetworkChatCodec codec)
         {
-            HttpWebRequest request = HttpWebRequest.CreateHttp("https://www.google.com/speech-api/v2/recognize?output=json&lang=ru-RU&key=AIzaSyCnl6MRydhw_5fLXIdASxkLJzcJh5iX0M4");
+            HttpWebRequest request = HttpWebRequest.CreateHttp("https://www.google.com/speech-api/v2/recognize?output=json&lang=ru-RU&key=" + Network.Properties.Settings.Default.GOOGLE_TTS_API_KEY);
             request.Method = "POST";
             request.ContentType = String.Format("audio/l16; rate={0};", codec.RecordFormat.SampleRate);
             request.ContentLength = data.Length;
