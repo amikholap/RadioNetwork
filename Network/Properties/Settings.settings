@@ -29,5 +29,8 @@
     <Setting Name="TIMESTAMP_FORMAT" Type="System.String" Scope="User">
       <Value Profile="(Default)">yyyy.MM.dd-HH.mm.ss</Value>
     </Setting>
+    <Setting Name="GOOGLE_TTS_API_KEY" Type="System.String" Scope="User">
+      <Value Profile="(Default)">AIzaSyDM9RT71Dz5LikjMlBErbXHZQq3-fEqWLM</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

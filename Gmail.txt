@@ -1,0 +1,7 @@
+e-mail:     BSUIRmilitary@gmail.com
+password:   M7faKe_Y3or88o!w)nFu4[0_tu1r%e
+Fname:      Ivan
+Lname:      Ivanovitch
+birth date: 03.07.1970
+API key:    AIzaSyDM9RT71Dz5LikjMlBErbXHZQq3-fEqWLM
+man link:   http://www.chromium.org/developers/how-tos/api-keys
