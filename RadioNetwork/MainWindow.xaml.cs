@@ -57,8 +57,6 @@ namespace RadioNetwork
             _sdc = new ServerDataContext(Controller.Server);
             _cdc = new ClientDataContext(Controller.Client);
 
-            // Initialize IsTalking state
-            PushToTalkButton.ClickMode = ClickMode.Press;
             _isTalking = false;
 
             // Start in client mode
@@ -131,21 +129,20 @@ namespace RadioNetwork
             Controller.ShutDown();
         }
 
-        private void PushToTalkButton_Click(object sender, RoutedEventArgs e)
+        private void PushToTalkToggleButton_Checked(object sender, RoutedEventArgs e)
         {
-            Button btn = (Button)sender;
-            if (_isTalking)
-            {
-                btn.ClickMode = ClickMode.Press;
-                Controller.StopTalking();
-                _isTalking = false;
-            }
-            else
-            {
-                btn.ClickMode = ClickMode.Release;
-                Controller.StartTalking();
-                _isTalking = true;
-            }
+            ImageToggleButton btn = (ImageToggleButton)sender;
+            btn.ClickMode = ClickMode.Release;
+            Controller.StartTalking();
+            _isTalking = true;
+        }
+
+        private void PushToTalkToggleButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ImageToggleButton btn = (ImageToggleButton)sender;
+            btn.ClickMode = ClickMode.Press;
+            Controller.StopTalking();
+            _isTalking = false;
         }
 
         /// <summary>

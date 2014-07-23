@@ -7,7 +7,12 @@
         Title="Радиосеть" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight">
 
     <Window.Resources>
-        <ResourceDictionary Source="/Controls/ControlsResourceDictionary.xaml"/>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Controls/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Canvas Width="800" Height="488">
@@ -16,15 +21,9 @@
         </Canvas.Background>
 
         <Border Canvas.Left="126" Canvas.Top="32" Canvas.ZIndex="10">
-            <!--Border.Effect>
-                <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
-            </Border.Effect-->
             <rnc:NumericalImageTextBox x:Name="FrTextBox" Text="255"  Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01" PreviewTextInput="FrTextBox_PreviewTextInput"/>
         </Border>
         <Border Canvas.Left="211" Canvas.Top="32" Canvas.ZIndex="10">
-            <!--Border.Effect>
-                <DropShadowEffect ShadowDepth="0" Color="White" Opacity="1" RenderingBias="Performance" />
-            </Border.Effect-->
             <rnc:NumericalImageTextBox x:Name="FtTextBox" Text="255" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
         </Border>
 
@@ -89,11 +88,10 @@
 
         <TextBox Height="48" Canvas.Left="331" Text="{Binding Path=Callsign}" Canvas.Top="32" Width="61" BorderThickness="0" Background="{x:Null}" FontFamily="Segoe Print" FontWeight="Bold" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="Wrap" MaxLength="13"/>
 
-        <ToggleButton Name="ModeToggleButton" Style="{StaticResource ModeToggleButtonStyle}" Canvas.Left="115" Canvas.Top="360" Checked="ModeToggleButton_Checked" Unchecked="ModeToggleButton_Unchecked" Height="89" Width="177" ToolTip="Переключение режима работы" Cursor="Hand"/>
+        <rnc:ImageToggleButton x:Name="ModeToggleButton" CheckedBackgroundImageSource="/img/mode_button_server.jpg" UncheckedBackgroundImageSource="/img/mode_button_client.jpg" Canvas.Left="115" Canvas.Top="360" Checked="ModeToggleButton_Checked" Unchecked="ModeToggleButton_Unchecked" Height="89" Width="177" ToolTip="Переключение режима работы"/>
 
-        <ToggleButton Name="PowerToggleButton" Style="{StaticResource PowerToggleButtonStyle}" Canvas.Left="365" Canvas.Top="290" Height="25" Width="28" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" Cursor="Hand" Checked="PowerToggleButton_Checked" Unchecked="PowerToggleButton_Unchecked"/>
+        <rnc:ImageToggleButton x:Name="PowerToggleButton" CheckedBackgroundImageSource="/img/power_button_on.jpg" UncheckedBackgroundImageSource="/img/power_button_off.jpg" Canvas.Left="365" Canvas.Top="290" Height="25" Width="28" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" Checked="PowerToggleButton_Checked" Unchecked="PowerToggleButton_Unchecked"/>
 
-        <Button Name="PushToTalkButton" Content="Тангента" Canvas.Left="676" Canvas.Top="438" Width="75" Click="PushToTalkButton_Click"/>
+        <rnc:ImageToggleButton x:Name="PushToTalkToggleButton" CheckedBackgroundImageSource="/img/pushtotalk_button_on.jpg" UncheckedBackgroundImageSource="/img/pushtotalk_button_off.jpg" ClickMode="Press" Canvas.Left="630" Canvas.Top="401" Width="170" Height="87" Checked="PushToTalkToggleButton_Checked" Unchecked="PushToTalkToggleButton_Unchecked"/>
     </Canvas>
-
 </Window>

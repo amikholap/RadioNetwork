@@ -58,13 +58,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Controls\ImageToggleButton.cs" />
     <Compile Include="Controls\NumericalImageTextBox.xaml.cs">
       <DependentUpon>NumericalImageTextBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\PaperDataGrid.cs" />
+    <Compile Include="Converters\StringToBitmapConverter.cs" />
     <Compile Include="DataContext\NetworkChatParticipantDataContext.cs" />
     <Compile Include="DataContext\ServerDataContext.cs" />
+    <Page Include="Controls\DigitButton.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\NumericalImageTextBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\Styles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -81,15 +91,11 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Controls\ControlsResourceDictionary.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Themes\PaperDataGrid.xaml">
+    <Page Include="Controls\PaperDataGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -173,6 +179,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="img\paper.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\pushtotalk_button_off.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\pushtotalk_button_on.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -15,6 +15,8 @@ namespace Network
 {
     public class Client : NetworkChatParticipant
     {
+        #region properties
+
         private IPAddress _servAddr;
         private UdpClient _streamClient;
         private int pingWaitReply = 9000;
@@ -42,11 +44,9 @@ namespace Network
         /// </summary>
         public IPAddress ReceiveMulticastGroupAddr { get; set; }
 
-        /// <summary>
-        /// A list of servers in a local network.
-        /// </summary>
-        public List<ServerSummary> AvailableServers { get; set; }
+        #endregion
 
+        #region eventhandlers
 
         public event EventHandler<EventArgs> ServerQuit;
         public event EventHandler<ClientEventArgs> ServerDisconnected;
@@ -56,6 +56,18 @@ namespace Network
             if (ServerDisconnected != null)
                 ServerDisconnected(this, e);
         }
+
+        protected virtual void OnServerQuit(EventArgs e)
+        {
+            if (ServerQuit != null)
+            {
+                ServerQuit(this, e);
+            }
+        }
+
+        #endregion
+
+        #region constructors
 
         public Client(string callsign, UInt32 fr, UInt32 ft)
             : base(callsign)
@@ -71,13 +83,9 @@ namespace Network
             Addr = addr;
         }
 
-        protected virtual void OnServerQuit(EventArgs e)
-        {
-            if (ServerQuit != null)
-            {
-                ServerQuit(this, e);
-            }
-        }
+        #endregion
+
+        #region methods
 
         protected void UpdateMulticastAddrs()
         {
@@ -228,9 +236,8 @@ namespace Network
             {
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
-                    IPAddress serverAddress = _servAddr;
                     Stop();
-                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", serverAddress)));
+                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с радиосетью \"{0\" разорвано", _servAddr)));
                 }
                 Thread.Sleep(pingWaitReply);
             }
@@ -332,4 +339,5 @@ namespace Network
             _servAddr = null;
         }
     }
+        #endregion
 }
