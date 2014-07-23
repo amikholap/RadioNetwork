@@ -135,7 +135,6 @@ namespace Network
                 if (serverEP != null)
                 {
                     serverAddresses.Add(serverEP.Address);
-                    logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
                 }
             }
             receiveClient.Close();

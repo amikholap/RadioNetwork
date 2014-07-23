@@ -48,7 +48,7 @@ namespace Logic
 
         static Controller()
         {
-            _client = new Client("Тополь", 275, 355);
+            _client = new Client("Тополь", 255, 255);
             _server = new Server("Береза");
             Mode = ControllerMode.None;
 
