@@ -31,6 +31,8 @@
     </Setting>
     <Setting Name="SERVER_DETAILS_PORT" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">41853</Value>
+    <Setting Name="GOOGLE_TTS_API_KEY" Type="System.String" Scope="User">
+      <Value Profile="(Default)">AIzaSyDM9RT71Dz5LikjMlBErbXHZQq3-fEqWLM</Value>
     </Setting>
   </Settings>
 </SettingsFile>
