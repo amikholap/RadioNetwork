@@ -11,6 +11,7 @@
             <Setter Property="Foreground" Value="{x:Null}"/>
             <Setter Property="BorderBrush" Value="{x:Null}"/>
             <Setter Property="Visibility" Value="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">

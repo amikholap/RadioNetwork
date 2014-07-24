@@ -205,6 +205,11 @@ namespace RadioNetwork
                 input.Text += digit;
             }
         }
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            _cdc.Fr = "";
+            _cdc.Ft = "";       
+        }
 
         /// <summary>
         /// Focus right input when left input is full.

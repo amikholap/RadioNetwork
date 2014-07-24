@@ -21,10 +21,10 @@
         </Canvas.Background>
 
         <Border Canvas.Left="126" Canvas.Top="32" Canvas.ZIndex="10">
-            <rnc:NumericalImageTextBox x:Name="FrTextBox" Text="255"  Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01" PreviewTextInput="FrTextBox_PreviewTextInput"/>
+            <rnc:NumericalImageTextBox x:Name="FrTextBox" Text="{Binding Fr}" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01" PreviewTextInput="FrTextBox_PreviewTextInput"/>
         </Border>
         <Border Canvas.Left="211" Canvas.Top="32" Canvas.ZIndex="10">
-            <rnc:NumericalImageTextBox x:Name="FtTextBox" Text="255" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
+            <rnc:NumericalImageTextBox x:Name="FtTextBox" Text="{Binding Ft}" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
         </Border>
 
         <rnc:PaperDataGrid x:Name="AvailableServers" Canvas.Left="436" Canvas.Top="32" Height="273" Width="335" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}">
@@ -37,52 +37,57 @@
 
         <Button Name="Button1" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="143" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/1.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/1.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button2" Style="{StaticResource DigitButtonStyle}" Canvas.Left="191" Canvas.Top="143" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/2.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/2.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button3" Style="{StaticResource DigitButtonStyle}" Canvas.Left="235" Canvas.Top="143" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/3.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/3.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button4" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="185" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/4.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/4.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button5" Style="{StaticResource DigitButtonStyle}" Canvas.Left="190" Canvas.Top="185" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/5.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/5.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button6" Style="{StaticResource DigitButtonStyle}" Canvas.Left="235" Canvas.Top="185" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/6.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/6.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button7" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="228" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/7.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/7.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button8" Style="{StaticResource DigitButtonStyle}" Canvas.Left="190" Canvas.Top="228" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/8.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/8.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button9" Style="{StaticResource DigitButtonStyle}" Canvas.Left="235" Canvas.Top="228" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/9.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/9.jpg"/>
             </Button.Background>
         </Button>
         <Button Name="Button0" Style="{StaticResource DigitButtonStyle}" Canvas.Left="189" Canvas.Top="270" Click="DigitButton_Click">
             <Button.Background>
-                <ImageBrush ImageSource="img/buttons/0.jpg"/>
+                <ImageBrush ImageSource="/img/buttons/0.jpg"/>
+            </Button.Background>
+        </Button>
+        <Button Name="ButtonReset" Style="{StaticResource DigitButtonStyle}" Canvas.Left="235" Canvas.Top="270" Click="ResetButton_Click">
+            <Button.Background>
+                <ImageBrush ImageSource="/img/buttons/reset.jpg"/>
             </Button.Background>
         </Button>
 
