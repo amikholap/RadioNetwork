@@ -19,16 +19,7 @@ namespace Audio
         private static WaveInEvent _waveIn;
         private static WaveOut _waveOut;
         private static WaveFileWriter _audioLog;
-
-        static AudioHelper()
-        {
-            _waveIn = new WaveInEvent();
-            _waveIn.BufferMilliseconds = 50;
-            _waveIn.DataAvailable += (sender, e) =>
-            {
-                AudioIO.AddOutputData(e.Buffer, null);
-            };
-        }
+        private static DateTime _startCaptureAt;
 
         /// <summary>
         /// Construct a valid WAVE file content from raw input.
@@ -57,14 +48,29 @@ namespace Audio
         /// <param name="inputDeviceNumber"></param>
         public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
+            _waveIn = new WaveInEvent();
+            _waveIn.BufferMilliseconds = 50;
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;
-            _waveIn.StartRecording();
-        }
 
+            _waveIn.DataAvailable += (sender, e) =>
+            {
+                AudioIO.AddOutputData(e.Buffer, null);
+            };
+
+            _waveIn.StartRecording();
+            _startCaptureAt = DateTime.Now;
+        }
         public static void StopCapture()
         {
-            _waveIn.StopRecording();
+            // If StopCapture goes right after StartCapture WaveIn may be not initialized completely.
+            // To avoid this make at least 0.5s pause between start & stop.
+            TimeSpan waitTime = TimeSpan.FromMilliseconds(500) - (DateTime.Now - _startCaptureAt);
+            if (waitTime > TimeSpan.Zero)
+            {
+                Thread.Sleep(waitTime);
+            }
+            _waveIn.Dispose();
         }
 
         /// <summary>
