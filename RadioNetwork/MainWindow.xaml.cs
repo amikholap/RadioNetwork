@@ -198,40 +198,84 @@ namespace RadioNetwork
                 char digit = ((Control)sender).Name.Last();
                 input.Text += digit;
             }
-            FocusCurrentFrequencyInput();
+            FocusFrequencyInput();
         }
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
             _cdc.Fr = "";
             _cdc.Ft = "";
-            FocusCurrentFrequencyInput();
-        }
-        /// <summary>
-        /// Find and focus not complete frequency display.
-        /// Set caret to the end of text.
-        /// </summary>
-        private void FocusCurrentFrequencyInput()
-        {
-            var input = this.GetCurrentFrequencyInput();
-            if (input != null)
-            {
-                input.CaretIndex = input.Text.Length;
-                input.Focus();
-            }
+            FocusFrequencyInput();
         }
 
         /// <summary>
-        /// Focus right input when left input is full.
+        /// Focus right input when left one is full.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void FrTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void FrTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             NumericalImageTextBox tb = (NumericalImageTextBox)sender;
             if (tb.Text.Length >= tb.MaxLength)
             {
-                FtTextBox.Focus();
+                this.FocusFrequencyInput(FtTextBox);
             }
+        }
+        /// <summary>
+        /// Cover case not handled by FrTextBox_TextChanged method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FrTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            NumericalImageTextBox tb = (NumericalImageTextBox)sender;
+            if (e.Key != Key.Back && tb.Text.Length == tb.MaxLength)
+            {
+                this.FocusFrequencyInput(FtTextBox);
+            }
+        }
+        /// <summary>
+        /// Focus left input when right one is empty.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FtTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            NumericalImageTextBox tb = (NumericalImageTextBox)sender;
+            if (tb.Text.Length == 0)
+            {
+                this.FocusFrequencyInput(FrTextBox);
+            }
+        }
+        /// <summary>
+        /// Hanle case not handled by FtTextBox_TextChanged method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FtTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            NumericalImageTextBox tb = (NumericalImageTextBox)sender;
+            if (e.Key == Key.Back && tb.Text.Length == 0)
+            {
+                this.FocusFrequencyInput(FrTextBox);
+            }
+        }
+        /// <summary>
+        /// Focus a frequency display control.
+        /// Set caret to the end of text.
+        /// </summary>
+        /// <param name="input">Input to focus. null value tells to use the first incomplete one.</param>
+        private void FocusFrequencyInput(NumericalImageTextBox input = null)
+        {
+            if (input == null)
+            {
+                input = this.GetCurrentFrequencyInput();
+            }
+            if (input == null)
+            {
+                return;
+            }
+            input.CaretIndex = input.Text.Length;
+            input.Focus();
         }
 
         /// <summary>

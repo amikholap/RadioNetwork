@@ -21,10 +21,28 @@
         </Canvas.Background>
 
         <Border Canvas.Left="126" Canvas.Top="32" Canvas.ZIndex="10">
-            <rnc:NumericalImageTextBox x:Name="FrTextBox" Text="{Binding Fr}" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01" PreviewTextInput="FrTextBox_PreviewTextInput"/>
+            <rnc:NumericalImageTextBox
+                x:Name="FrTextBox"
+                Text="{Binding Fr}"
+                Height="51" Width="85"
+                Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"
+                MaxLength="3"
+                BorderThickness="0"
+                FontSize="0.01"
+                TextChanged="FrTextBox_TextChanged"
+                PreviewKeyDown="FrTextBox_PreviewKeyDown"/>
         </Border>
         <Border Canvas.Left="211" Canvas.Top="32" Canvas.ZIndex="10">
-            <rnc:NumericalImageTextBox x:Name="FtTextBox" Text="{Binding Ft}" Height="51" Width="85" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" MaxLength="3" BorderThickness="0" FontSize="0.01"/>
+            <rnc:NumericalImageTextBox
+                x:Name="FtTextBox"
+                Text="{Binding Ft}"
+                Height="51" Width="85"
+                Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"
+                MaxLength="3"
+                BorderThickness="0"
+                FontSize="0.01"
+                TextChanged="FtTextBox_TextChanged"
+                PreviewKeyDown="FtTextBox_PreviewKeyDown"/>
         </Border>
 
         <rnc:PaperDataGrid x:Name="AvailableServers" Canvas.Left="436" Canvas.Top="32" Height="273" Width="335" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}">
