@@ -9,11 +9,14 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using System.IO.Pipes;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Network
 {
     public class Client : NetworkChatParticipant
     {
+        #region properties
+
         private IPAddress _servAddr;
         private UdpClient _streamClient;
         private int pingWaitReply = 9000;
@@ -26,19 +29,24 @@ namespace Network
         /// Transmit frequency.
         /// </summary>
         public UInt32 Ft { get; set; }
-        /// <summary>
-        /// IP multicast group where the client will send audio data.
-        /// </summary>
+
         /// <summary>
         /// Server IP
         /// </summary>
         public IPAddress ServAddr { get { return _servAddr; } }
+
+        /// <summary>
+        /// IP multicast group where the client will send audio data.
+        /// </summary>
         public IPAddress TransmitMulticastGroupAddr { get; set; }
         /// <summary>
         /// IP multicast group where the client will listen for audio data.
         /// </summary>
         public IPAddress ReceiveMulticastGroupAddr { get; set; }
 
+        #endregion
+
+        #region eventhandlers
 
         public event EventHandler<EventArgs> ServerQuit;
         public event EventHandler<ClientEventArgs> ServerDisconnected;
@@ -48,6 +56,18 @@ namespace Network
             if (ServerDisconnected != null)
                 ServerDisconnected(this, e);
         }
+
+        protected virtual void OnServerQuit(EventArgs e)
+        {
+            if (ServerQuit != null)
+            {
+                ServerQuit(this, e);
+            }
+        }
+
+        #endregion
+
+        #region constructors
 
         public Client(string callsign, UInt32 fr, UInt32 ft)
             : base(callsign)
@@ -63,13 +83,9 @@ namespace Network
             Addr = addr;
         }
 
-        protected virtual void OnServerQuit(EventArgs e)
-        {
-            if (ServerQuit != null)
-            {
-                ServerQuit(this, e);
-            }
-        }
+        #endregion
+
+        #region methods
 
         protected void UpdateMulticastAddrs()
         {
@@ -77,58 +93,106 @@ namespace Network
             ReceiveMulticastGroupAddr = NetworkHelper.FreqToMcastGroup(Fr);
         }
 
-        /// <summary>
-        /// Return a list of available server IP addresses.
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<IPAddress> DetectServers()
+        public static IEnumerable<ServerSummary> DetectServers()
         {
-            Byte[] dgram = new byte[256];
-            List<IPAddress> serverIPs = new List<IPAddress>();
+            int waitTime = 1000;
+            int msgLen = 16;
 
-            UdpClient udpClient = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
-            udpClient.EnableBroadcast = true;
-            // determine port && BroadcastAddr
-            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Network.Properties.Settings.Default.BROADCAST_PORT);
-            IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
+            List<IPAddress> serverAddresses = new List<IPAddress>();
+            List<ServerSummary> servers = new List<ServerSummary>();
 
-            // send BroadCast message "client" in byte[]
-            string request = "client";
-            dgram = Encoding.UTF8.GetBytes(request);
-            // Blocks until a message returns on this socket from a remote host.
-            udpClient.Send(dgram, dgram.Length, broadcastEndPoint);
+            byte[] clientMsg = new byte[msgLen];
+            byte[] serverMsg = new byte[msgLen];
 
-            // listen for server's reponse for 5 seconds
-            DateTime t = DateTime.Now;
+            // Initialize unique message to distinguish this client from others.
+            new Random().NextBytes(clientMsg);
+
+
+            UdpClient sendClient = NetworkHelper.InitUdpClient();
+            sendClient.EnableBroadcast = true;
+            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Properties.Settings.Default.BROADCAST_PORT);
             try
             {
-                // wait for server's response for 5 seconds
-                while ((DateTime.Now - t) < TimeSpan.FromSeconds(5))
-                {
-                    dgram = udpClient.Receive(ref anyEndPoint);
-                    string response = Encoding.UTF8.GetString(dgram);
-                    // data is in format {client,server}
-                    if (response == "server")
-                    {
-                        serverIPs.Add(anyEndPoint.Address);
-                        logger.Debug(String.Format("Found server: {0}", anyEndPoint.Address));
-                    }
-                }
+                sendClient.Send(clientMsg, clientMsg.Length, broadcastEndPoint);
             }
             catch (SocketException)
             {
                 // timeout
             }
+            finally
+            {
+                sendClient.Close();
+            }
+
+            UdpClient receiveClient = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
+            receiveClient.Client.ReceiveTimeout = waitTime;
+            DateTime startTime = DateTime.Now;
+            IPEndPoint serverEP;
+
+            while (DateTime.Now - startTime < TimeSpan.FromMilliseconds(waitTime))
+            {
+                serverEP = null;
+                try
+                {
+                    serverMsg = receiveClient.Receive(ref serverEP);
+                }
+                catch (SocketException)
+                {
+                    // timeout
+                }
+                if (serverEP != null && clientMsg.SequenceEqual(serverMsg))
+                {
+                    serverAddresses.Add(serverEP.Address);
+                }
+            }
+            receiveClient.Close();
+
+            foreach (var servAddr in serverAddresses)
+            {
+                ServerSummary s = GetServerSummary(servAddr);
+                if (s != null)
+                {
+                    servers.Add(s);
+                    break;
+                }
+            }
+
+            return servers;
+        }
+
+        /// <summary>
+        /// Fetch details for a server with the specified IP address.
+        /// Return a deserialized Server object or null if something went wrong.
+        /// </summary>
+        /// <param name="addr"></param>
+        /// <returns></returns>
+        private static ServerSummary GetServerSummary(IPAddress addr)
+        {
+            IPEndPoint ep = new IPEndPoint(addr, Properties.Settings.Default.SERVER_DETAILS_PORT);
+            TcpClient c = new TcpClient();
+            c.ReceiveTimeout = 2000;
+
+            ServerSummary server = null;
+
+            try
+            {
+                c.Connect(ep);
+                using (NetworkStream ns = c.GetStream())
+                {
+                    BinaryFormatter bf = new BinaryFormatter();
+                    server = (ServerSummary)bf.Deserialize(ns);
+                }
+            }
             catch (Exception e)
             {
-                logger.Error("Unhandled exception while detecting servers.", e);
+                logger.Error("Unhandled exception while fetching server summary.", e);
             }
             finally
             {
-                udpClient.Close();
+                c.Close();
             }
 
-            return serverIPs;
+            return server;
         }
 
         /// <summary>
@@ -175,14 +239,12 @@ namespace Network
 
         protected override void StartSendPingLoop()
         {
-            base._connectPing = true;
-            while (base._connectPing == true)
+            while (_isWorking)
             {
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
-                    IPAddress serverAddress = _servAddr;
-                    Stop();                    
-                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с сервером {0} разорвано", serverAddress)));
+                    Stop();
+                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с радиосетью \"{0\" разорвано", _servAddr)));
                 }
                 Thread.Sleep(pingWaitReply);
             }
@@ -265,8 +327,8 @@ namespace Network
         public string Start(IPAddress serverAddr)
         {
             _servAddr = serverAddr;
-            string reply;
-            if ((reply = UpdateClientInfo(Callsign, Fr, Ft)) == "free")
+            string reply = UpdateClientInfo(Callsign, Fr, Ft);
+            if (reply == "free")
             {
                 base.Start();
             }
@@ -282,7 +344,7 @@ namespace Network
             // server reply does not matter           
             base.Stop();
             _servAddr = null;
-            Thread.Sleep(1000);    // let worker threads finish
         }
     }
+        #endregion
 }

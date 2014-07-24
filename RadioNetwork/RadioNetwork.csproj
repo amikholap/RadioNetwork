@@ -58,12 +58,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Controls\ImageToggleButton.cs" />
     <Compile Include="Controls\NumericalImageTextBox.xaml.cs">
       <DependentUpon>NumericalImageTextBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\PaperDataGrid.cs" />
+    <Compile Include="Converters\StringToBitmapConverter.cs" />
     <Compile Include="DataContext\NetworkChatParticipantDataContext.cs" />
     <Compile Include="DataContext\ServerDataContext.cs" />
+    <Page Include="Controls\DigitButton.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\NumericalImageTextBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\Styles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -80,7 +91,11 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Controls\ControlsResourceDictionary.xaml">
+    <Page Include="Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\PaperDataGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -162,9 +177,21 @@
     <Resource Include="img\buttons\8.jpg" />
     <Resource Include="img\buttons\9.jpg" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\paper.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\pushtotalk_button_off.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\pushtotalk_button_on.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\buttons\reset.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>$(SolutionDir)\LibZ\libz.exe inject-dll --assembly $(TargetPath) --include *.dll --move</PostBuildEvent>
+    <PostBuildEvent>"$(SolutionDir)\LibZ\libz.exe" inject-dll --assembly "$(TargetPath)" --include *.dll --move</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

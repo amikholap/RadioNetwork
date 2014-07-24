@@ -11,11 +11,9 @@ namespace RadioNetwork
 {
     class ServerDataContext : NetworkChatParticipantDataContext
     {
-        private Server _server;
-
         public ServerDataContext(Server server)
         {
-            _server = server;
+            _object = server;
         }
 
         public override bool IsClient
@@ -23,27 +21,11 @@ namespace RadioNetwork
             get { return false; }
         }
 
-        public string Callsign
-        {
-            get
-            {
-                return _server.Callsign;
-            }
-            set
-            {
-                if (String.IsNullOrWhiteSpace(value))
-                {
-                    throw new ApplicationException("Позывной не указан.");
-                }
-                _server.Callsign = value;
-            }
-        }
-
         public ObservableCollection<Client> Clients
         {
             get
             {
-                return _server.Clients;
+                return ((Server)_object).Clients;
             }
         }
     }

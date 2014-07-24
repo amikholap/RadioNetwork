@@ -10,11 +10,11 @@ namespace RadioNetwork
 {
     class ClientDataContext : NetworkChatParticipantDataContext
     {
-        private Client _client;
+        public IEnumerable<ServerSummary> AvailableServers { get; set; }
 
         public ClientDataContext(Client client)
         {
-            _client = client;
+            _object = client;
         }
 
         public override bool IsClient
@@ -22,47 +22,69 @@ namespace RadioNetwork
             get { return true; }
         }
 
-        public string Callsign
-        {
-            get { return _client.Callsign; }
-            set
-            {
-                if (String.IsNullOrWhiteSpace(value))
-                {
-                    throw new ApplicationException("Позывной не указан.");
-                }
-                _client.Callsign = value;
-            }
-        }
-
         public string Fr
         {
             get
             {
-                return _client.Fr.ToString();
+                if (((Client)_object).Fr == 0)
+                {
+                    return "";
+                }
+                return ((Client)_object).Fr.ToString();
             }
             set
             {
-                uint fr;
-                if (!uint.TryParse(value, out fr))
+                UInt32 fr;
+                if (String.IsNullOrEmpty(value))
                 {
-                    throw new ApplicationException("Неправильное значение частоты приема.");
+                    fr = 0;
                 }
-                _client.Fr = fr;
+                else
+                {
+                    try
+                    {
+                        fr = UInt32.Parse(value);
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ApplicationException("Неправильное значение частоты приема.");
+                    }
+                }
+                ((Client)_object).Fr = fr;
+                NotifyPropertyChanged("Fr");
             }
         }
 
         public string Ft
         {
-            get { return _client.Ft.ToString(); }
+            get
+            {
+                if (((Client)_object).Ft == 0)
+                {
+                    return "";
+                }
+                return ((Client)_object).Ft.ToString();
+            }
             set
             {
-                uint ft;
-                if (!uint.TryParse(value, out ft))
+                UInt32 ft;
+                if (String.IsNullOrEmpty(value))
                 {
-                    throw new ApplicationException("Неправильное значение частоты приема.");
+                    ft = 0;
                 }
-                _client.Ft = ft;
+                else
+                {
+                    try
+                    {
+                        ft = UInt32.Parse(value);
+                    }
+                    catch (FormatException)
+                    {
+                        throw new ApplicationException("Неправильное значение частоты передачи.");
+                    }
+                }
+                ((Client)_object).Ft = ft;
+                NotifyPropertyChanged("Ft");
             }
         }
     }

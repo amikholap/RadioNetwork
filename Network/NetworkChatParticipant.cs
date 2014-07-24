@@ -23,7 +23,15 @@ namespace Network
         private int pingWaitAccept = 6000;
         protected INetworkChatCodec _codec;
 
-        private volatile bool _listenPing;
+
+
+        /// <summary>
+        /// Tell working state.
+        /// True by default.
+        /// When set to false a shutdown will follow in several seconds.
+        /// </summary>
+        protected volatile bool _isWorking;
+        protected volatile bool _listenPing;
         protected volatile bool _muted;
         protected volatile bool _connectPing;
         protected volatile bool _receiving;
@@ -126,6 +134,10 @@ namespace Network
                     logger.Debug(String.Format("ping listen accept SYN send from {0}", tcpClient.Client.RemoteEndPoint));
                     tcpClient.Close();
                 }
+                else
+                {
+                    Thread.Sleep(pingWaitAccept);
+                }
             }
             listener.Stop();
             logger.Debug("ping listen accept stop");
@@ -167,7 +179,7 @@ namespace Network
                     logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " start");
                     if (ar.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(pingWaitAccept), true) == false)
                     {
-                        logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " failed");                        
+                        logger.Debug("ping async " + IPAddress.Parse(PingAddr.ToString()) + " failed");
                         return false;
                     }
                     tcp.EndConnect(ar);
@@ -178,7 +190,7 @@ namespace Network
                 }
                 finally
                 {
-                    wh.Close();                                        
+                    wh.Close();
                     tcp.Close();
                 }
             }
@@ -228,6 +240,7 @@ namespace Network
 
         public virtual void Start()
         {
+            _isWorking = true;
             StartLoggingAudio();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
@@ -245,6 +258,8 @@ namespace Network
             StopReceiving();
             AudioHelper.StopPlaying();
             StopLoggingAudio();
+            _isWorking = false;
+            Thread.Sleep(1000);    // let worker threads finish
         }
 
         #endregion

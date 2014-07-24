@@ -62,18 +62,16 @@ namespace Network
             return client;
         }
 
-        public static UdpClient InitUdpClient(int port)
+        public static UdpClient InitUdpClient(IPEndPoint localEP)
         {
-            UdpClient client = new UdpClient(port);
-            ConfigureUdpClient(ref client);
+            UdpClient client = InitUdpClient();
+            client.Client.Bind(localEP);
             return client;
         }
 
-        public static UdpClient InitUdpClient(IPEndPoint localEP)
+        public static UdpClient InitUdpClient(int port)
         {
-            UdpClient client = new UdpClient(localEP);
-            ConfigureUdpClient(ref client);
-            return client;
+            return InitUdpClient(new IPEndPoint(IPAddress.Any, port));
         }
     }
 }

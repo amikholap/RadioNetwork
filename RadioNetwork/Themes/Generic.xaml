@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:RadioNetwork"
+                    xmlns:rnc="clr-namespace:RadioNetwork.Controls"
+                    xmlns:rncv="clr-namespace:RadioNetwork.Converters">
+    <rncv:StringToBitmapConverter x:Key="StringToBitmapConverter"/>
+
+    <Style TargetType="{x:Type rnc:ImageToggleButton}">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type rnc:ImageToggleButton}">
+                    <Grid>
+                        <Image x:Name="ImageToggleButtonImage" Source="{TemplateBinding UncheckedBackgroundImageSource, Converter={StaticResource StringToBitmapConverter}}"/>
+                        <ContentPresenter x:Name="contentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Path=IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                            <Setter TargetName="ImageToggleButtonImage" Property="Source" Value="{Binding CheckedBackgroundImageSource, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringToBitmapConverter}}"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

@@ -8,9 +8,11 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 
 namespace Network
@@ -18,13 +20,6 @@ namespace Network
     public class Server : NetworkChatParticipant
     {
         #region Properties
-
-        /// <summary>
-        /// Indicates if server is running.
-        /// True by default.
-        /// When set to false server will shut down in several seconds.
-        /// </summary>
-        private volatile bool _isWorking;
 
         /// <summary>
         /// Details about the current talker.
@@ -74,7 +69,6 @@ namespace Network
         public Server(string callsign)
             : base(callsign)
         {
-            _isWorking = true;
             _clients = new ObservableCollection<Client>();
             _messages = new ObservableCollection<string>();
             _mcastClients = new Dictionary<IPAddress, UdpClient>();
@@ -87,11 +81,22 @@ namespace Network
 
         public event EventHandler<TalkerChangedEventArgs> TalkerChanged;
 
+
         protected void OnTalkerChanged(TalkerChangedEventArgs e)
         {
             if (TalkerChanged != null)
             {
                 TalkerChanged(this, e);
+            }
+        }
+
+        public event EventHandler<MessagesChangedEventArgs> MessagesChanged;
+
+        protected void OnMessagesChanged(MessagesChangedEventArgs e)
+        {
+            if (MessagesChanged != null)
+            {
+                MessagesChanged(this, e);
             }
         }
 
@@ -206,6 +211,7 @@ namespace Network
 
             line = String.Format("<{0:g}> {1}: {2}", ts.TimeOfDay, e.Talker.Callsign, message);
             Dispatcher.Invoke(() => { _messages.Add(line); });
+            OnMessagesChanged(new MessagesChangedEventArgs(e.Talker, line));
         }
 
         #endregion
@@ -213,35 +219,30 @@ namespace Network
         #region Methods
 
         /// <summary>
-        /// Listen on BROADCAST_PORT for any udp datagrams with client ip addresses.
-        /// Reply with a string "server"
+        /// Launch echo server on BROADCAST_PORT for any udp datagrams.
         /// </summary>
-        private void ListenNewClients()
+        private void EchoServer()
         {
-            IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
-            UdpClient client = NetworkHelper.InitUdpClient(Network.Properties.Settings.Default.BROADCAST_PORT);
+            UdpClient client = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
             client.EnableBroadcast = true;
 
-            // listen for new clients
+            // listen for client requests
             while (_isWorking)
             {
-                while (client.Available > 0)
+                if (client.Available > 0)
                 {
-                    // receive client's message
+                    // receive a message
+                    IPEndPoint broadcastEP = new IPEndPoint(IPAddress.Any, Network.Properties.Settings.Default.BROADCAST_PORT);
                     byte[] dgram = client.Receive(ref broadcastEP);
                     IPAddress clientAddr = broadcastEP.Address;
-                    string type = Encoding.UTF8.GetString(dgram);    // either "client" or "server"
-                    if (type == "server")
+
+                    // don't process server's own messages
+                    if (clientAddr.Equals(this.Addr))
                     {
-                        // skip server's own messages
                         continue;
                     }
 
-                    logger.Debug(String.Format("Found client: {0}", clientAddr));
-
-                    // send a string "server" to the connected client
-                    string response = "server";
-                    dgram = Encoding.UTF8.GetBytes(response);
+                    // send echo response
                     UdpClient c = new UdpClient();
                     try
                     {
@@ -250,7 +251,7 @@ namespace Network
                     }
                     catch (Exception e)
                     {
-                        logger.Error("Unhandled exception while listening for new clients.", e);
+                        logger.Error("Unhandled exception in echo server.", e);
                         continue;
                     }
                     finally
@@ -261,6 +262,36 @@ namespace Network
                 Thread.Sleep(50);
             }
             client.Close();
+        }
+
+        /// <summary>
+        /// Respond with serialized summary of `this` to any connection at SERVER_DETAILS_PORT.
+        /// </summary>
+        private void SummaryServer()
+        {
+            TcpListener listener = new TcpListener(IPAddress.Any, Properties.Settings.Default.SERVER_DETAILS_PORT);
+            listener.Server.ReceiveTimeout = 1000;
+            listener.Server.SendTimeout = 1000;
+
+            listener.Start();
+
+            while (_isWorking)
+            {
+                if (listener.Pending())
+                {
+                    using (TcpClient c = listener.AcceptTcpClient())
+                    using (NetworkStream ns = c.GetStream())
+                    {
+                        BinaryFormatter bf = new BinaryFormatter();
+                        bf.Serialize(ns, new ServerSummary(this));
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(100);
+                }
+            }
+            listener.Stop();
         }
 
         /// <summary>
@@ -310,7 +341,7 @@ namespace Network
                                     }
                                     // get client's IP address                                                               
                                     int a = 0;
-                                    Client existingClient = null;                                    
+                                    Client existingClient = null;
                                     foreach (Client item in Clients)
                                     {
                                         if (clientAddr.Equals(item.Addr))
@@ -356,7 +387,7 @@ namespace Network
                                                 Dispatcher.Invoke((Action)(() => _clients.Insert(index, existingClient)));
                                             }
                                             logger.Debug(String.Format("client {0} reconnect to {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
-                                        }         
+                                        }
                                     }
                                     else     // if callsign is busy
                                     {
@@ -388,11 +419,11 @@ namespace Network
                                             }
                                             lock (item)
                                             {
-                                                Dispatcher.Invoke((Action)(() => _clients.Remove(item))); 
+                                                Dispatcher.Invoke((Action)(() => _clients.Remove(item)));
                                             }
                                             logger.Debug(String.Format("client {0} disconnect {1} with freqs {2}, {3}", clientAddr, callsign, fr, ft));
                                             break;
-                                        }  
+                                        }
                                     }
                                     UpdateMulticastClients();
                                     break;
@@ -401,7 +432,7 @@ namespace Network
                                 // unknown format
                                 Server.logger.Warn(request);
                                 continue;
-                        }                        
+                        }
                     }
                 }
                 else
@@ -539,11 +570,13 @@ namespace Network
         public override void Start()
         {
             base.Start();
+
             InitTextLog();
-            Thread listenNewClientsThread = new Thread(this.ListenNewClients);
-            Thread listenClientsInfoThread = new Thread(this.ListenClientsInfo);
-            listenNewClientsThread.Start();
-            listenClientsInfoThread.Start();
+
+            (new Thread(this.EchoServer)).Start();
+            (new Thread(this.SummaryServer)).Start();
+            (new Thread(this.ListenClientsInfo)).Start();
+
             this.TalkerChanged += SpeechRecognizer.Server_TalkerChanged;
             SpeechRecognizer.SpeechRecognized += SpeechRecognizer_SpeechRecognized;
             SpeechRecognizer.Start(new UncompressedPcmChatCodec());
@@ -558,8 +591,6 @@ namespace Network
             SpeechRecognizer.SpeechRecognized -= SpeechRecognizer_SpeechRecognized;
             this.TalkerChanged -= SpeechRecognizer.Server_TalkerChanged;
 
-            _isWorking = false;          
-
             // close all UdpClients
             Dispatcher.Invoke((Action)(() => _clients.Clear()));
             UpdateMulticastClients();
@@ -567,7 +598,6 @@ namespace Network
             DumpTextLog();
 
             base.Stop();
-            Thread.Sleep(1000);    // let worker threads finish
         }
 
         #endregion

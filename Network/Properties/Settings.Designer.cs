@@ -25,7 +25,7 @@ namespace Network.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("41853")]
+        [global::System.Configuration.DefaultSettingValueAttribute("41852")]
         public int BROADCAST_PORT {
             get {
                 return ((int)(this["BROADCAST_PORT"]));
@@ -128,6 +128,19 @@ namespace Network.Properties {
             }
             set {
                 this["TIMESTAMP_FORMAT"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+
+        [global::System.Configuration.DefaultSettingValueAttribute("41853")]
+        public int SERVER_DETAILS_PORT {
+            get {
+                return ((int)(this["SERVER_DETAILS_PORT"]));
+            }
+            set {
+                this["SERVER_DETAILS_PORT"] = value;
             }
         }
         

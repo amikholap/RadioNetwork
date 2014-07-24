@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="BROADCAST_PORT" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">41853</Value>
+      <Value Profile="(Default)">41852</Value>
     </Setting>
     <Setting Name="TCP_PORT" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">41854</Value>
@@ -29,6 +29,8 @@
     <Setting Name="TIMESTAMP_FORMAT" Type="System.String" Scope="User">
       <Value Profile="(Default)">yyyy.MM.dd-HH.mm.ss</Value>
     </Setting>
+    <Setting Name="SERVER_DETAILS_PORT" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">41853</Value>
     <Setting Name="GOOGLE_TTS_API_KEY" Type="System.String" Scope="User">
       <Value Profile="(Default)">AIzaSyDM9RT71Dz5LikjMlBErbXHZQq3-fEqWLM</Value>
     </Setting>
