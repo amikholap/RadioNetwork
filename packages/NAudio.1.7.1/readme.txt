@@ -10,12 +10,14 @@ id, so if you want me to put your full name here, please also get in touch.
 
 in alphabetical order:
 Alexandre Mutel
+Alexander Binkert
 AmandaTarafaMas
 balistof
 biermeester
 borman11
 bradb
 Brandon Hansen (kg6ypi)
+csechet
 ChunkWare Music Software
 CKing
 DaMacc
@@ -26,10 +28,14 @@ Hfuy
 Iain McCowan
 Idael Cardaso 
 ioctlLR
+Jamie Michael Ewins
+jannera
 jbaker8935
 jcameron23
 jonahoffmann
 jontdelorme
+Justin Frankel
+K24A3
 Kassoul
 kevinxxx
 Lustild
@@ -38,22 +44,28 @@ ManuN
 MeelMarcel
 Michael Feld 
 Michael J
+Michael Lehenbauer
+Nigel Redmon
 Nikolaos Georgiou
 Owen Skriloff
 owoudenb
 painmailer
+PPavan
 Pygmy
 Ray Molenkamp
 Robert Bristow-Johnson
 Scott Fleischman 
 Sirish Bajpai
+sporn
 Steve Underwood
 Ted Murphy
 Tiny Simple Tools
 Tobias Fleming
 Tony Cabello
+Tony Sistemas
 TuneBlade
 topher3683
+Vladimir Rokovanov
 Ville Koskinen
 Wyatt Rice
 Yuval Naveh
