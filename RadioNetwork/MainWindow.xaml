@@ -4,14 +4,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:rnc="clr-namespace:RadioNetwork.Controls"
         Closing="OnWindowClosing"
+        PreviewKeyUp="MainWindow_PreviewKeyUp"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
         Title="Радиосеть" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight">
 
     <Window.Resources>
         <ResourceDictionary>
-            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Controls/Styles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -115,6 +117,14 @@
 
         <rnc:ImageToggleButton x:Name="PowerToggleButton" CheckedBackgroundImageSource="/img/power_button_on.jpg" UncheckedBackgroundImageSource="/img/power_button_off.jpg" Canvas.Left="365" Canvas.Top="290" Height="25" Width="28" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" Checked="PowerToggleButton_Checked" Unchecked="PowerToggleButton_Unchecked"/>
 
-        <rnc:ImageToggleButton x:Name="PushToTalkToggleButton" CheckedBackgroundImageSource="/img/pushtotalk_button_on.jpg" UncheckedBackgroundImageSource="/img/pushtotalk_button_off.jpg" ClickMode="Press" Canvas.Left="630" Canvas.Top="401" Width="170" Height="87" Checked="PushToTalkToggleButton_Checked" Unchecked="PushToTalkToggleButton_Unchecked"/>
+        <rnc:ImageToggleButton
+            x:Name="PushToTalkToggleButton"
+            CheckedBackgroundImageSource="/img/pushtotalk_button_on.jpg"
+            UncheckedBackgroundImageSource="/img/pushtotalk_button_off.jpg"
+            ClickMode="Press"
+            Canvas.Left="630" Canvas.Top="401"
+            Width="170" Height="87"
+            Checked="PushToTalkToggleButton_Checked"
+            Unchecked="PushToTalkToggleButton_Unchecked"/>
     </Canvas>
 </Window>

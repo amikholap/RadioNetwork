@@ -126,6 +126,33 @@ namespace RadioNetwork
             Controller.ShutDown();
         }
 
+        /// <summary>
+        /// Global shortcut for space as PushToTalk button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                PushToTalkToggleButton.IsChecked = true;
+                e.Handled = true;
+            }
+        }
+        /// <summary>
+        /// Global shortcut for space as PushToTalk button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MainWindow_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                PushToTalkToggleButton.IsChecked = false;
+                e.Handled = true;
+            }
+        }
+
         private void PushToTalkToggleButton_Checked(object sender, RoutedEventArgs e)
         {
             ImageToggleButton btn = (ImageToggleButton)sender;
