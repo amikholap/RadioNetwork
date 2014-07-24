@@ -60,7 +60,20 @@ namespace Logic
                 DateTime lastUpdated = DateTime.Now;
                 while (true)
                 {
+                    int nServers = 0;
+                    if (AvailableServers != null)
+                    {
+                        nServers = AvailableServers.Count();
+                    }
+
+                    // Update a list of available servers.
+                    // Check twice if any server disappears.
                     AvailableServers = Network.Client.DetectServers();
+                    if (AvailableServers.Count() < nServers)
+                    {
+                        AvailableServers = Network.Client.DetectServers();
+                    }
+
                     sleepTime = interval - (DateTime.Now - lastUpdated);
                     if (sleepTime > TimeSpan.Zero)
                     {
