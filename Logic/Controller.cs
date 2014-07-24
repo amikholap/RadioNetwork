@@ -57,7 +57,7 @@ namespace Logic
         static Controller()
         {
             _client = new Client("Тополь", 255, 255);
-            _server = new Server("Береза");            
+            _server = new Server("Береза");
             Mode = ControllerMode.None;
 
             // Update available servers every second
@@ -68,18 +68,22 @@ namespace Logic
                 DateTime lastUpdated = DateTime.Now;
                 while (true)
                 {
-                    int nServers = 0;
-                    if (AvailableServers != null)
+                    // Update AvailableServers only in client mode
+                    if (Mode == ControllerMode.Client)
                     {
-                        nServers = AvailableServers.Count();
-                    }
+                        int nServers = 0;
+                        if (AvailableServers != null)
+                        {
+                            nServers = AvailableServers.Count();
+                        }
 
-                    // Update a list of available servers.
-                    // Check twice if any server disappears.
-                    AvailableServers = Network.Client.DetectServers();
-                    if (AvailableServers.Count() < nServers)
-                    {
+                        // Update a list of available servers.
+                        // Check twice if any server disappears.
                         AvailableServers = Network.Client.DetectServers();
+                        if (AvailableServers.Count() < nServers)
+                        {
+                            AvailableServers = Network.Client.DetectServers();
+                        }
                     }
 
                     sleepTime = interval - (DateTime.Now - lastUpdated);
