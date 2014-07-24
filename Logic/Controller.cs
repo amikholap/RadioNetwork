@@ -9,6 +9,7 @@ using log4net;
 using System.Net;
 using System.Threading;
 using System.Diagnostics;
+using System.ComponentModel;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
@@ -41,6 +42,13 @@ namespace Logic
         /// </summary>
         public static IEnumerable<ServerSummary> AvailableServers { get; set; }
 
+        #region EventHandlers
+        static void Server_MessagesChanged(object sender, MessagesChangedEventArgs e)
+        {
+        }
+        #endregion
+
+
         static void Client_ServerDisconnected(object sender, ClientEventArgs e)
         {
             _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
@@ -49,7 +57,7 @@ namespace Logic
         static Controller()
         {
             _client = new Client("Тополь", 255, 255);
-            _server = new Server("Береза");
+            _server = new Server("Береза");            
             Mode = ControllerMode.None;
 
             // Update available servers every second
@@ -100,7 +108,6 @@ namespace Logic
         {
             AudioIO.StopTicking();
         }
-
         /// <summary>
         /// Run application in client mode.
         /// </summary>
@@ -162,11 +169,11 @@ namespace Logic
 
                 // create Server instance
                 _server = new Server(callsign);
-
                 // try to start server
                 try
                 {
                     _server.Start();
+                    _server.MessagesChanged += Server_MessagesChanged;
                     Mode = ControllerMode.Server;
                 }
                 catch (Exception e)
@@ -195,6 +202,7 @@ namespace Logic
                     break;
                 case ControllerMode.Server:
                     _server.Stop();
+                    _server.MessagesChanged -= Server_MessagesChanged;
                     break;
             }
             Mode = ControllerMode.None;
