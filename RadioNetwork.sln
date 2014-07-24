@@ -9,6 +9,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Audio", "Audio\Audio.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logic", "Logic\Logic.csproj", "{8745F7DA-4AEF-4C4C-B86E-41F9D21877FC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{04ACE1D6-3FD0-4E72-BC99-D21F8356F4FF}"
+	ProjectSection(SolutionItems) = preProject
+		Gmail.txt = Gmail.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libz", "Libz", "{C8AE8B4D-98BB-4F07-9D7D-1F828BC0351C}"
+	ProjectSection(SolutionItems) = preProject
+		LibZ\doboz.libzcodec = LibZ\doboz.libzcodec
+		LibZ\libz.exe = LibZ\libz.exe
+		LibZ\lz4.libzcodec = LibZ\lz4.libzcodec
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

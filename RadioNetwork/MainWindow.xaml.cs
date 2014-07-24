@@ -132,7 +132,6 @@ namespace RadioNetwork
             btn.ClickMode = ClickMode.Release;
             Controller.StartTalking();
         }
-
         private void PushToTalkToggleButton_Unchecked(object sender, RoutedEventArgs e)
         {
             ImageToggleButton btn = (ImageToggleButton)sender;

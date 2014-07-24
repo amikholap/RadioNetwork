@@ -96,16 +96,24 @@ namespace Network
         public static IEnumerable<ServerSummary> DetectServers()
         {
             int waitTime = 1000;
-            Byte[] dgram = new byte[0];
+            int msgLen = 16;
+
             List<IPAddress> serverAddresses = new List<IPAddress>();
             List<ServerSummary> servers = new List<ServerSummary>();
+
+            byte[] clientMsg = new byte[msgLen];
+            byte[] serverMsg = new byte[msgLen];
+
+            // Initialize unique message to distinguish this client from others.
+            new Random().NextBytes(clientMsg);
+
 
             UdpClient sendClient = NetworkHelper.InitUdpClient();
             sendClient.EnableBroadcast = true;
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Properties.Settings.Default.BROADCAST_PORT);
             try
             {
-                sendClient.Send(dgram, dgram.Length, broadcastEndPoint);
+                sendClient.Send(clientMsg, clientMsg.Length, broadcastEndPoint);
             }
             catch (SocketException)
             {
@@ -126,16 +134,15 @@ namespace Network
                 serverEP = null;
                 try
                 {
-                    receiveClient.Receive(ref serverEP);
+                    serverMsg = receiveClient.Receive(ref serverEP);
                 }
                 catch (SocketException)
                 {
                     // timeout
                 }
-                if (serverEP != null)
+                if (serverEP != null && clientMsg.SequenceEqual(serverMsg))
                 {
                     serverAddresses.Add(serverEP.Address);
-                    logger.Debug(String.Format("Server responded: {0}", serverAddresses.Last()));
                 }
             }
             receiveClient.Close();

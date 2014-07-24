@@ -134,6 +134,10 @@ namespace Network
                     logger.Debug(String.Format("ping listen accept SYN send from {0}", tcpClient.Client.RemoteEndPoint));
                     tcpClient.Close();
                 }
+                else
+                {
+                    Thread.Sleep(pingWaitAccept);
+                }
             }
             listener.Stop();
             logger.Debug("ping listen accept stop");

@@ -417,6 +417,32 @@
             AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR
             </summary>
         </member>
+        <member name="T:NAudio.CoreAudioApi.AudioClientProperties">
+            <summary>
+            The AudioClientProperties structure is used to set the parameters that describe the properties of the client's audio stream.
+            </summary>
+            <remarks>http://msdn.microsoft.com/en-us/library/windows/desktop/hh968105(v=vs.85).aspx</remarks>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioClientProperties.cbSize">
+            <summary>
+            The size of the buffer for the audio stream.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioClientProperties.bIsOffload">
+            <summary>
+            Boolean value to indicate whether or not the audio stream is hardware-offloaded
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioClientProperties.eCategory">
+            <summary>
+            An enumeration that is used to specify the category of the audio stream.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioClientProperties.Options">
+            <summary>
+            A bit-field describing the characteristics of the stream. Supported in Windows 8.1 and later.
+            </summary>
+        </member>
         <member name="T:NAudio.CoreAudioApi.AudioClientShareMode">
             <summary>
             AUDCLNT_SHAREMODE
@@ -462,9 +488,54 @@
             AUDCLNT_STREAMFLAGS_NOPERSIST     
             </summary>
         </member>
+        <member name="T:NAudio.CoreAudioApi.AudioClientStreamOptions">
+            <summary>
+            Defines values that describe the characteristics of an audio stream.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioClientStreamOptions.None">
+            <summary>
+            No stream options.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioClientStreamOptions.Raw">
+            <summary>
+            The audio stream is a 'raw' stream that bypasses all signal processing except for endpoint specific, always-on processing in the APO, driver, and hardware.
+            </summary>
+        </member>
         <member name="T:NAudio.CoreAudioApi.AudioClockClient">
             <summary>
-            
+            Audio Clock Client
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioClockClient.GetPosition(System.UInt64@,System.UInt64@)">
+            <summary>
+            Get Position
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioClockClient.Dispose">
+            <summary>
+            Dispose
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioClockClient.Characteristics">
+            <summary>
+            Characteristics
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioClockClient.Frequency">
+            <summary>
+            Frequency
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioClockClient.AdjustedPosition">
+            <summary>
+            Adjusted Position
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioClockClient.CanAdjustPosition">
+            <summary>
+            Can Adjust Position
             </summary>
         </member>
         <member name="T:NAudio.CoreAudioApi.AudioEndpointVolume">
@@ -668,6 +739,51 @@
         <member name="M:NAudio.CoreAudioApi.AudioRenderClient.Dispose">
             <summary>
             Release the COM object
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.AudioStreamCategory">
+            <summary>
+            Specifies the category of an audio stream.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.Other">
+            <summary>
+            Other audio stream.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.ForegroundOnlyMedia">
+            <summary>
+            Media that will only stream when the app is in the foreground.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.BackgroundCapableMedia">
+            <summary>
+            Media that can be streamed when the app is in the background.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.Communications">
+            <summary>
+            Real-time communications, such as VOIP or chat.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.Alerts">
+            <summary>
+            Alert sounds.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.SoundEffects">
+            <summary>
+            Sound effects.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.GameEffects">
+            <summary>
+            Game sound effects.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.GameMedia">
+            <summary>
+            Background audio for games.
             </summary>
         </member>
         <member name="T:NAudio.CoreAudioApi.AudioVolumeNotificationData">
@@ -986,7 +1102,7 @@
             <summary>
             Get device by ID
             </summary>
-            <param name="ID">Device ID</param>
+            <param name="id">Device ID</param>
             <returns>Device</returns>
         </member>
         <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.#ctor">
@@ -1209,283 +1325,6 @@
             Voice communications (talking to another person).
             </summary>
         </member>
-        <member name="T:NAudio.Dmo.DmoDescriptor">
-            <summary>
-            Contains the name and CLSID of a DirectX Media Object
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.DmoDescriptor.#ctor(System.String,System.Guid)">
-            <summary>
-            Initializes a new instance of DmoDescriptor
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoDescriptor.Name">
-            <summary>
-            Name
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoDescriptor.Clsid">
-            <summary>
-            Clsid
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoEnumerator">
-            <summary>
-            DirectX Media Object Enumerator
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.DmoEnumerator.GetAudioEffectNames">
-            <summary>
-            Get audio effect names
-            </summary>
-            <returns>Audio effect names</returns>
-        </member>
-        <member name="M:NAudio.Dmo.DmoEnumerator.GetAudioEncoderNames">
-            <summary>
-            Get audio encoder names
-            </summary>
-            <returns>Audio encoder names</returns>
-        </member>
-        <member name="M:NAudio.Dmo.DmoEnumerator.GetAudioDecoderNames">
-            <summary>
-            Get audio decoder names
-            </summary>
-            <returns>Audio decoder names</returns>
-        </member>
-        <member name="T:NAudio.Dmo.DmoGuids">
-            <summary>
-            DMO Guids for use with DMOEnum
-            dmoreg.h
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoHResults">
-            <summary>
-            MediaErr.h
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoInputDataBufferFlags">
-            <summary>
-            DMO Input Data Buffer Flags
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoInputDataBufferFlags.None">
-            <summary>
-            None
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoInputDataBufferFlags.SyncPoint">
-            <summary>
-            DMO_INPUT_DATA_BUFFERF_SYNCPOINT
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoInputDataBufferFlags.Time">
-            <summary>
-            DMO_INPUT_DATA_BUFFERF_TIME
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoInputDataBufferFlags.TimeLength">
-            <summary>
-            DMO_INPUT_DATA_BUFFERF_TIMELENGTH
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoMediaType">
-            <summary>
-            http://msdn.microsoft.com/en-us/library/aa929922.aspx
-            DMO_MEDIA_TYPE 
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.DmoMediaType.GetWaveFormat">
-            <summary>
-            Gets the structure as a Wave format (if it is one)
-            </summary>        
-        </member>
-        <member name="M:NAudio.Dmo.DmoMediaType.SetWaveFormat(NAudio.Wave.WaveFormat)">
-            <summary>
-            Sets this object up to point to a wave format
-            </summary>
-            <param name="waveFormat">Wave format structure</param>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.MajorType">
-            <summary>
-            Major type
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.MajorTypeName">
-            <summary>
-            Major type name
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.SubType">
-            <summary>
-            Subtype
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.SubTypeName">
-            <summary>
-            Subtype name
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.FixedSizeSamples">
-            <summary>
-            Fixed size samples
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.SampleSize">
-            <summary>
-            Sample size
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.FormatType">
-            <summary>
-            Format type
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoMediaType.FormatTypeName">
-            <summary>
-            Format type name
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoOutputDataBuffer">
-            <summary>
-            DMO Output Data Buffer
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.DmoOutputDataBuffer.#ctor(System.Int32)">
-            <summary>
-            Creates a new DMO Output Data Buffer structure
-            </summary>
-            <param name="maxBufferSize">Maximum buffer size</param>
-        </member>
-        <member name="M:NAudio.Dmo.DmoOutputDataBuffer.Dispose">
-            <summary>
-            Dispose
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.DmoOutputDataBuffer.RetrieveData(System.Byte[],System.Int32)">
-            <summary>
-            Retrives the data in this buffer
-            </summary>
-            <param name="data">Buffer to receive data</param>
-            <param name="offset">Offset into buffer</param>
-        </member>
-        <member name="P:NAudio.Dmo.DmoOutputDataBuffer.MediaBuffer">
-            <summary>
-            Media Buffer
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoOutputDataBuffer.Length">
-            <summary>
-            Length of data in buffer
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoOutputDataBuffer.StatusFlags">
-            <summary>
-            Status Flags
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoOutputDataBuffer.Timestamp">
-            <summary>
-            Timestamp
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoOutputDataBuffer.Duration">
-            <summary>
-            Duration
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.DmoOutputDataBuffer.MoreDataAvailable">
-            <summary>
-            Is more data available
-            If true, ProcessOuput should be called again
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoOutputDataBufferFlags">
-            <summary>
-            DMO Output Data Buffer Flags
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoOutputDataBufferFlags.None">
-            <summary>
-            None
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoOutputDataBufferFlags.SyncPoint">
-            <summary>
-            DMO_OUTPUT_DATA_BUFFERF_SYNCPOINT
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoOutputDataBufferFlags.Time">
-            <summary>
-            DMO_OUTPUT_DATA_BUFFERF_TIME
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoOutputDataBufferFlags.TimeLength">
-            <summary>
-            DMO_OUTPUT_DATA_BUFFERF_TIMELENGTH
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoOutputDataBufferFlags.Incomplete">
-            <summary>
-            DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoPartialMediaType">
-            <summary>
-            DMO_PARTIAL_MEDIATYPE
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.DmoProcessOutputFlags">
-            <summary>
-            DMO Process Output Flags
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoProcessOutputFlags.None">
-            <summary>
-            None
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.DmoProcessOutputFlags.DiscardWhenNoBuffer">
-            <summary>
-            DMO_PROCESS_OUTPUT_DISCARD_WHEN_NO_BUFFER
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.IMediaBuffer">
-            <summary>
-            IMediaBuffer Interface
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.IMediaBuffer.SetLength(System.Int32)">
-            <summary>
-            Set Length
-            </summary>
-            <param name="length">Length</param>
-            <returns>HRESULT</returns>
-        </member>
-        <member name="M:NAudio.Dmo.IMediaBuffer.GetMaxLength(System.Int32@)">
-            <summary>
-            Get Max Length
-            </summary>
-            <param name="maxLength">Max Length</param>
-            <returns>HRESULT</returns>
-        </member>
-        <member name="M:NAudio.Dmo.IMediaBuffer.GetBufferAndLength(System.IntPtr,System.IntPtr)">
-            <summary>
-            Get Buffer and Length
-            </summary>
-            <param name="bufferPointerPointer">Pointer to variable into which to write the Buffer Pointer </param>
-            <param name="validDataLengthPointer">Pointer to variable into which to write the Valid Data Length</param>
-            <returns>HRESULT</returns>
-        </member>
-        <member name="T:NAudio.Dmo.IMediaObject">
-            <summary>
-            defined in mediaobj.h
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.IMediaParamInfo">
-            <summary>
-            defined in Medparam.h
-            </summary>
-        </member>
         <member name="T:NAudio.Dmo.IWMResamplerProps">
             <summary>
             Windows Media Resampler Props
@@ -1502,453 +1341,73 @@
              Specifies the channel matrix.
             </summary>
         </member>
-        <member name="T:NAudio.Dmo.MediaBuffer">
+        <member name="T:NAudio.Dsp.BiQuadFilter">
             <summary>
-            Attempting to implement the COM IMediaBuffer interface as a .NET object
-            Not sure what will happen when I pass this to an unmanaged object
+            BiQuad filter
             </summary>
         </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.#ctor(System.Int32)">
+        <member name="M:NAudio.Dsp.BiQuadFilter.Transform(System.Single)">
             <summary>
-            Creates a new Media Buffer
+            Passes a single sample through the filter
             </summary>
-            <param name="maxLength">Maximum length in bytes</param>
+            <param name="inSample">Input sample</param>
+            <returns>Output sample</returns>
         </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.Dispose">
+        <member name="M:NAudio.Dsp.BiQuadFilter.SetLowPassFilter(System.Single,System.Single,System.Single)">
             <summary>
-            Dispose and free memory for buffer
+            Set this up as a low pass filter
             </summary>
+            <param name="sampleRate">Sample Rate</param>
+            <param name="cutoffFrequency">Cut-off Frequency</param>
+            <param name="q">Bandwidth</param>
         </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.Finalize">
+        <member name="M:NAudio.Dsp.BiQuadFilter.SetPeakingEq(System.Single,System.Single,System.Single,System.Single)">
             <summary>
-            Finalizer
+            Set this up as a peaking EQ
             </summary>
+            <param name="sampleRate">Sample Rate</param>
+            <param name="centreFrequency">Centre Frequency</param>
+            <param name="q">Bandwidth (Q)</param>
+            <param name="dbGain">Gain in decibels</param>
         </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.NAudio#Dmo#IMediaBuffer#SetLength(System.Int32)">
+        <member name="M:NAudio.Dsp.BiQuadFilter.SetHighPassFilter(System.Single,System.Single,System.Single)">
             <summary>
-            Set length of valid data in the buffer
-            </summary>
-            <param name="length">length</param>
-            <returns>HRESULT</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.NAudio#Dmo#IMediaBuffer#GetMaxLength(System.Int32@)">
-            <summary>
-            Gets the maximum length of the buffer
-            </summary>
-            <param name="maxLength">Max length (output parameter)</param>
-            <returns>HRESULT</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.NAudio#Dmo#IMediaBuffer#GetBufferAndLength(System.IntPtr,System.IntPtr)">
-            <summary>
-            Gets buffer and / or length
-            </summary>
-            <param name="bufferPointerPointer">Pointer to variable into which buffer pointer should be written</param>
-            <param name="validDataLengthPointer">Pointer to variable into which valid data length should be written</param>
-            <returns>HRESULT</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.LoadData(System.Byte[],System.Int32)">
-            <summary>
-            Loads data into this buffer
-            </summary>
-            <param name="data">Data to load</param>
-            <param name="bytes">Number of bytes to load</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaBuffer.RetrieveData(System.Byte[],System.Int32)">
-            <summary>
-            Retrieves the data in the output buffer
-            </summary>
-            <param name="data">buffer to retrieve into</param>
-            <param name="offset">offset within that buffer</param>
-        </member>
-        <member name="P:NAudio.Dmo.MediaBuffer.Length">
-            <summary>
-            Length of data in the media buffer
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.MediaObject">
-            <summary>
-            Media Object
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.#ctor(NAudio.Dmo.IMediaObject)">
-            <summary>
-            Creates a new Media Object
-            </summary>
-            <param name="mediaObject">Media Object COM interface</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetInputType(System.Int32,System.Int32)">
-            <summary>
-            Gets the input media type for the specified input stream
-            </summary>
-            <param name="inputStream">Input stream index</param>
-            <param name="inputTypeIndex">Input type index</param>
-            <returns>DMO Media Type or null if there are no more input types</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetOutputType(System.Int32,System.Int32)">
-            <summary>
-            Gets the DMO Media Output type
-            </summary>
-            <param name="outputStream">The output stream</param>
-            <param name="outputTypeIndex">Output type index</param>
-            <returns>DMO Media Type or null if no more available</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetOutputCurrentType(System.Int32)">
-            <summary>
-            retrieves the media type that was set for an output stream, if any
-            </summary>
-            <param name="outputStreamIndex">Output stream index</param>
-            <returns>DMO Media Type or null if no more available</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetInputTypes(System.Int32)">
-            <summary>
-            Enumerates the supported input types
-            </summary>
-            <param name="inputStreamIndex">Input stream index</param>
-            <returns>Enumeration of input types</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetOutputTypes(System.Int32)">
-            <summary>
-            Enumerates the output types
-            </summary>
-            <param name="outputStreamIndex">Output stream index</param>
-            <returns>Enumeration of supported output types</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SupportsInputType(System.Int32,NAudio.Dmo.DmoMediaType)">
-            <summary>
-            Querys whether a specified input type is supported
-            </summary>
-            <param name="inputStreamIndex">Input stream index</param>
-            <param name="mediaType">Media type to check</param>
-            <returns>true if supports</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SetInputType(System.Int32,NAudio.Dmo.DmoMediaType,NAudio.Dmo.DmoSetTypeFlags)">
-            <summary>
-            Sets the input type helper method
-            </summary>
-            <param name="inputStreamIndex">Input stream index</param>
-            <param name="mediaType">Media type</param>
-            <param name="flags">Flags (can be used to test rather than set)</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SetInputType(System.Int32,NAudio.Dmo.DmoMediaType)">
-            <summary>
-            Sets the input type
-            </summary>
-            <param name="inputStreamIndex">Input stream index</param>
-            <param name="mediaType">Media Type</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SetInputWaveFormat(System.Int32,NAudio.Wave.WaveFormat)">
-            <summary>
-            Sets the input type to the specified Wave format
-            </summary>
-            <param name="inputStreamIndex">Input stream index</param>
-            <param name="waveFormat">Wave format</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SupportsInputWaveFormat(System.Int32,NAudio.Wave.WaveFormat)">
-            <summary>
-            Requests whether the specified Wave format is supported as an input
-            </summary>
-            <param name="inputStreamIndex">Input stream index</param>
-            <param name="waveFormat">Wave format</param>
-            <returns>true if supported</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.CreateDmoMediaTypeForWaveFormat(NAudio.Wave.WaveFormat)">
-            <summary>
-            Helper function to make a DMO Media Type to represent a particular WaveFormat
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SupportsOutputType(System.Int32,NAudio.Dmo.DmoMediaType)">
-            <summary>
-            Checks if a specified output type is supported
-            n.b. you may need to set the input type first
-            </summary>
-            <param name="outputStreamIndex">Output stream index</param>
-            <param name="mediaType">Media type</param>
-            <returns>True if supported</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SupportsOutputWaveFormat(System.Int32,NAudio.Wave.WaveFormat)">
-            <summary>
-            Tests if the specified Wave Format is supported for output
-            n.b. may need to set the input type first
-            </summary>
-            <param name="outputStreamIndex">Output stream index</param>
-            <param name="waveFormat">Wave format</param>
-            <returns>True if supported</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SetOutputType(System.Int32,NAudio.Dmo.DmoMediaType,NAudio.Dmo.DmoSetTypeFlags)">
-            <summary>
-            Helper method to call SetOutputType
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SetOutputType(System.Int32,NAudio.Dmo.DmoMediaType)">
-            <summary>
-            Sets the output type
-            n.b. may need to set the input type first
-            </summary>
-            <param name="outputStreamIndex">Output stream index</param>
-            <param name="mediaType">Media type to set</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.SetOutputWaveFormat(System.Int32,NAudio.Wave.WaveFormat)">
-            <summary>
-            Set output type to the specified wave format
-            n.b. may need to set input type first
-            </summary>
-            <param name="outputStreamIndex">Output stream index</param>
-            <param name="waveFormat">Wave format</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetInputSizeInfo(System.Int32)">
-            <summary>
-            Get Input Size Info
-            </summary>
-            <param name="inputStreamIndex">Input Stream Index</param>
-            <returns>Input Size Info</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetOutputSizeInfo(System.Int32)">
-            <summary>
-            Get Output Size Info
-            </summary>
-            <param name="outputStreamIndex">Output Stream Index</param>
-            <returns>Output Size Info</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.ProcessInput(System.Int32,NAudio.Dmo.IMediaBuffer,NAudio.Dmo.DmoInputDataBufferFlags,System.Int64,System.Int64)">
-            <summary>
-            Process Input
-            </summary>
-            <param name="inputStreamIndex">Input Stream index</param>
-            <param name="mediaBuffer">Media Buffer</param>
-            <param name="flags">Flags</param>
-            <param name="timestamp">Timestamp</param>
-            <param name="duration">Duration</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.ProcessOutput(NAudio.Dmo.DmoProcessOutputFlags,System.Int32,NAudio.Dmo.DmoOutputDataBuffer[])">
-            <summary>
-            Process Output
-            </summary>
-            <param name="flags">Flags</param>
-            <param name="outputBufferCount">Output buffer count</param>
-            <param name="outputBuffers">Output buffers</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.AllocateStreamingResources">
-            <summary>
-            Gives the DMO a chance to allocate any resources needed for streaming
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.FreeStreamingResources">
-            <summary>
-            Tells the DMO to free any resources needed for streaming
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.GetInputMaxLatency(System.Int32)">
-            <summary>
-            Gets maximum input latency
-            </summary>
-            <param name="inputStreamIndex">input stream index</param>
-            <returns>Maximum input latency as a ref-time</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.Flush">
-            <summary>
-            Flushes all buffered data
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.Discontinuity(System.Int32)">
-            <summary>
-            Report a discontinuity on the specified input stream
-            </summary>
-            <param name="inputStreamIndex">Input Stream index</param>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.IsAcceptingData(System.Int32)">
-            <summary>
-            Is this input stream accepting data?
-            </summary>
-            <param name="inputStreamIndex">Input Stream index</param>
-            <returns>true if accepting data</returns>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObject.Dispose">
-            <summary>
-            Experimental code, not currently being called
-            Not sure if it is necessary anyway
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.MediaObject.InputStreamCount">
-            <summary>
-            Number of input streams
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.MediaObject.OutputStreamCount">
-            <summary>
-            Number of output streams
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.MediaObjectSizeInfo">
-            <summary>
-            Media Object Size Info
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObjectSizeInfo.#ctor(System.Int32,System.Int32,System.Int32)">
-            <summary>
-            Media Object Size Info
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.MediaObjectSizeInfo.ToString">
-            <summary>
-            ToString
-            </summary>        
-        </member>
-        <member name="P:NAudio.Dmo.MediaObjectSizeInfo.Size">
-            <summary>
-            Minimum Buffer Size, in bytes
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.MediaObjectSizeInfo.MaxLookahead">
-            <summary>
-            Max Lookahead
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.MediaObjectSizeInfo.Alignment">
-            <summary>
-            Alignment
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.MediaParamInfo">
-            <summary>
-            MP_PARAMINFO
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.MediaParamType">
-            <summary>
-            MP_TYPE
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.MediaParamType.Int">
-            <summary>
-            MPT_INT
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.MediaParamType.Float">
-            <summary>
-            MPT_FLOAT
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.MediaParamType.Bool">
-            <summary>
-            MPT_BOOL
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.MediaParamType.Enum">
-            <summary>
-            MPT_ENUM
-            </summary>
-        </member>
-        <member name="F:NAudio.Dmo.MediaParamType.Max">
-            <summary>
-            MPT_MAX
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.MediaParamCurveType">
-            <summary>
-            MP_CURVE_TYPE
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.MediaTypes">
-            <summary>
-            uuids.h, ksuuids.h
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.ResamplerMediaComObject">
-            <summary>
-            From wmcodecsdp.h
-            Implements:
-            - IMediaObject 
-            - IMFTransform (Media foundation - we will leave this for now as there is loads of MF stuff)
-            - IPropertyStore 
-            - IWMResamplerProps 
-            Can resample PCM or IEEE
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.Resampler">
-            <summary>
-            Resampler
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.Resampler.#ctor">
-            <summary>
-            Creates a new Resampler based on the DMO Resampler
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.Resampler.Dispose">
-            <summary>
-            Dispose code - experimental at the moment
-            Was added trying to track down why Resampler crashes NUnit
-            This code not currently being called by ResamplerDmoStream
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.Resampler.MediaObject">
-            <summary>
-            Media Object
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.WindowsMediaMp3DecoderComObject">
-            <summary>
-            implements IMediaObject  (DirectX Media Object)
-            implements IMFTransform (Media Foundation Transform)
-            On Windows XP, it is always an MM (if present at all)
-            </summary>
-        </member>
-        <member name="T:NAudio.Dmo.WindowsMediaMp3Decoder">
-            <summary>
-            Windows Media MP3 Decoder (as a DMO)
-            WORK IN PROGRESS - DO NOT USE!
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.WindowsMediaMp3Decoder.#ctor">
-            <summary>
-            Creates a new Resampler based on the DMO Resampler
-            </summary>
-        </member>
-        <member name="M:NAudio.Dmo.WindowsMediaMp3Decoder.Dispose">
-            <summary>
-            Dispose code - experimental at the moment
-            Was added trying to track down why Resampler crashes NUnit
-            This code not currently being called by ResamplerDmoStream
-            </summary>
-        </member>
-        <member name="P:NAudio.Dmo.WindowsMediaMp3Decoder.MediaObject">
-            <summary>
-            Media Object
+            Set this as a high pass filter
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.LowPassFilter(System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = 1 / (s^2 + s/Q + 1)
+            Create a low pass filter
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.HighPassFilter(System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = s^2 / (s^2 + s/Q + 1)
+            Create a High pass filter
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.BandPassFilterConstantSkirtGain(System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
+            Create a bandpass filter with constant skirt gain
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.BandPassFilterConstantPeakGain(System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
+            Create a bandpass filter with constant peak gain
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.NotchFilter(System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
+            Creates a notch filter
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.AllPassFilter(System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
+            Creaes an all pass filter
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.PeakingEQ(System.Single,System.Single,System.Single,System.Single)">
             <summary>
-            H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
+            Create a Peaking EQ
             </summary>
         </member>
         <member name="M:NAudio.Dsp.BiQuadFilter.LowShelf(System.Single,System.Single,System.Single,System.Single)">
@@ -1986,6 +1445,103 @@
         <member name="F:NAudio.Dsp.Complex.Y">
             <summary>
             Imaginary Part
+            </summary>
+        </member>
+        <member name="T:NAudio.Dsp.EnvelopeGenerator">
+            <summary>
+            Envelope generator (ADSR)
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.#ctor">
+            <summary>
+            Creates and Initializes an Envelope Generator
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.SetTargetRatioAttack(System.Single)">
+            <summary>
+            Sets the attack curve
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.SetTargetRatioDecayRelease(System.Single)">
+            <summary>
+            Sets the decay release curve
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.Process">
+            <summary>
+            Read the next volume multiplier from the envelope generator
+            </summary>
+            <returns>A volume multiplier</returns>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.Gate(System.Boolean)">
+            <summary>
+            Trigger the gate
+            </summary>
+            <param name="gate">If true, enter attack phase, if false enter release phase (unless already idle)</param>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.Reset">
+            <summary>
+            Reset to idle state
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.EnvelopeGenerator.GetOutput">
+            <summary>
+            Get the current output level
+            </summary>
+        </member>
+        <member name="P:NAudio.Dsp.EnvelopeGenerator.AttackRate">
+            <summary>
+            Attack Rate (seconds * SamplesPerSecond)
+            </summary>
+        </member>
+        <member name="P:NAudio.Dsp.EnvelopeGenerator.DecayRate">
+            <summary>
+            Decay Rate (seconds * SamplesPerSecond)
+            </summary>
+        </member>
+        <member name="P:NAudio.Dsp.EnvelopeGenerator.ReleaseRate">
+            <summary>
+            Release Rate (seconds * SamplesPerSecond)
+            </summary>
+        </member>
+        <member name="P:NAudio.Dsp.EnvelopeGenerator.SustainLevel">
+            <summary>
+            Sustain Level (1 = 100%)
+            </summary>
+        </member>
+        <member name="P:NAudio.Dsp.EnvelopeGenerator.State">
+            <summary>
+            Current envelope state
+            </summary>
+        </member>
+        <member name="T:NAudio.Dsp.EnvelopeGenerator.EnvelopeState">
+            <summary>
+            Envelope State
+            </summary>
+        </member>
+        <member name="F:NAudio.Dsp.EnvelopeGenerator.EnvelopeState.Idle">
+            <summary>
+            Idle
+            </summary>
+        </member>
+        <member name="F:NAudio.Dsp.EnvelopeGenerator.EnvelopeState.Attack">
+            <summary>
+            Attack
+            </summary>
+        </member>
+        <member name="F:NAudio.Dsp.EnvelopeGenerator.EnvelopeState.Decay">
+            <summary>
+            Decay
+            </summary>
+        </member>
+        <member name="F:NAudio.Dsp.EnvelopeGenerator.EnvelopeState.Sustain">
+            <summary>
+            Sustain
+            </summary>
+        </member>
+        <member name="F:NAudio.Dsp.EnvelopeGenerator.EnvelopeState.Release">
+            <summary>
+            Release
             </summary>
         </member>
         <member name="T:NAudio.Dsp.FastFourierTransform">
@@ -2066,61 +1622,6 @@
             Mono
             </summary>
         </member>
-        <member name="T:NAudio.FileFormats.Mp3.DmoMp3FrameDecompressor">
-            <summary>
-            MP3 Frame decompressor using the Windows Media MP3 Decoder DMO object
-            </summary>
-        </member>
-        <member name="T:NAudio.Wave.IMp3FrameDecompressor">
-            <summary>
-            Interface for MP3 frame by frame decoder
-            </summary>
-        </member>
-        <member name="M:NAudio.Wave.IMp3FrameDecompressor.DecompressFrame(NAudio.Wave.Mp3Frame,System.Byte[],System.Int32)">
-            <summary>
-            Decompress a single MP3 frame
-            </summary>
-            <param name="frame">Frame to decompress</param>
-            <param name="dest">Output buffer</param>
-            <param name="destOffset">Offset within output buffer</param>
-            <returns>Bytes written to output buffer</returns>
-        </member>
-        <member name="M:NAudio.Wave.IMp3FrameDecompressor.Reset">
-            <summary>
-            Tell the decoder that we have repositioned
-            </summary>
-        </member>
-        <member name="P:NAudio.Wave.IMp3FrameDecompressor.OutputFormat">
-            <summary>
-            PCM format that we are converting into
-            </summary>
-        </member>
-        <member name="M:NAudio.FileFormats.Mp3.DmoMp3FrameDecompressor.#ctor(NAudio.Wave.WaveFormat)">
-            <summary>
-            Initializes a new instance of the DMO MP3 Frame decompressor
-            </summary>
-            <param name="sourceFormat"></param>
-        </member>
-        <member name="M:NAudio.FileFormats.Mp3.DmoMp3FrameDecompressor.DecompressFrame(NAudio.Wave.Mp3Frame,System.Byte[],System.Int32)">
-            <summary>
-            Decompress a single frame of MP3
-            </summary>
-        </member>
-        <member name="M:NAudio.FileFormats.Mp3.DmoMp3FrameDecompressor.Reset">
-            <summary>
-            Alerts us that a reposition has occured so the MP3 decoder needs to reset its state
-            </summary>
-        </member>
-        <member name="M:NAudio.FileFormats.Mp3.DmoMp3FrameDecompressor.Dispose">
-            <summary>
-            Dispose of this obejct and clean up resources
-            </summary>
-        </member>
-        <member name="P:NAudio.FileFormats.Mp3.DmoMp3FrameDecompressor.OutputFormat">
-            <summary>
-            Converted PCM WaveFormat
-            </summary>
-        </member>
         <member name="T:NAudio.Wave.Id3v2Tag">
             <summary>
             An ID3v2 Tag
@@ -2177,6 +1678,30 @@
         <member name="P:NAudio.Wave.Id3v2Tag.RawData">
             <summary>
             Raw data from this tag
+            </summary>
+        </member>
+        <member name="T:NAudio.Wave.IMp3FrameDecompressor">
+            <summary>
+            Interface for MP3 frame by frame decoder
+            </summary>
+        </member>
+        <member name="M:NAudio.Wave.IMp3FrameDecompressor.DecompressFrame(NAudio.Wave.Mp3Frame,System.Byte[],System.Int32)">
+            <summary>
+            Decompress a single MP3 frame
+            </summary>
+            <param name="frame">Frame to decompress</param>
+            <param name="dest">Output buffer</param>
+            <param name="destOffset">Offset within output buffer</param>
+            <returns>Bytes written to output buffer</returns>
+        </member>
+        <member name="M:NAudio.Wave.IMp3FrameDecompressor.Reset">
+            <summary>
+            Tell the decoder that we have repositioned
+            </summary>
+        </member>
+        <member name="P:NAudio.Wave.IMp3FrameDecompressor.OutputFormat">
+            <summary>
+            PCM format that we are converting into
             </summary>
         </member>
         <member name="T:NAudio.Wave.Mp3Frame">
@@ -4458,7 +3983,7 @@
             Seeks to a new position in the media source.
             </summary>
         </member>
-        <member name="M:NAudio.MediaFoundation.IMFSourceReader.ReadSample(System.Int32,System.Int32,System.Int32@,System.Int32@,System.UInt64@,NAudio.MediaFoundation.IMFSample@)">
+        <member name="M:NAudio.MediaFoundation.IMFSourceReader.ReadSample(System.Int32,System.Int32,System.Int32@,NAudio.MediaFoundation.MF_SOURCE_READER_FLAG@,System.UInt64@,NAudio.MediaFoundation.IMFSample@)">
             <summary>
             Reads the next sample from the media source.
             </summary>
@@ -4476,6 +4001,52 @@
         <member name="M:NAudio.MediaFoundation.IMFSourceReader.GetPresentationAttribute(System.Int32,System.Guid,NAudio.CoreAudioApi.Interfaces.PropVariant@)">
             <summary>
             Gets an attribute from the underlying media source.
+            </summary>
+        </member>
+        <member name="T:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG">
+            <summary>
+            Contains flags that indicate the status of the IMFSourceReader::ReadSample method
+            http://msdn.microsoft.com/en-us/library/windows/desktop/dd375773(v=vs.85).aspx
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.None">
+            <summary>
+            No Error
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_ERROR">
+            <summary>
+            An error occurred. If you receive this flag, do not make any further calls to IMFSourceReader methods.
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_ENDOFSTREAM">
+            <summary>
+            The source reader reached the end of the stream.
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_NEWSTREAM">
+            <summary>
+            One or more new streams were created
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_NATIVEMEDIATYPECHANGED">
+            <summary>
+            The native format has changed for one or more streams. The native format is the format delivered by the media source before any decoders are inserted.
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED">
+            <summary>
+            The current media has type changed for one or more streams. To get the current media type, call the IMFSourceReader::GetCurrentMediaType method.
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_STREAMTICK">
+            <summary>
+            There is a gap in the stream. This flag corresponds to an MEStreamTick event from the media source.
+            </summary>
+        </member>
+        <member name="F:NAudio.MediaFoundation.MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_ALLEFFECTSREMOVED">
+            <summary>
+            All transforms inserted by the application have been removed for a particular stream.
             </summary>
         </member>
         <member name="T:NAudio.MediaFoundation.IMFTransform">
@@ -9791,9 +9362,9 @@
             <summary>
             Allows you to:
             1. insert a pre-delay of silence before the source begins
-            2. optionally skip over a certain amount of the source
-            3. optionally take only a set amount 
-            4. 
+            2. skip over a certain amount of the beginning of the source
+            3. only play a set amount from the source
+            4. insert silence at the end after the source is complete
             </summary>
         </member>
         <member name="M:NAudio.Wave.SampleProviders.OffsetSampleProvider.#ctor(NAudio.Wave.ISampleProvider)">
@@ -9816,9 +9387,19 @@
             Number of samples of silence to insert before playing source
             </summary>
         </member>
+        <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.DelayBy">
+            <summary>
+            Amount of silence to insert before playing
+            </summary>
+        </member>
         <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.SkipOverSamples">
             <summary>
             Number of samples in source to discard
+            </summary>
+        </member>
+        <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.SkipOver">
+            <summary>
+            Amount of audio to skip over from the source before beginning playback
             </summary>
         </member>
         <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.TakeSamples">
@@ -9826,9 +9407,19 @@
             Number of samples to read from source (if 0, then read it all)
             </summary>
         </member>
+        <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.Take">
+            <summary>
+            Amount of audio to take from the source (TimeSpan.Zero means play to end)
+            </summary>
+        </member>
         <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.LeadOutSamples">
             <summary>
             Number of samples of silence to insert after playing source
+            </summary>
+        </member>
+        <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.LeadOut">
+            <summary>
+            Amount of silence to insert after playing source
             </summary>
         </member>
         <member name="P:NAudio.Wave.SampleProviders.OffsetSampleProvider.WaveFormat">
@@ -12294,6 +11885,11 @@
             Current position within this stream
             </summary>
         </member>
+        <member name="E:NAudio.Wave.MediaFoundationReader.WaveFormatChanged">
+            <summary>
+            WaveFormat has changed
+            </summary>
+        </member>
         <member name="T:NAudio.Wave.MediaFoundationReader.MediaFoundationReaderSettings">
             <summary>
             Allows customisation of this reader class
@@ -12353,48 +11949,6 @@
         <member name="P:NAudio.Wave.RawSourceWaveStream.Position">
             <summary>
             The current position in this stream
-            </summary>
-        </member>
-        <member name="T:NAudio.Wave.ResamplerDmoStream">
-            <summary>
-            Wave Stream for converting between sample rates
-            </summary>
-        </member>
-        <member name="M:NAudio.Wave.ResamplerDmoStream.#ctor(NAudio.Wave.IWaveProvider,NAudio.Wave.WaveFormat)">
-            <summary>
-            WaveStream to resample using the DMO Resampler
-            </summary>
-            <param name="inputProvider">Input Stream</param>
-            <param name="outputFormat">Desired Output Format</param>
-        </member>
-        <member name="M:NAudio.Wave.ResamplerDmoStream.Read(System.Byte[],System.Int32,System.Int32)">
-            <summary>
-            Reads data from input stream
-            </summary>
-            <param name="buffer">buffer</param>
-            <param name="offset">offset into buffer</param>
-            <param name="count">Bytes required</param>
-            <returns>Number of bytes read</returns>
-        </member>
-        <member name="M:NAudio.Wave.ResamplerDmoStream.Dispose(System.Boolean)">
-            <summary>
-            Dispose
-            </summary>
-            <param name="disposing">True if disposing (not from finalizer)</param>
-        </member>
-        <member name="P:NAudio.Wave.ResamplerDmoStream.WaveFormat">
-            <summary>
-            Stream Wave Format
-            </summary>
-        </member>
-        <member name="P:NAudio.Wave.ResamplerDmoStream.Length">
-            <summary>
-            Stream length in bytes
-            </summary>
-        </member>
-        <member name="P:NAudio.Wave.ResamplerDmoStream.Position">
-            <summary>
-            Stream position in bytes
             </summary>
         </member>
         <member name="T:NAudio.Wave.SimpleCompressorStream">
@@ -12765,6 +12319,20 @@
             <param name="device">Device to use</param>
             <param name="shareMode"></param>
             <param name="latency"></param>
+        </member>
+        <member name="F:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.audioClientProperties">
+            <summary>
+            Properties of the client's audio stream.
+            Set before calling init
+            </summary>
+        </member>
+        <member name="M:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.SetClientProperties(System.Boolean,NAudio.CoreAudioApi.AudioStreamCategory,NAudio.CoreAudioApi.AudioClientStreamOptions)">
+            <summary>
+            Sets the parameters that describe the properties of the client's audio stream.
+            </summary>
+            <param name="useHardwareOffload">Boolean value to indicate whether or not the audio stream is hardware-offloaded.</param>
+            <param name="category">An enumeration that is used to specify the category of the audio stream.</param>
+            <param name="options">A bit-field describing the characteristics of the stream. Supported in Windows 8.1 and later.</param>
         </member>
         <member name="M:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.Play">
             <summary>
