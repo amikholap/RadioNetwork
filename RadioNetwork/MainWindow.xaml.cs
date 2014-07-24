@@ -197,18 +197,25 @@ namespace RadioNetwork
             {
                 char digit = ((Control)sender).Name.Last();
                 input.Text += digit;
-                // TODO: cursor position
-                input.Focus();
             }
+            FocusCurrentFrequencyInput();
         }
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
             _cdc.Fr = "";
             _cdc.Ft = "";
-
+            FocusCurrentFrequencyInput();
+        }
+        /// <summary>
+        /// Find and focus not complete frequency display.
+        /// Set caret to the end of text.
+        /// </summary>
+        private void FocusCurrentFrequencyInput()
+        {
             var input = this.GetCurrentFrequencyInput();
             if (input != null)
             {
+                input.CaretIndex = input.Text.Length;
                 input.Focus();
             }
         }
