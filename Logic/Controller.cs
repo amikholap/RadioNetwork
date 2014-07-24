@@ -68,8 +68,8 @@ namespace Logic
                 DateTime lastUpdated = DateTime.Now;
                 while (true)
                 {
-                    // Update AvailableServers only in client mode
-                    if (Mode == ControllerMode.Client)
+                    // Don't update AvailableServers in server mode
+                    if (Mode != ControllerMode.Server)
                     {
                         int nServers = 0;
                         if (AvailableServers != null)
