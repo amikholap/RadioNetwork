@@ -12,6 +12,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 
 namespace Network
@@ -80,11 +81,22 @@ namespace Network
 
         public event EventHandler<TalkerChangedEventArgs> TalkerChanged;
 
+
         protected void OnTalkerChanged(TalkerChangedEventArgs e)
         {
             if (TalkerChanged != null)
             {
                 TalkerChanged(this, e);
+            }
+        }
+
+        public event EventHandler<MessagesChangedEventArgs> MessagesChanged;
+
+        protected void OnMessagesChanged(MessagesChangedEventArgs e)
+        {
+            if (MessagesChanged != null)
+            {
+                MessagesChanged(this, e);
             }
         }
 
@@ -199,6 +211,7 @@ namespace Network
 
             line = String.Format("<{0:g}> {1}: {2}", ts.TimeOfDay, e.Talker.Callsign, message);
             Dispatcher.Invoke(() => { _messages.Add(line); });
+            OnMessagesChanged(new MessagesChangedEventArgs(e.Talker, line));
         }
 
         #endregion
