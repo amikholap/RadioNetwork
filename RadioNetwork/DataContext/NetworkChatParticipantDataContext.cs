@@ -21,9 +21,19 @@ namespace RadioNetwork.DataContext
             }
         }
 
-        public abstract bool IsClient
+        public bool IsClient
         {
-            get;
+            get
+            {
+                return _object is Client;
+            }
+        }
+        public bool IsServer
+        {
+            get
+            {
+                return _object is Server;
+            }
         }
 
         public string Callsign

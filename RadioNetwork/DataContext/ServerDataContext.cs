@@ -16,11 +16,6 @@ namespace RadioNetwork
             _object = server;
         }
 
-        public override bool IsClient
-        {
-            get { return false; }
-        }
-
         public ObservableCollection<Client> Clients
         {
             get

@@ -64,7 +64,7 @@ namespace Logic
             Thread detectServersThread = new Thread(() =>
             {
                 TimeSpan sleepTime;
-                TimeSpan interval = TimeSpan.FromSeconds(1);
+                TimeSpan interval = TimeSpan.FromSeconds(3);
                 DateTime lastUpdated = DateTime.Now;
                 while (true)
                 {
@@ -79,11 +79,17 @@ namespace Logic
 
                         // Update a list of available servers.
                         // Check twice if any server disappears.
-                        AvailableServers = Network.Client.DetectServers();
-                        if (AvailableServers.Count() < nServers)
+                        // Use a temporary variable to avoid UI update.
+                        IEnumerable<ServerSummary> availableServers;
+                        availableServers = Network.Client.DetectServers();
+                        if (availableServers.Count() < nServers)
                         {
-                            AvailableServers = Network.Client.DetectServers();
+                            availableServers = Network.Client.DetectServers();
                         }
+                        if (availableServers.Count() < nServers)
+                        {
+                        }
+                        AvailableServers = availableServers.OrderBy(ss => ss.Addr.ToString());
                     }
 
                     sleepTime = interval - (DateTime.Now - lastUpdated);

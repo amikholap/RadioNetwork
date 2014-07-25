@@ -107,38 +107,27 @@ namespace Network
             // Initialize unique message to distinguish this client from others.
             new Random().NextBytes(clientMsg);
 
-
             UdpClient sendClient = NetworkHelper.InitUdpClient();
             sendClient.EnableBroadcast = true;
-            IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, Properties.Settings.Default.BROADCAST_PORT);
-            try
-            {
-                sendClient.Send(clientMsg, clientMsg.Length, broadcastEndPoint);
-            }
-            catch (SocketException)
-            {
-                // timeout
-            }
-            finally
-            {
-                sendClient.Close();
-            }
+            IPAddress bcastAddr = NetworkHelper.GetBroadcastAddress(NetworkHelper.GetLocalIPAddress());
+            IPEndPoint broadcastEndPoint = new IPEndPoint(bcastAddr, Properties.Settings.Default.BROADCAST_PORT);
+            sendClient.Send(clientMsg, clientMsg.Length, broadcastEndPoint);
+            sendClient.Close();
 
-            UdpClient receiveClient = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
-            receiveClient.Client.ReceiveTimeout = waitTime;
-            DateTime startTime = DateTime.Now;
             IPEndPoint serverEP;
+            UdpClient receiveClient = NetworkHelper.InitUdpClient(Properties.Settings.Default.BROADCAST_PORT);
+            DateTime startTime = DateTime.Now;
 
             while (DateTime.Now - startTime < TimeSpan.FromMilliseconds(waitTime))
             {
                 serverEP = null;
-                try
+                if (receiveClient.Available > 0)
                 {
                     serverMsg = receiveClient.Receive(ref serverEP);
                 }
-                catch (SocketException)
+                else
                 {
-                    // timeout
+                    Thread.Sleep(50);
                 }
                 if (serverEP != null && clientMsg.SequenceEqual(serverMsg))
                 {

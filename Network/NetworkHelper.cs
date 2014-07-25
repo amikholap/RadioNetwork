@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -66,6 +67,49 @@ namespace Network
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Return netmask for a network `localAddr` belongs to.
+        /// </summary>
+        /// <param name="localAddr"></param>
+        /// <returns></returns>
+        public static IPAddress GetSubnetMask(IPAddress localAddr)
+        {
+            foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapter.GetIPProperties().UnicastAddresses)
+                {
+                    if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        if (localAddr.Equals(unicastIPAddressInformation.Address))
+                        {
+                            return unicastIPAddressInformation.IPv4Mask;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Return broadcast address for a network `localAddr` belongs to.
+        /// </summary>
+        /// <param name="localAddr"></param>
+        /// <returns></returns>
+        public static IPAddress GetBroadcastAddress(IPAddress localAddr)
+        {
+            byte[] addrBytes = localAddr.GetAddressBytes();
+            IPAddress mask = GetSubnetMask(localAddr);
+
+            BitArray h = new BitArray(addrBytes);
+            BitArray m = new BitArray(mask.GetAddressBytes());
+            BitArray b = h.Or(m.Not());
+
+            b.CopyTo(addrBytes, 0);
+            IPAddress bcastAddr = new IPAddress(addrBytes);
+
+            return bcastAddr;
         }
 
         /// <summary>

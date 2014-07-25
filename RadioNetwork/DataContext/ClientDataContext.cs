@@ -17,11 +17,6 @@ namespace RadioNetwork
             _object = client;
         }
 
-        public override bool IsClient
-        {
-            get { return true; }
-        }
-
         public string Fr
         {
             get
