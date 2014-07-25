@@ -153,7 +153,6 @@ namespace Network
                 if (s != null)
                 {
                     servers.Add(s);
-                    break;
                 }
             }
 
