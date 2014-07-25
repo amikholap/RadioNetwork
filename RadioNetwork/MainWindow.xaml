@@ -47,7 +47,11 @@
                 PreviewKeyDown="FtTextBox_PreviewKeyDown"/>
         </Border>
 
-        <rnc:PaperDataGrid x:Name="AvailableServers" Canvas.Left="436" Canvas.Top="32" Height="273" Width="335" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}">
+        <rnc:PaperDataGrid
+            x:Name="AvailableServers"
+            Canvas.Left="438" Canvas.Top="88"
+            Height="175" Width="343"
+            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}">
             <rnc:PaperDataGrid.Columns>
                 <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}" Width="*"/>
                 <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Path=Addr}"/>
@@ -113,9 +117,25 @@
 
         <TextBox Height="48" Canvas.Left="331" Text="{Binding Path=Callsign}" Canvas.Top="32" Width="61" BorderThickness="0" Background="{x:Null}" FontFamily="Segoe Print" FontWeight="Bold" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="Wrap" MaxLength="13"/>
 
-        <rnc:ImageToggleButton x:Name="ModeToggleButton" CheckedBackgroundImageSource="/img/mode_button_server.jpg" UncheckedBackgroundImageSource="/img/mode_button_client.jpg" Canvas.Left="115" Canvas.Top="360" Checked="ModeToggleButton_Checked" Unchecked="ModeToggleButton_Unchecked" Height="89" Width="177" ToolTip="Переключение режима работы"/>
+        <rnc:ImageToggleButton
+            x:Name="ModeToggleButton"
+            CheckedBackgroundImageSource="/img/mode_button_server.jpg"
+            UncheckedBackgroundImageSource="/img/mode_button_client.jpg"
+            Canvas.Left="115" Canvas.Top="360"
+            Height="89" Width="177"
+            Checked="ModeToggleButton_Checked"
+            Unchecked="ModeToggleButton_Unchecked"
+            ToolTip="Переключение режима работы"/>
 
-        <rnc:ImageToggleButton x:Name="PowerToggleButton" CheckedBackgroundImageSource="/img/power_button_on.jpg" UncheckedBackgroundImageSource="/img/power_button_off.jpg" Canvas.Left="365" Canvas.Top="290" Height="25" Width="28" Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}" Checked="PowerToggleButton_Checked" Unchecked="PowerToggleButton_Unchecked"/>
+        <rnc:ImageToggleButton
+            x:Name="PowerToggleButton"
+            CheckedBackgroundImageSource="/img/power_button_on.jpg"
+            UncheckedBackgroundImageSource="/img/power_button_off.jpg"
+            Canvas.Left="365" Canvas.Top="290"
+            Height="25" Width="28"
+            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"
+            Checked="PowerToggleButton_Checked"
+            Unchecked="PowerToggleButton_Unchecked"/>
 
         <rnc:ImageToggleButton
             x:Name="PushToTalkToggleButton"
