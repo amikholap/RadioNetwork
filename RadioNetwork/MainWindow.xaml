@@ -75,11 +75,14 @@
             </rnc:PaperDataGrid.Columns>
         </rnc:PaperDataGrid>
 
-        <TextBlock
+        <TextBox
             Name="TextLog"
             Background="AliceBlue"
-            Height="181" Width="320"
+            IsReadOnly="True"
+            Height="150" Width="320"
             Canvas.Left="438" Canvas.Top="187"
+            VerticalScrollBarVisibility="Auto"
+            TextWrapping="Wrap"
             Visibility="{Binding Path=IsServer, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
         <Button Name="Button1" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="143" Click="DigitButton_Click">
@@ -165,6 +168,7 @@
             UncheckedBackgroundImageSource="/img/power_button_off.jpg"
             Canvas.Left="365" Canvas.Top="290"
             Height="25" Width="28"
+            IsChecked="{Binding Path=IsWorking, Mode=OneWay}"
             Checked="PowerToggleButton_Checked"
             Unchecked="PowerToggleButton_Unchecked"/>
 

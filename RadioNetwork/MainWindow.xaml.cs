@@ -59,6 +59,15 @@ namespace RadioNetwork
             timer.Interval = TimeSpan.FromSeconds(1);
             timer.Start();
             timer.Tick += this.UpdateAvailableServersTimer_Tick;
+
+            Controller.SpeechRecognized += (sender, e) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    TextLog.Text += String.Format("{0}: {1}\n", e.Talker.Callsign, e.Message);
+                    TextLog.ScrollToEnd();
+                });
+            };
         }
 
         private bool StartClient()

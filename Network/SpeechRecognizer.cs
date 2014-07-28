@@ -21,9 +21,16 @@ namespace Network
             request.ContentLength = data.Length;
             request.UserAgent = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36";
 
-            using (var stream = request.GetRequestStream())
+            try
             {
-                stream.Write(data, 0, data.Length);
+                using (var stream = request.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+            }
+            catch (WebException)
+            {
+                return "";
             }
 
             using (var response = request.GetResponse())
@@ -71,7 +78,6 @@ namespace Network
                 return;
             }
 
-            // TODO: don't increase buffer length each time
             Array.Resize(ref _buffer, _buffer.Length + e.Item.Data.Length);
             e.Item.Data.CopyTo(_buffer, _buffer.Length - e.Item.Data.Length);
         }
