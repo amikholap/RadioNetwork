@@ -49,6 +49,16 @@
                 PreviewKeyDown="FtTextBox_PreviewKeyDown"/>
         </Border>
 
+        <TextBox
+            Name="CallsignTextBox"
+            Style="{StaticResource PaperCallsignStyle}"
+            Height="48" Width="61"
+            Canvas.Left="331" Canvas.Top="32"
+            IsEnabled="{Binding Path=IsWorking, Converter={StaticResource BooleanNegationConverter}}"
+            Text="{Binding Path=Callsign}"
+            MaxLength="13">
+        </TextBox>
+
         <rnc:PaperDataGrid
             x:Name="AvailableServers"
             Canvas.Left="438" Canvas.Top="70"
@@ -142,15 +152,10 @@
             </Button.Background>
         </Button>
 
-        <TextBox
-            Name="CallsignTextBox"
-            Style="{StaticResource PaperCallsignStyle}"
-            Height="48" Width="61"
-            Canvas.Left="331" Canvas.Top="32"
-            IsEnabled="{Binding Path=IsWorking, Converter={StaticResource BooleanNegationConverter}}"
-            Text="{Binding Path=Callsign}"
-            MaxLength="13">
-        </TextBox>
+        <Image Height="26" Width="27"
+               Canvas.Left="341" Canvas.Top="136"
+               Visibility="{Binding Path=IsWorking, Converter={StaticResource BooleanToVisibilityConverter}}"
+               Source="/img/isworking_indicator.jpg"/>
 
         <rnc:ImageToggleButton
             x:Name="ModeToggleButton"

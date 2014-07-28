@@ -207,7 +207,9 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="img\isworking_indicator.jpg" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="img\buttons\0.jpg" />
     <Resource Include="img\buttons\1.jpg" />
