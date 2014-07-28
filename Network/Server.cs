@@ -227,7 +227,7 @@ namespace Network
             client.EnableBroadcast = true;
 
             // listen for client requests
-            while (_isWorking)
+            while (IsWorking)
             {
                 if (client.Available > 0)
                 {
@@ -275,7 +275,7 @@ namespace Network
 
             listener.Start();
 
-            while (_isWorking)
+            while (IsWorking)
             {
                 if (listener.Pending())
                 {
@@ -305,7 +305,7 @@ namespace Network
             listener.Server.SendTimeout = 5000;
             listener.Start();
 
-            while (_isWorking)
+            while (IsWorking)
             {
                 if (listener.Pending())
                 {

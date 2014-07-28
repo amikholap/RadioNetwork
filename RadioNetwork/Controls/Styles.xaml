@@ -1,7 +1,8 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="/RadioNetwork;component/Controls/DigitButton.xaml" />
-        <ResourceDictionary Source="/RadioNetwork;component/Controls/PaperDataGrid.xaml" />
+        <ResourceDictionary Source="/RadioNetwork;component/Controls/DigitButton.xaml"/>
+        <ResourceDictionary Source="/RadioNetwork;component/Controls/PaperCallsign.xaml"/>
+        <ResourceDictionary Source="/RadioNetwork;component/Controls/PaperDataGrid.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

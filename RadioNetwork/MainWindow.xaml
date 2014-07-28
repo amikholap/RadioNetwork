@@ -3,6 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:rnc="clr-namespace:RadioNetwork.Controls"
+        xmlns:rncv="clr-namespace:RadioNetwork.Converters"
         Closing="OnWindowClosing"
         PreviewKeyUp="MainWindow_PreviewKeyUp"
         PreviewKeyDown="MainWindow_PreviewKeyDown"
@@ -14,6 +15,7 @@
                 <ResourceDictionary Source="/Controls/Styles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <rncv:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -56,6 +58,18 @@
                 <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}" Width="*"/>
                 <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Path=Addr}"/>
                 <DataGridTextColumn Header="Участников" Binding="{Binding Path=ClientCount}"/>
+            </rnc:PaperDataGrid.Columns>
+        </rnc:PaperDataGrid>
+
+        <rnc:PaperDataGrid
+            x:Name="ConnectedClients"
+            Canvas.Left="438" Canvas.Top="60"
+            Height="200" Width="343"
+            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsServer}">
+            <rnc:PaperDataGrid.Columns>
+                <DataGridTextColumn Header="Позывной"/>
+                <DataGridTextColumn Header="Ч.прм."/>
+                <DataGridTextColumn Header="Ч.прд."/>
             </rnc:PaperDataGrid.Columns>
         </rnc:PaperDataGrid>
 
@@ -115,14 +129,22 @@
             </Button.Background>
         </Button>
 
-        <TextBox Height="48" Canvas.Left="331" Text="{Binding Path=Callsign}" Canvas.Top="32" Width="61" BorderThickness="0" Background="{x:Null}" FontFamily="Segoe Print" FontWeight="Bold" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="Wrap" MaxLength="13"/>
+        <TextBox
+            Name="CallsignTextBox"
+            Style="{StaticResource PaperCallsignStyle}"
+            Height="48" Width="61"
+            Canvas.Left="331" Canvas.Top="32"
+            IsEnabled="{Binding Path=IsWorking}"
+            Text="{Binding Path=Callsign}"
+            MaxLength="13">
+        </TextBox>
 
         <rnc:ImageToggleButton
             x:Name="ModeToggleButton"
             CheckedBackgroundImageSource="/img/mode_button_server.jpg"
             UncheckedBackgroundImageSource="/img/mode_button_client.jpg"
             Canvas.Left="115" Canvas.Top="360"
-            Height="89" Width="177"
+            Height="30" Width="177"
             Checked="ModeToggleButton_Checked"
             Unchecked="ModeToggleButton_Unchecked"
             ToolTip="Переключение режима работы"/>

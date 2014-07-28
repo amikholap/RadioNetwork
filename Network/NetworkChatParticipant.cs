@@ -23,14 +23,6 @@ namespace Network
         private int pingWaitAccept = 6000;
         protected INetworkChatCodec _codec;
 
-
-
-        /// <summary>
-        /// Tell working state.
-        /// True by default.
-        /// When set to false a shutdown will follow in several seconds.
-        /// </summary>
-        protected volatile bool _isWorking;
         protected volatile bool _listenPing;
         protected volatile bool _muted;
         protected volatile bool _connectPing;
@@ -49,8 +41,12 @@ namespace Network
         /// </summary>
         public string Callsign { get; set; }
 
-        protected virtual void StartSendPingLoop() { }
-        protected virtual void StartReceivingLoop() { }
+        /// <summary>
+        /// Tell working state.
+        /// True by default.
+        /// When set to false a shutdown will follow in several seconds.
+        /// </summary>
+        public bool IsWorking { get; private set; }
 
         #endregion
 
@@ -86,6 +82,9 @@ namespace Network
         #endregion
 
         #region Methods
+
+        protected virtual void StartSendPingLoop() { }
+        protected virtual void StartReceivingLoop() { }
 
         /// <summary>
         /// Return absolute path to file in log dir with now timestamp as name.
@@ -240,7 +239,7 @@ namespace Network
 
         public virtual void Start()
         {
-            _isWorking = true;
+            IsWorking = true;
             StartLoggingAudio();
             AudioHelper.StartPlaying(new UncompressedPcmChatCodec());
             StartReceiving();
@@ -258,7 +257,7 @@ namespace Network
             StopReceiving();
             AudioHelper.StopPlaying();
             StopLoggingAudio();
-            _isWorking = false;
+            IsWorking = false;
             Thread.Sleep(1000);    // let worker threads finish
         }
 

@@ -82,12 +82,16 @@ namespace RadioNetwork
 
             var servAddr = ((ServerSummary)AvailableServers.SelectedItem).Addr;
 
-            return Controller.StartClient(callsign, fr, ft, servAddr);
+            bool isStarted = Controller.StartClient(callsign, fr, ft, servAddr);
+            _cdc = new ClientDataContext(Controller.Client);
+
+            return isStarted;
         }
 
         private void StartServer()
         {
             Controller.StartServer(_sdc.Callsign);
+            _sdc = new ServerDataContext(Controller.Server);
         }
 
         private void SwitchToClientMode()
@@ -290,7 +294,7 @@ namespace RadioNetwork
         /// Focus a frequency display control.
         /// Set caret to the end of text.
         /// </summary>
-        /// <param name="input">Input to focus. null value tells to use the first incomplete one.</param>
+        /// <param name="input">Input to focus. `null` value tells to use the first incomplete one.</param>
         private void FocusFrequencyInput(NumericalImageTextBox input = null)
         {
             if (input == null)

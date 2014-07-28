@@ -36,6 +36,14 @@ namespace RadioNetwork.DataContext
             }
         }
 
+        public bool IsWorking
+        {
+            get
+            {
+                return _object.IsWorking;
+            }
+        }
+
         public string Callsign
         {
             get { return _object.Callsign; }

@@ -227,7 +227,7 @@ namespace Network
 
         protected override void StartSendPingLoop()
         {
-            while (_isWorking)
+            while (IsWorking)
             {
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
