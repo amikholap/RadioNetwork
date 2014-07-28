@@ -54,11 +54,11 @@
             Canvas.Left="438" Canvas.Top="70"
             Height="230" Width="320"
             Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"
-            ItemsSource="{Binding Clients}">
+            ItemsSource="{Binding AvailableServers}">
             <rnc:PaperDataGrid.Columns>
-                <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}" Width="*"/>
-                <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Path=Addr}"/>
-                <DataGridTextColumn Header="Участников" Binding="{Binding Path=ClientCount}"/>
+                <DataGridTextColumn Header="Позывной" Binding="{Binding Callsign}" Width="*"/>
+                <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Addr}"/>
+                <DataGridTextColumn Header="Участников" Binding="{Binding ClientCount}"/>
             </rnc:PaperDataGrid.Columns>
         </rnc:PaperDataGrid>
 
@@ -66,12 +66,13 @@
             x:Name="ConnectedClients"
             Canvas.Left="438" Canvas.Top="32"
             Height="150" Width="320"
-            Visibility="{Binding Path=IsServer, Converter={StaticResource BooleanToVisibilityConverter}}">
+            Visibility="{Binding Path=IsServer, Converter={StaticResource BooleanToVisibilityConverter}}"
+            ItemsSource="{Binding Clients}">
             <rnc:PaperDataGrid.Columns>
-                <DataGridTextColumn Header="Позывной" Width="*"/>
-                <DataGridTextColumn Header="Сетевой адрес" Width="*"/>
-                <DataGridTextColumn Header="Ч.прм."/>
-                <DataGridTextColumn Header="Ч.прд."/>
+                <DataGridTextColumn Header="Позывной" Binding="{Binding Callsign}"  Width="*"/>
+                <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Addr}"/>
+                <DataGridTextColumn Header="Ч.прм." Binding="{Binding Fr}"/>
+                <DataGridTextColumn Header="Ч.прд." Binding="{Binding Ft}"/>
             </rnc:PaperDataGrid.Columns>
         </rnc:PaperDataGrid>
 
