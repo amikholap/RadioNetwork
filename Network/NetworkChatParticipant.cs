@@ -139,7 +139,7 @@ namespace Network
 
         protected void StartListenPingLoop(IPAddress PingAddr, int PING_PORT)
         {
-            logger.Debug("ping listen from " + IPAddress.Parse(PingAddr.ToString()) + " port " + PING_PORT);
+            logger.Debug("Ping listen from " + IPAddress.Parse(PingAddr.ToString()) + " port " + PING_PORT);
             TcpListener listener = new TcpListener(PingAddr, PING_PORT);
             listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             TcpClient tcpClient;
@@ -153,7 +153,6 @@ namespace Network
                 if (listener.Pending())
                 {
                     tcpClient = listener.AcceptTcpClient();
-                    logger.Debug(String.Format("ping listen accept SYN send from {0}", tcpClient.Client.RemoteEndPoint));
                     tcpClient.Close();
                 }
                 else
@@ -162,7 +161,6 @@ namespace Network
                 }
             }
             listener.Stop();
-            logger.Debug("ping listen accept stop");
         }
 
         protected void StartListenPing()

@@ -51,9 +51,10 @@
 
         <rnc:PaperDataGrid
             x:Name="AvailableServers"
-            Canvas.Left="438" Canvas.Top="88"
-            Height="175" Width="343"
-            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}">
+            Canvas.Left="438" Canvas.Top="70"
+            Height="230" Width="320"
+            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"
+            ItemsSource="{Binding Clients}">
             <rnc:PaperDataGrid.Columns>
                 <DataGridTextColumn Header="Позывной" Binding="{Binding Path=Callsign}" Width="*"/>
                 <DataGridTextColumn Header="Сетевой адрес" Binding="{Binding Path=Addr}"/>
@@ -63,15 +64,23 @@
 
         <rnc:PaperDataGrid
             x:Name="ConnectedClients"
-            Canvas.Left="438" Canvas.Top="60"
-            Height="200" Width="343"
-            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsServer}">
+            Canvas.Left="438" Canvas.Top="32"
+            Height="150" Width="320"
+            Visibility="{Binding Path=IsServer, Converter={StaticResource BooleanToVisibilityConverter}}">
             <rnc:PaperDataGrid.Columns>
-                <DataGridTextColumn Header="Позывной"/>
+                <DataGridTextColumn Header="Позывной" Width="*"/>
+                <DataGridTextColumn Header="Сетевой адрес" Width="*"/>
                 <DataGridTextColumn Header="Ч.прм."/>
                 <DataGridTextColumn Header="Ч.прд."/>
             </rnc:PaperDataGrid.Columns>
         </rnc:PaperDataGrid>
+
+        <TextBlock
+            Name="TextLog"
+            Background="AliceBlue"
+            Height="181" Width="320"
+            Canvas.Left="438" Canvas.Top="187"
+            Visibility="{Binding Path=IsServer, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
         <Button Name="Button1" Style="{StaticResource DigitButtonStyle}" Canvas.Left="145" Canvas.Top="143" Click="DigitButton_Click">
             <Button.Background>
@@ -151,6 +160,7 @@
 
         <rnc:ImageToggleButton
             x:Name="PowerToggleButton"
+            ToolTip="Включение/Выключение"
             CheckedBackgroundImageSource="/img/power_button_on.jpg"
             UncheckedBackgroundImageSource="/img/power_button_off.jpg"
             Canvas.Left="365" Canvas.Top="290"
