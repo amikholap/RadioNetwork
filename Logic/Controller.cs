@@ -9,7 +9,6 @@ using log4net;
 using System.Net;
 using System.Threading;
 using System.Diagnostics;
-using System.ComponentModel;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
@@ -18,6 +17,8 @@ namespace Logic
 {
     public static class Controller
     {
+        #region Properties
+
         private static Client _client;
         private static Server _server;
 
@@ -42,23 +43,17 @@ namespace Logic
         /// </summary>
         public static IEnumerable<ServerSummary> AvailableServers { get; set; }
 
-        #region EventHandlers
-        static void Server_MessagesChanged(object sender, MessagesChangedEventArgs e)
-        {
-        }
         #endregion
 
-
-        static void Client_ServerDisconnected(object sender, ClientEventArgs e)
-        {
-            _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
-        }
+        #region Constructors
 
         static Controller()
         {
             _client = new Client("Тополь", 255, 255);
             _server = new Server("Береза");
             Mode = ControllerMode.None;
+
+            SpeechRecognizer.SpeechRecognized += SpeechRecognizer_SpeechRecognized;
 
             // Update available servers every second
             Thread detectServersThread = new Thread(() =>
@@ -104,6 +99,37 @@ namespace Logic
             detectServersThread.Start();
         }
 
+        #endregion
+
+        #region Events
+
+        public static event EventHandler<Logic.SpeechRecognizedEventArgs> SpeechRecognized;
+        private static void OnSpeechRecognized(Logic.SpeechRecognizedEventArgs e)
+        {
+            if (SpeechRecognized != null)
+            {
+                SpeechRecognized(null, e);
+            }
+        }
+
+        #endregion
+
+        #region EventHandlers
+
+        private static void Client_ServerDisconnected(object sender, ClientEventArgs e)
+        {
+            _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
+        }
+
+        private static void SpeechRecognizer_SpeechRecognized(object sender, Network.SpeechRecognizedEventArgs e)
+        {
+            OnSpeechRecognized(new Logic.SpeechRecognizedEventArgs(e.Talker, e.Message));
+        }
+
+        #endregion
+
+        #region Methods
+
         /// <summary>
         /// Initialize internal services.
         /// </summary>
@@ -118,6 +144,7 @@ namespace Logic
         {
             AudioIO.StopTicking();
         }
+
         /// <summary>
         /// Run application in client mode.
         /// </summary>
@@ -179,11 +206,11 @@ namespace Logic
 
                 // create Server instance
                 _server = new Server(callsign);
+
                 // try to start server
                 try
                 {
                     _server.Start();
-                    _server.MessagesChanged += Server_MessagesChanged;
                     Mode = ControllerMode.Server;
                 }
                 catch (Exception e)
@@ -212,7 +239,6 @@ namespace Logic
                     break;
                 case ControllerMode.Server:
                     _server.Stop();
-                    _server.MessagesChanged -= Server_MessagesChanged;
                     break;
             }
             Mode = ControllerMode.None;
@@ -243,5 +269,7 @@ namespace Logic
                     break;
             }
         }
+
+        #endregion
     }
 }
