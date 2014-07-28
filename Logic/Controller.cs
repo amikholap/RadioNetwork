@@ -17,6 +17,8 @@ namespace Logic
 {
     public static class Controller
     {
+        #region Properties
+
         private static Client _client;
         private static Server _server;
 
@@ -41,16 +43,17 @@ namespace Logic
         /// </summary>
         public static IEnumerable<ServerSummary> AvailableServers { get; set; }
 
-        static void Client_ServerDisconnected(object sender, ClientEventArgs e)
-        {
-            _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
-        }
+        #endregion
+
+        #region Constructors
 
         static Controller()
         {
             _client = new Client("Тополь", 255, 255);
             _server = new Server("Береза");
             Mode = ControllerMode.None;
+
+            SpeechRecognizer.SpeechRecognized += SpeechRecognizer_SpeechRecognized;
 
             // Update available servers every second
             Thread detectServersThread = new Thread(() =>
@@ -89,6 +92,37 @@ namespace Logic
             detectServersThread.IsBackground = true;  // don't wait this thread to terminate on exit
             detectServersThread.Start();
         }
+
+        #endregion
+
+        #region Events
+
+        public static event EventHandler<Logic.SpeechRecognizedEventArgs> SpeechRecognized;
+        private static void OnSpeechRecognized(Logic.SpeechRecognizedEventArgs e)
+        {
+            if (SpeechRecognized != null)
+            {
+                SpeechRecognized(null, e);
+            }
+        }
+
+        #endregion
+
+        #region EventHandlers
+
+        private static void Client_ServerDisconnected(object sender, ClientEventArgs e)
+        {
+            _client.Dispatcher.Invoke(new Action(() => { throw new RNException(e.Message); }), null);
+        }
+
+        private static void SpeechRecognizer_SpeechRecognized(object sender, Network.SpeechRecognizedEventArgs e)
+        {
+            OnSpeechRecognized(new Logic.SpeechRecognizedEventArgs(e.Talker, e.Message));
+        }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// Initialize internal services.
@@ -229,5 +263,7 @@ namespace Logic
                     break;
             }
         }
+
+        #endregion
     }
 }
