@@ -32,9 +32,6 @@ namespace RadioNetwork
     /// </summary>
     public partial class MainWindow : Window
     {
-        private ClientDataContext _cdc;
-        private ServerDataContext _sdc;
-
         /// <summary>
         /// Show a message box with warning text.
         /// </summary>
@@ -53,9 +50,6 @@ namespace RadioNetwork
 
             Controller.Init();
 
-            _sdc = new ServerDataContext(Controller.Server);
-            _cdc = new ClientDataContext(Controller.Client);
-
             // Start in client mode
             ModeToggleButton.IsChecked = false;
             SwitchToClientMode();
@@ -69,9 +63,9 @@ namespace RadioNetwork
 
         private bool StartClient()
         {
-            string callsign = _cdc.Callsign;
-            var fr = UInt32.Parse(_cdc.Fr);
-            var ft = UInt32.Parse(_cdc.Ft);
+            string callsign = ((ClientDataContext)this.DataContext).Callsign;
+            var fr = UInt32.Parse(((ClientDataContext)this.DataContext).Fr);
+            var ft = UInt32.Parse(((ClientDataContext)this.DataContext).Ft);
 
             if (AvailableServers.SelectedItem == null)
             {
@@ -83,27 +77,26 @@ namespace RadioNetwork
             var servAddr = ((ServerSummary)AvailableServers.SelectedItem).Addr;
 
             bool isStarted = Controller.StartClient(callsign, fr, ft, servAddr);
-            _cdc = new ClientDataContext(Controller.Client);
+            this.DataContext = new ClientDataContext(Controller.Client);
 
             return isStarted;
         }
 
         private void StartServer()
         {
-            Controller.StartServer(_sdc.Callsign);
-            _sdc = new ServerDataContext(Controller.Server);
+            Controller.StartServer(((ServerDataContext)this.DataContext).Callsign);
+            this.DataContext = new ServerDataContext(Controller.Server);
         }
 
         private void SwitchToClientMode()
         {
             Controller.Stop();
-            this.DataContext = _cdc;
+            this.DataContext = new ClientDataContext(Controller.Client);
         }
-
         private void SwitchToServerMode()
         {
-            StartServer();
-            this.DataContext = _sdc;
+            Controller.Stop();
+            this.DataContext = new ServerDataContext(Controller.Server);
         }
 
         /// <summary>
@@ -200,12 +193,19 @@ namespace RadioNetwork
         /// <param name="e"></param>
         private void PowerToggleButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (!StartClient())
+            if (this.DataContext is ClientDataContext)
             {
-                // something went wrong
-                ToggleButton b = (ToggleButton)sender;
-                b.IsChecked = false;
-                return;
+                if (!StartClient())
+                {
+                    // something went wrong
+                    ToggleButton b = (ToggleButton)sender;
+                    b.IsChecked = false;
+                    return;
+                }
+            }
+            else if (this.DataContext is ServerDataContext)
+            {
+                StartServer();
             }
         }
 
@@ -233,8 +233,8 @@ namespace RadioNetwork
         }
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            _cdc.Fr = "";
-            _cdc.Ft = "";
+            ((ClientDataContext)this.DataContext).Fr = "";
+            ((ClientDataContext)this.DataContext).Ft = "";
             FocusFrequencyInput();
         }
 

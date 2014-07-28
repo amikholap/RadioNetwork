@@ -13,14 +13,14 @@ namespace RadioNetwork
     {
         public ServerDataContext(Server server)
         {
-            _object = server;
+            Object = server;
         }
 
         public ObservableCollection<Client> Clients
         {
             get
             {
-                return ((Server)_object).Clients;
+                return ((Server)Object).Clients;
             }
         }
     }

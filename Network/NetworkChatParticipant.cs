@@ -11,10 +11,11 @@ using System.Threading;
 using System.Windows.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using System.ComponentModel;
 
 namespace Network
 {
-    public class NetworkChatParticipant : DispatcherObject
+    public class NetworkChatParticipant : DispatcherObject, INotifyPropertyChanged
     {
         #region Properties
 
@@ -27,6 +28,7 @@ namespace Network
         protected volatile bool _muted;
         protected volatile bool _connectPing;
         protected volatile bool _receiving;
+        protected volatile bool _isWorking;
 
         private Thread _listenPingThread;
         protected Thread _connectPingThread;
@@ -46,7 +48,20 @@ namespace Network
         /// True by default.
         /// When set to false a shutdown will follow in several seconds.
         /// </summary>
-        public bool IsWorking { get; private set; }
+        public bool IsWorking
+        {
+            get
+            {
+                return _isWorking;
+            }
+            private set
+            {
+                _isWorking = value;
+                NotifyPropertyChanged("IsWorking");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion
 
@@ -68,6 +83,14 @@ namespace Network
         #endregion
 
         #region EventHandlers
+
+        protected void NotifyPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
 
         protected virtual void AudioIO_OutputDataAvailable(object sender, AudioIOEventArgs e) { }
         protected virtual void AudioIO_InputDataAvailable(object sender, AudioIOEventArgs e)

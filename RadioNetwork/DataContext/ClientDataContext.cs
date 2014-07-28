@@ -14,18 +14,18 @@ namespace RadioNetwork
 
         public ClientDataContext(Client client)
         {
-            _object = client;
+            Object = client;
         }
 
         public string Fr
         {
             get
             {
-                if (((Client)_object).Fr == 0)
+                if (((Client)Object).Fr == 0)
                 {
                     return "";
                 }
-                return ((Client)_object).Fr.ToString();
+                return ((Client)Object).Fr.ToString();
             }
             set
             {
@@ -45,7 +45,7 @@ namespace RadioNetwork
                         throw new ApplicationException("Неправильное значение частоты приема.");
                     }
                 }
-                ((Client)_object).Fr = fr;
+                ((Client)Object).Fr = fr;
                 NotifyPropertyChanged("Fr");
             }
         }
@@ -54,11 +54,11 @@ namespace RadioNetwork
         {
             get
             {
-                if (((Client)_object).Ft == 0)
+                if (((Client)Object).Ft == 0)
                 {
                     return "";
                 }
-                return ((Client)_object).Ft.ToString();
+                return ((Client)Object).Ft.ToString();
             }
             set
             {
@@ -78,7 +78,7 @@ namespace RadioNetwork
                         throw new ApplicationException("Неправильное значение частоты передачи.");
                     }
                 }
-                ((Client)_object).Ft = ft;
+                ((Client)Object).Ft = ft;
                 NotifyPropertyChanged("Ft");
             }
         }

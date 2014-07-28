@@ -10,9 +10,28 @@ namespace RadioNetwork.DataContext
 {
     public abstract class NetworkChatParticipantDataContext : INotifyPropertyChanged
     {
-        protected NetworkChatParticipant _object;
+        private NetworkChatParticipant _object;
+        protected NetworkChatParticipant Object
+        {
+            get
+            {
+                return _object;
+            }
+            set
+            {
+                _object = value;
+                _object.PropertyChanged += (sender, e) =>
+                {
+                    if (e.PropertyName == "IsWorking")
+                    {
+                        this.NotifyPropertyChanged("IsWorking");
+                    }
+                };
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         protected void NotifyPropertyChanged(string propertyName)
         {
             if (PropertyChanged != null)
@@ -25,14 +44,14 @@ namespace RadioNetwork.DataContext
         {
             get
             {
-                return _object is Client;
+                return Object is Client;
             }
         }
         public bool IsServer
         {
             get
             {
-                return _object is Server;
+                return Object is Server;
             }
         }
 
@@ -40,20 +59,20 @@ namespace RadioNetwork.DataContext
         {
             get
             {
-                return _object.IsWorking;
+                return Object.IsWorking;
             }
         }
 
         public string Callsign
         {
-            get { return _object.Callsign; }
+            get { return Object.Callsign; }
             set
             {
                 if (String.IsNullOrWhiteSpace(value))
                 {
                     throw new ApplicationException("Позывной не указан.");
                 }
-                _object.Callsign = value;
+                Object.Callsign = value;
             }
         }
     }

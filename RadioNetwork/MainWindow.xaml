@@ -134,7 +134,7 @@
             Style="{StaticResource PaperCallsignStyle}"
             Height="48" Width="61"
             Canvas.Left="331" Canvas.Top="32"
-            IsEnabled="{Binding Path=IsWorking}"
+            IsEnabled="{Binding Path=IsWorking, Converter={StaticResource BooleanNegationConverter}}"
             Text="{Binding Path=Callsign}"
             MaxLength="13">
         </TextBox>
@@ -155,7 +155,6 @@
             UncheckedBackgroundImageSource="/img/power_button_off.jpg"
             Canvas.Left="365" Canvas.Top="290"
             Height="25" Width="28"
-            Visibility="{Binding Converter={StaticResource BooleanToVisibilityConverter}, Path=IsClient}"
             Checked="PowerToggleButton_Checked"
             Unchecked="PowerToggleButton_Unchecked"/>
 
