@@ -49,7 +49,7 @@ namespace Audio
         public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
             _waveIn = new WaveInEvent();
-            _waveIn.BufferMilliseconds = 50;
+            _waveIn.BufferMilliseconds = 100;
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;
 
@@ -82,8 +82,7 @@ namespace Audio
         {
             // data provider for WaveOut
             _playBuffer = new BufferedWaveProvider(codec.RecordFormat);
-            // BufferDuration == lag
-            _playBuffer.BufferDuration = TimeSpan.FromMilliseconds(150);
+            _playBuffer.BufferDuration = TimeSpan.FromSeconds(10);
             _playBuffer.DiscardOnBufferOverflow = true;
 
             // output device
