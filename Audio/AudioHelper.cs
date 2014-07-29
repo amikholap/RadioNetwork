@@ -20,6 +20,7 @@ namespace Audio
         private static WaveOut _waveOut;
         private static WaveFileWriter _audioLog;
         private static DateTime _startCaptureAt;
+        private static DateTime _lastTalked;
 
         /// <summary>
         /// Construct a valid WAVE file content from raw input.
@@ -49,7 +50,7 @@ namespace Audio
         public static void StartCapture(INetworkChatCodec codec, int inputDeviceNumber = 0)
         {
             _waveIn = new WaveInEvent();
-            _waveIn.BufferMilliseconds = 100;
+            _waveIn.BufferMilliseconds = 150;
             _waveIn.DeviceNumber = inputDeviceNumber;
             _waveIn.WaveFormat = codec.RecordFormat;
 
@@ -82,7 +83,7 @@ namespace Audio
         {
             // data provider for WaveOut
             _playBuffer = new BufferedWaveProvider(codec.RecordFormat);
-            _playBuffer.BufferDuration = TimeSpan.FromSeconds(10);
+            _playBuffer.BufferDuration = TimeSpan.FromSeconds(1);
             _playBuffer.DiscardOnBufferOverflow = true;
 
             // output device
@@ -102,13 +103,21 @@ namespace Audio
             }
         }
 
+        /// <summary>
+        /// Write voice data or silence to audio log.
+        /// Append silence only if nobody talked for at least 300ms.
+        /// This prevents null e.Item between AudioIO ticks to interrupt actual speech.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private static void AudioLogTickCallback(object sender, AudioIOEventArgs e)
         {
             if (e.Item != null)
             {
                 _audioLog.Write(e.Item.Data, 0, e.Item.Data.Length);
+                _lastTalked = DateTime.Now;
             }
-            else
+            else if (_lastTalked != null && DateTime.Now - _lastTalked > TimeSpan.FromMilliseconds(300))
             {
                 // this array can be created only once
                 float[] silence = new float[(int)(AudioIO.TickInterval.TotalSeconds * _audioLog.WaveFormat.SampleRate)];

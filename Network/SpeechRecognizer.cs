@@ -3,12 +3,14 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Network
 {
     public static class SpeechRecognizer
     {
         private static byte[] _buffer;
+        private static Mutex _bufferLock = new Mutex();
         private static INetworkChatCodec _codec;
 
         public static event EventHandler<SpeechRecognizedEventArgs> SpeechRecognized;
@@ -78,8 +80,10 @@ namespace Network
                 return;
             }
 
+            _bufferLock.WaitOne();
             Array.Resize(ref _buffer, _buffer.Length + e.Item.Data.Length);
             e.Item.Data.CopyTo(_buffer, _buffer.Length - e.Item.Data.Length);
+            _bufferLock.ReleaseMutex();
         }
 
         public static void Server_TalkerChanged(object sender, TalkerChangedEventArgs e)
@@ -90,14 +94,18 @@ namespace Network
                     {
                         // do nothing if someone just started talking or
                         // the current buffer duration is under 1s
+                        _bufferLock.WaitOne();
                         _buffer = new byte[0];
+                        _bufferLock.ReleaseMutex();
                         return;
                     }
 
                     // work with a local copy since this method is async
+                    _bufferLock.WaitOne();
                     byte[] buffer = new byte[_buffer.Length];
                     Array.Copy(_buffer, buffer, _buffer.Length);
                     _buffer = new byte[0];
+                    _bufferLock.ReleaseMutex();
 
                     byte[] flacFileData = AudioHelper.ConstructWaveFileData(buffer, _codec);
                     string recognized = UploadWaveToGoogle(flacFileData, _codec);

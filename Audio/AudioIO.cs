@@ -49,7 +49,7 @@ namespace Audio
             _outputQueue = new ConcurrentQueue<AudioQueueItem>();
 
             // this should probably be the same value as AudioHelper._waveIn.BufferMilliseconds
-            TickInterval = TimeSpan.FromMilliseconds(50);
+            TickInterval = TimeSpan.FromMilliseconds(20);
         }
 
         private static void OnInputTick(AudioIOEventArgs e)
@@ -98,6 +98,8 @@ namespace Audio
             _isTicking = true;
             while (_isTicking)
             {
+                DateTime start = DateTime.Now;
+
                 mergedData = null;
 
                 if (_inputQueue.TryDequeue(out item))
@@ -122,7 +124,6 @@ namespace Audio
                     {
                         mergedData = item.Data;
                     }
-                    mergedData = item.Data;
                 }
                 else
                 {
@@ -138,7 +139,11 @@ namespace Audio
                     OnMergedTick(new AudioIOEventArgs(null));
                 }
 
-                Thread.Sleep(TickInterval);
+                TimeSpan sleepInverval = TickInterval - (DateTime.Now - start);
+                if (sleepInverval > TimeSpan.Zero)
+                {
+                    Thread.Sleep(sleepInverval);
+                }
             }
         }
 

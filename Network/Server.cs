@@ -159,6 +159,7 @@ namespace Network
                 _lastTalked.Timestamp = e.Item.Timestamp;
                 OnTalkerChanged(new TalkerChangedEventArgs(prevTalker, _lastTalked.Talker));
             }
+            // don't allow other clients to talk
             if (_lastTalked.Talker != e.Item.Context)
             {
                 return;
