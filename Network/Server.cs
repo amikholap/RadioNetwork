@@ -134,7 +134,7 @@ namespace Network
         /// <param name="e"></param>
         protected override void AudioIO_InputDataAvailable(object sender, AudioIOEventArgs e)
         {
-            // drop last talked lock after 0.3s of inactivity
+            // drop last talked lock after 0.5s of inactivity
             if ((DateTime.Now - _lastTalked.Timestamp).Milliseconds > 300 && _lastTalked.Talker != null)
             {
                 NetworkChatParticipant prevTalker = _lastTalked.Talker;
@@ -156,7 +156,6 @@ namespace Network
             {
                 NetworkChatParticipant prevTalker = _lastTalked.Talker;
                 _lastTalked.Talker = (Client)e.Item.Context;
-                _lastTalked.Timestamp = e.Item.Timestamp;
                 OnTalkerChanged(new TalkerChangedEventArgs(prevTalker, _lastTalked.Talker));
             }
             // don't allow other clients to talk
@@ -164,6 +163,7 @@ namespace Network
             {
                 return;
             }
+            _lastTalked.Timestamp = e.Item.Timestamp;
 
             // spread the message to other clients with that freq
             IPAddress mcastAddr = ((Client)_lastTalked.Talker).TransmitMulticastGroupAddr;
@@ -271,7 +271,13 @@ namespace Network
                     using (NetworkStream ns = c.GetStream())
                     {
                         BinaryFormatter bf = new BinaryFormatter();
-                        bf.Serialize(ns, new ServerSummary(this));
+                        try
+                        {
+                            bf.Serialize(ns, new ServerSummary(this));
+                        }
+                        catch (IOException)
+                        {
+                        }
                     }
                 }
                 else

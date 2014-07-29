@@ -218,9 +218,6 @@
     <Resource Include="img\isworking_indicator.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="img\buttons\0.jpg" />
     <Resource Include="img\buttons\1.jpg" />
     <Resource Include="img\buttons\2.jpg" />
@@ -232,6 +229,9 @@
     <Resource Include="img\buttons\8.jpg" />
     <Resource Include="img\buttons\9.jpg" />
     <Resource Include="img\buttons\reset.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
