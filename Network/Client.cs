@@ -232,7 +232,7 @@ namespace Network
                 if (StartAsyncPing(_servAddr, Network.Properties.Settings.Default.PING_PORT_IN_SERVER) == false)
                 {
                     Stop();
-                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с радиосетью \"{0\" разорвано", _servAddr)));
+                    OnClientEvent(new ClientEventArgs(string.Format("Соединение с радиосетью {0} разорвано.", _servAddr)));
                 }
                 Thread.Sleep(pingWaitReply);
             }
