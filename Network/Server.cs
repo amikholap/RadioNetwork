@@ -93,9 +93,9 @@ namespace Network
         #region EventHandlers
 
         /// <summary>
-        /// Take a chunk from the output queue and send it
-        /// to the input queue with server context.
-        /// This will set the highest priority.
+        /// Take a chunk from the output queue and send it to all clients.
+        /// Only server messages are there.
+        /// Any client talker is interrupted.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -128,7 +128,7 @@ namespace Network
         }
 
         /// <summary>
-        /// Receive data from self or a single client at a time and route it to mcast groups.
+        /// Take client message and route it to a proper multicast group.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
